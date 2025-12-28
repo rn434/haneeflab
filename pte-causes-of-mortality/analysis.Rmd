@@ -1,0 +1,1311 @@
+---
+title: "PTE vs. NTE Causes of Mortality"
+author: "Rohan Nagabhirava"
+date: "`r Sys.Date()`"
+css: styles.css
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+# Analysis Setup
+
+This section includes options for knitting of the Rmd document, loading of the necessary libraries for the analysis, definitions of functions to streamline analysis down the line, and the connection to the database.
+
+```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+options(encoding = "UTF-8")
+```
+
+```{r}
+library("dplyr")
+library("ggplot2")
+library("ggfortify")
+library("ggpubr")
+library("ggsci")
+library("glue")
+library("gridExtra")
+library("gt")
+library("gtsummary")
+library("lubridate")
+library("MatchIt")
+library("patchwork")
+library("ranger")
+library("readxl")
+library("rlang")
+library("RODBC")
+library("stringr")
+library("survival")
+library("survminer")
+library("tidyr")
+```
+
+```{r}
+get_custom_theme <- function() {
+  custom_theme <- theme_minimal() + 
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 12),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 6),
+      legend.key = element_rect(fill = NA),
+      legend.background = element_rect(fill = "white", color = "black"),
+      legend.position = "right"
+    )
+  return(custom_theme)
+}
+
+hist_plot <- function(data, x, binwidth, min, max, step, title, xlabel, ylabel) {
+  plt <- ggplot(
+    data = data, 
+    aes_string(x = x, fill = "as.factor(PTE)", y = "..density..")
+    ) +
+    geom_histogram(position = "identity", alpha = 0.5, binwidth = binwidth, na.rm = TRUE) +
+    scale_fill_manual(
+      values = c("NTE" = "blue", "PTE" = "red"),
+      labels = c("NTE" = "NTE", "PTE" = "PTE")
+    ) +
+    scale_x_continuous(
+      breaks = seq(min, max, by = step),
+      labels = seq(min, max, by = step)
+    ) +
+    labs(
+      title = title,
+      x = xlabel,
+      y = ylabel,
+      fill = "PTE"
+    ) +
+    get_custom_theme()
+  return(plt)
+}
+
+bar_plot <- function(data, x, title, xlabel, ylabel) {
+  summary_data <- data %>%
+    group_by(across(all_of(c("PTE", x)))) %>%
+    summarise(count = n()) %>%
+    mutate(proportion = count / sum(count)) %>%
+    ungroup()
+
+  plt <- ggplot(data = summary_data, aes_string(x = x, y = "proportion", fill = "as.factor(PTE)")) +
+    geom_bar(stat = "identity", position = "dodge", alpha = 0.5, color = "black") +
+    scale_fill_manual(
+      values = c("0" = "blue", "1" = "red"),
+      labels = c("0" = "NTE", "1" = "PTE")
+    ) +
+    labs(
+      title = title,
+      x = xlabel,
+      y = ylabel,
+      fill = "PTE"
+    ) +
+    get_custom_theme()
+  return(plt)
+}
+
+my_ggsurvplot <- function(fit, data, title, legend_labs) {
+    plot <- ggsurvplot(
+      fit = fit,
+      data = data,
+      censor = FALSE,
+      conf.int = FALSE,
+      size = 0.5,
+
+      xlim = c(0, 10),
+      ylim = c(0, 1),
+      xlab = "Years",
+      ylab = "Survival",
+      break.x.by = 1,
+      break.y.by = 0.1,
+      surv.scale = "percent",
+
+      legend = "right",
+      legend.labs = legend_labs,
+      
+      title = title,
+      ggtheme = get_custom_theme()
+    )
+    return(plot)
+}
+
+three_by_three_grid <- function(plots, order, title) {
+    plots_with_guide_area <- plots[[1]] + 
+      plots[[2]] + 
+      guide_area() + 
+      plots[[3]] + 
+      plots[[4]] + 
+      plots[[5]] + 
+      plots[[6]] + 
+      plots[[7]] + 
+      plots[[8]] 
+    
+    grid <- plots_with_guide_area +
+        plot_layout(
+            byrow = TRUE,
+            ncol = 3,
+            nrow = 3,
+            guides = "collect",
+            axes = "collect"
+        ) + 
+        plot_annotation(
+            title = title, 
+            theme = theme(plot.title = element_text(hjust = 0.5, size = 16))
+        )
+    return(grid)
+}
+
+plot_cox <- function(
+    cox_fits, 
+    legend_labs, 
+    age_discrete_column = "AgeOfOnsetDiscrete",
+    numeric_covariates = NULL, 
+    categorical_covariates = NULL
+) {
+    if (is.null(numeric_covariates)) {
+        numeric_covariates <- c()
+    }
+    if (is.null(categorical_covariates)) {
+        categorical_covariates <- c()
+    }
+    
+    age_labels_with_all <- names(cox_fits)
+    n <- length(age_labels_with_all)
+
+    plots <- vector(mode = "list", length = n)
+    names(plots) <- age_labels_with_all
+    
+    for (i in 1:n) {
+      age_label <- age_labels_with_all[[i]]
+      cox_fit <- cox_fits[[i]]
+      if (age_label == "All") {
+        age_subset <- data
+      } else {
+        age_subset <- data[data[[age_discrete_column]] == age_label, ]
+      }
+      new_data <- calculate_prediction_data(
+        data = age_subset, 
+        numeric_cols = numeric_covariates, 
+        categorical_cols = categorical_covariates
+      )
+      fit <- survfit(
+        formula = cox_fit,
+        newdata = new_data
+      )
+      plot <- my_ggsurvplot(
+          fit = fit, 
+          data = age_subset, 
+          title = glue("Age {age_label}"), 
+          legend_labs = legend_labs
+         )
+    plots[[i]] <- plot$plot
+    }
+    
+    return(plots)
+}
+
+```
+
+```{r}
+build_surv_formula_string <- function(futime, event, covariates) {
+    formula <- glue("Surv({futime}, {event}) ~ {paste(covariates, collapse = ' + ')}")
+    return(formula)
+}
+
+calculate_weights <- function(data, cols, group) {
+  index <- data[, c(cols, group)]
+  
+  tab1 <- table(data[cols]) / nrow(data)
+  tab2 <- table(index) / nrow(data)
+
+  n_groups <- dim(tab2)[length(cols) + 1]
+  rwt <- rep(tab1, times = n_groups) / tab2
+
+  return(rwt[as.matrix(index)])
+}
+
+calculate_prediction_data <- function(data, numeric_cols, categorical_cols) {
+    cols <- c(numeric_cols, categorical_cols)
+    new_data_values <- vector("list", length = length(cols))
+    names(new_data_values) <- cols
+    
+    for (col in numeric_cols) {
+        if (!(col %in% names(data))) {
+            stop(glue("{col} not found in supplied data"))
+        }
+        new_data_values[[col]] <- mean(data[[col]], na.rm = TRUE)
+    }
+    for (col in categorical_cols) {
+        if (!(col %in% names(data))) {
+            stop(glue("{col} not found in supplied data"))
+        }
+        new_data_values[[col]] <- unique(data[[col]])
+    }
+    rows_needed <- prod(unlist(sapply(new_data_values, length)))
+    
+    new_data <- data.frame(matrix(
+        ncol = length(cols),
+        nrow = rows_needed
+    ))
+    names(new_data) <- cols
+    for (col in cols) {
+        new_data[[col]] <- rep(
+            new_data_values[[col]],
+            length.out = rows_needed
+        )
+    }
+    
+    return(new_data)
+}
+    
+bold_gt_table <- function(gt_table, significant_matrix) {
+    bolded_gt_table <- gt_table
+    for (i in seq_len(nrow(significant_matrix))) {
+        bolded_gt_table <- bolded_gt_table %>%
+            tab_style(
+              style = cell_text(weight = "bold"),
+              locations = cells_body(
+                columns = colnames(significant_matrix)[significant_matrix[i, ]],
+                rows = i
+              )
+        )
+    }
+    return(bolded_gt_table)
+}
+    
+format_gt_table <- function(gt_table) {
+    formatted_gt_table <- gt_table %>%
+
+    tab_style(
+        style = list(
+            cell_text(size = px(18))
+    ),
+        locations = cells_column_labels()
+    ) %>%
+    tab_style(
+        style = cell_text(align = "center"),
+        locations = list(
+            cells_column_labels(), 
+            cells_body(), 
+            cells_stub(),
+            cells_stubhead()
+        )
+    ) %>%
+    return(formatted_gt_table)
+}
+```
+
+```{r}
+assign_asterisks <- function(p_value) {
+  case_when(
+    p_value < 0.001 ~ "***",
+    p_value < 0.01 ~ "**",
+    p_value < 0.05 ~ "*",
+    TRUE ~ ""
+  )
+}
+
+format_p_values <- function(p) {
+    case_when(
+        p < 0.001 ~ "<0.001***",
+        p < 0.01 ~ sprintf("%.3f**", p),
+        p < 0.05 ~ sprintf("%.3f*", p),
+        TRUE ~ sprintf("%.3f", p)
+      )
+}
+
+extract_cox_fit_stats <- function(cox_fit) {
+  summary_fit <- summary(cox_fit)
+  hr <- summary_fit$coefficients[, "exp(coef)"]
+  ci_lower <- summary_fit$conf.int[, "lower .95"]
+  ci_upper <- summary_fit$conf.int[, "upper .95"]
+  p_values <- summary_fit$coefficients[, "Pr(>|z|)"]
+  
+  stats <- data.frame(
+    Covariate = rownames(summary_fit$coefficients),
+    HR = format(round(hr, digits = 2), nsmall = 2),
+    CI = glue("({format(round(ci_lower, 2), nsmall = 2)}, {format(round(ci_upper, 2), nsmall = 2)})"),
+    raw_p = p_values,
+    p = format_p_values(p_values)
+  )
+  return(stats)
+}
+
+extract_cox_fit_list_stats <- function(cox_fits, group_name) {
+    results <- lapply(cox_fits, extract_cox_fit_stats) %>%
+        bind_rows(.id = group_name)
+    return(results)
+}
+```
+
+```{r}
+km_plots <- function(
+    data,
+    futime = "YearsOfFollowUp", 
+    event = "DeathObserved", 
+    legend_labs = c("NTE", "PTE"),
+    age_discrete_column = "AgeOfOnsetDiscrete",
+    age_labels = c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+"),
+    group = "PTE",
+    covariates = NULL
+) {
+    if (is.null(covariates)) {
+        covariates <- c()
+    }
+    
+    age_labels_with_all <- c("All", age_labels)
+    n <- length(age_labels_with_all)
+
+    plots <- vector(mode = "list", length = n)
+    names(plots) <- age_labels_with_all
+
+    for (i in 1:n) {
+      age_label <- age_labels_with_all[[i]]
+      if (age_label == "All") {
+        age_subset <- data
+      } else {
+        age_subset <- data[data[[age_discrete_column]] == age_label, ]
+      }
+      formula <- as.formula(
+          build_surv_formula_string(
+              futime = futime,
+              event = event,
+              covariates = c(group)
+          )
+      )
+      
+      if (as.logical(length(covariates))) {
+        age_subset$Weights <- calculate_weights(
+          data = age_subset,
+          cols = covariates,
+          group = group
+        ) 
+        fit <- surv_fit(
+          formula,
+          data = age_subset,
+          weights = age_subset$Weights
+        )
+      } else {
+        fit <- surv_fit(
+          formula,
+          data = age_subset
+        )
+      }
+      
+      id <- 1:nrow(age_subset)
+      cfit <- coxph(
+          formula,
+          data = age_subset,
+          cluster = id,
+          weights = age_subset$Weights
+      )
+      print(summary(cfit))
+      
+      plot <- my_ggsurvplot(
+          fit = fit, 
+          data = age_subset, 
+          title = glue("Age {age_label}"), 
+          legend_labs = legend_labs
+      )
+      plots[[i]] <- plot$plot
+    }
+    
+    return(plots)
+}
+
+cox_analysis <- function(
+    data,
+    futime = "FollowUpYears", 
+    event = "DeathEvent", 
+    age_discrete_column = "AgeOfOnsetDiscrete",
+    age_labels = c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+"),
+    numeric_covariates = NULL, 
+    categorical_covariates = NULL
+) {
+    if (is.null(numeric_covariates)) {
+        numeric_covariates <- c()
+    }
+    if (is.null(categorical_covariates)) {
+        categorical_covariates <- c()
+    }
+    
+    age_labels_with_all <- c("All", age_labels)
+    n <- length(age_labels_with_all)
+
+    cox_fits <- vector(mode = "list", length = n)
+    names(cox_fits) <- age_labels_with_all
+
+    for (i in 1:n) {
+      age_label <- age_labels_with_all[[i]]
+      if (age_label == "All") {
+        age_subset <- data
+      } else {
+        age_subset <- data[data[[age_discrete_column]] == age_label, ]
+      }
+      
+      
+      cox_fit <- coxph(
+        as.formula(build_surv_formula_string(
+            futime = futime,
+            event = event,
+            covariates = c(numeric_covariates, categorical_covariates)
+        )),
+        data = age_subset,
+        robust = TRUE,
+        model = TRUE
+      )
+      
+      cox_fits[[i]] <- cox_fit
+
+    }
+
+    return(cox_fits)
+}
+
+cox_plots <- function(
+    data,
+    futime = "FollowUpYears", 
+    event = "DeathEvent", 
+    age_discrete_column = "AgeOfOnsetDiscrete",
+    age_labels = c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+"),
+    numeric_covariates = NULL, 
+    categorical_covariates = NULL
+) {
+    if (is.null(numeric_covariates)) {
+        numeric_covariates <- c()
+    }
+    if (is.null(categorical_covariates)) {
+        categorical_covariates <- c()
+    }
+    
+    age_labels_with_all <- c("All", age_labels)
+    n <- length(age_labels_with_all)
+
+    plts <- vector(mode = "list", length = n)
+    names(plts) <- age_labels_with_all
+
+    for (i in 1:n) {
+      age_label <- age_labels_with_all[[i]]
+      if (age_label == "All") {
+        age_subset <- data
+      } else {
+        age_subset <- data[data[[age_discrete_column]] == age_label, ]
+      }
+      
+      form <- build_surv_formula_string(
+            futime = futime,
+            event = event,
+            covariates = c(numeric_covariates, categorical_covariates)
+        )
+      print(form)
+      
+      res.cox <- coxph(
+        as.formula(build_surv_formula_string(
+            futime = futime,
+            event = event,
+            covariates = c(numeric_covariates, categorical_covariates)
+        )),
+        data = age_subset,
+        robust = TRUE,
+        model = TRUE
+      )
+      plt <- my_ggsurvplot(
+          survfit(res.cox, data = age_subset), 
+          data = age_subset,
+          title = "Test",
+          legend_labs = c("None")
+        )
+      
+      
+      plts[[i]] <- plt
+
+    }
+
+    return(plts)
+}
+
+```
+
+# Analysis
+
+```{r}
+conn <- tryCatch({
+    odbcDriverConnect(
+        "driver={SQL Server};server=vhacdwrb03.vha.med.va.gov;database=ORD_Haneef_202402056D;trusted_connection=true"
+    )
+}, warning = function(w) {
+    message("Not connected to VA network, loading fake-data.csv...")
+    return(NULL)
+}, error = function(e) {
+    message("Not connected to VA network, loading fake-data.csv...")
+    return(NULL)
+})
+```
+```{r}
+if (is.null(conn)) {
+    raw_epilepsy_data <- read.csv("../dummy_data/combined.csv")
+} else {
+    raw_epilepsy_data <- sqlQuery(
+        conn,
+        "SELECT * FROM ORD_Haneef_202402056D.Dflt.rnCohortInfoMDR;"
+    )
+}
+```
+```{r}
+mdr_path <- "C:/Users/VHAHOUNAGABR/OneDrive - Department of Veterans Affairs/PTE-Non-PTE/dre-causes.csv"
+raw_mdr_data <- read.csv(mdr_path)
+```
+
+```{r}
+adjust_date <- function(dates, type) {
+    if (type == "dob") {
+        year(dates) <- ifelse(year(dates) > 2000,
+                        year(dates) - 100,
+                        year(dates))
+    } else if (type == "dod") {
+        current_year <- year(Sys.Date())
+        year(dates) <- ifelse(year(dates) < 1979 | year(dates) > current_year,
+                        year(dates) + 100 * ifelse(year(dates) < 1979, 1, -1),
+                        year(dates))
+    }
+    
+    return(as_date(dates))
+}
+```
+
+```{r}
+mdr_data <- raw_mdr_data %>%
+    mutate(DOB = adjust_date(parse_date_time(DOB_MDR, "d-b-y"), type = "dob")) %>%
+    mutate(DOD = adjust_date(parse_date_time(DOD_NDI, "d-b-y"), type = "dod")) %>%
+    mutate(GBD_Cause1 = ifelse(GBD_Cause1 == "", NA, GBD_Cause1)) %>%
+    mutate(GBD_Cause2 = ifelse(GBD_Cause2 == "", NA, GBD_Cause2)) %>%
+    mutate(GBD_Cause3 = ifelse(GBD_Cause3 == "", NA, GBD_Cause3)) %>%
+    mutate(GBD_Cause4 = ifelse(GBD_Cause4 == "", NA, GBD_Cause4)) %>%
+    mutate(MatchFound = ifelse(is.na(GBD_Cause1), 0, 1)) %>%
+    rename(ScrSSN = SCRSSN, Death = MatchFound, Cause1 = GBD_Cause1, Cause2 = GBD_Cause2, Cause3 = GBD_Cause3, Cause4 = GBD_Cause4) %>%
+    filter(Death == 1) %>%
+    select(ScrSSN, Death, DOB, DOD, Cause1, Cause2, Cause3, Cause4) %>%
+    filter(!is.na(ScrSSN))
+
+epilepsy_data <- raw_epilepsy_data %>%
+    mutate(across(all_of(colnames(.)[grepl("Date", colnames(.))]), 
+                  ~ as_date(parse_date_time(., orders = c("ymd"))))) %>%
+    filter(!is.na(ScrSSN)) %>%
+    filter(PatientICN != 1017308665)
+
+age_breaks <- c(18, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, Inf)
+age_labels <- c("18-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80-84", "85-89", "90+")
+
+eci_breaks <- c(-Inf, -20, -10, 0, 10, 25, 40, 55, Inf)
+eci_labels <- c("<-21", "-20--11", "-10--1", "0-9", "10-24", "25-39", "40-54", "55+")
+
+tbiclasskarlander_levels = c(
+    "None", 
+    "Concussive", 
+    "Fracture",
+    "Diffuse Cerebral", 
+    "Focal Cerebral",
+    "Extracerebral",
+    "Unknown"
+)
+            
+data <- mdr_data %>%
+    inner_join(epilepsy_data, by = join_by(ScrSSN)) %>%
+    mutate(FollowUp = ifelse(
+        Death,
+        interval(DxDate, DOD) %>% as.numeric("years"),
+        interval(DxDate, FollowUpDate) %>% as.numeric("years")
+    )) %>%
+    mutate(FollowUpTBI = ifelse(
+        Death,
+        interval(OldestTBIDate, DOD) %>% as.numeric("years"),
+        interval(OldestTBIDate, FollowUpDate) %>% as.numeric("years")
+    )) %>%
+    mutate(AgeOfOnset = interval(BirthDate, DxDate) %>% as.numeric("years")) %>%
+    mutate(AgeDiscrete = cut(
+        AgeOfOnset, 
+        breaks = age_breaks, 
+        labels = age_labels, 
+        right = FALSE)
+    ) %>%
+    mutate(ECIDiscrete = cut(
+        ECI, 
+        breaks = eci_breaks, 
+        labels = eci_labels, 
+        right = FALSE)
+    ) %>%
+    mutate(
+        TBIClassKarlander = ifelse(is.na(TBIClassKarlander) & PTE == 1, "Unknown", 
+                          ifelse(is.na(TBIClassKarlander) & PTE == 0, "None", TBIClassKarlander)
+                       )
+    ) %>%
+    mutate(
+        TBIClassKarlander = factor(
+            TBIClassKarlander,
+            levels = tbiclasskarlander_levels
+        )
+    ) %>%
+    mutate(PTE = ifelse(PTE == 0, "NTE", "PTE"))
+
+data <- data %>%
+    filter(year(DxDate) >= 2005 & year(DxDate) < 2023) %>%
+    filter(FollowUp >= 0) %>%
+    filter(AgeOfOnset >= 18) %>%
+    select(ScrSSN, Death, DOB, DOD, Cause1, Cause2, Cause3, Cause4, FollowUp, FollowUpTBI, PTE, TBIClassKarlander, AgeOfOnset, AgeDiscrete, ECI, ECIDiscrete, Gender, Race, Ethnicity, OldestTBIDate) %>%
+    mutate(TBIClassKarlanderWeight = calculate_weights(., c("AgeDiscrete", "Gender"), c("TBIClassKarlander"))) %>%
+    mutate(PTEWeight = calculate_weights(., c("AgeDiscrete", "Gender"), c("PTE")))
+```
+## By TBI Classification
+
+### All Mortality Records
+```{r}
+summary_table <- data %>%
+  select("AgeOfOnset", "Gender", "Race", "Ethnicity", "ECI", "TBIClassKarlander") %>%
+  tbl_summary(
+    by = "TBIClassKarlander",
+    missing = "ifany",
+    statistic = list(
+        all_continuous() ~ "{mean} ({sd})",
+        all_categorical() ~ "{n} ({p}%)"
+    ),
+    label = list(
+      "AgeOfOnset" ~ "Age of Onset"
+    )
+  ) %>%
+  add_stat_label() %>%
+  modify_column_hide(columns = "stat_7") %>%
+  modify_spanning_header(
+    all_stat_cols() ~ "**TBI Classification**"
+  ) %>%
+  as_gt() %>%
+  gt::tab_header(
+    title = "Cohort Demographics"
+  ) 
+  
+# gtsave(summary_table, "summary.docx")
+summary_table
+```
+### Non-Garbage Codes
+
+```{r}
+clean_data <- data %>%
+    filter(Cause != "Garbage")
+
+summary_table <- clean_data %>%
+  select("AgeOfOnset", "Gender", "Race", "Ethnicity", "ECI", "TBIClassKarlander") %>%
+  tbl_summary(
+    by = "TBIClassKarlander",
+    missing = "ifany",
+    statistic = list(
+        all_continuous() ~ "{mean} ({sd})",
+        all_categorical() ~ "{n} ({p}%)"
+    ),
+    label = list(
+      "AgeOfOnset" ~ "Age of Onset"
+    )
+  ) %>%
+  add_stat_label() %>%
+  modify_column_hide(columns = "stat_7") %>%
+  modify_spanning_header(
+    all_stat_cols() ~ "**TBI Classification**"
+  ) %>%
+  as_gt() %>%
+  gt::tab_header(
+    title = "Cohort Demographics"
+  ) 
+  
+# gtsave(summary_table, "summary.docx")
+summary_table
+```
+
+```{r}
+full_df <- expand.grid(
+    TBIClassKarlander = unique(data$TBIClassKarlander),
+    Cause3 = unique(data$Cause3)
+)
+
+count_data <- data %>%
+    group_by(TBIClassKarlander, Cause3) %>%
+    summarise(count = sum(TBIClassKarlanderWeight)) %>%
+    right_join(full_df, by = c("TBIClassKarlander", "Cause3"))
+
+
+
+contingency_table <- xtabs(TBIClassKarlanderWeight ~ TBIClassKarlander + Cause3, data = data)
+contingency_table <- contingency_table[, order(colnames(contingency_table))]
+chi_squared_test <- chisq.test(contingency_table)
+std_residuals <- chi_squared_test$stdres
+
+x <- pivot_wider(count_data, names_from = TBIClassKarlander, values_from = count)
+write.table(x, "clipboard", sep = "\t", row.names = FALSE)
+
+# plt_TBIClassKarlander <- ggplot(count_data, aes(x = interaction(TBIClassKarlander, Cause1), y = count, fill = TBIClassKarlander)) +
+#     geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+#     scale_x_discrete(labels = rep(unique(count_data$Cause1), each = 7)) +
+#     labs(title = "Mortality by Category", x = "Category", y = "Count") +
+#     get_custom_theme() +
+#     theme(panel.spacing = unit(1, "lines")) + 
+#     theme(axis.text.x = element_text(angle = 90, hjust = 1))
+# 
+# ggsave("plt_tbiclasskarlander_cause1.png", plt_TBIClassKarlander, width = 20, height = 20, bg = "white")
+```
+```{r}
+full_df <- expand.grid(
+    TBIClassKarlander = unique(data$TBIClassKarlander),
+    Cause2 = unique(data$Cause2)
+)
+
+count_data <- data %>%
+    group_by(TBIClassKarlander, Cause2) %>%
+    summarise(count = sum(TBIClassKarlanderWeight)) %>%
+    right_join(full_df, by = c("TBIClassKarlander", "Cause2")) %>%
+    filter(Cause2 != "Enteric infections") %>%
+    filter(Cause2 != "HIV/AIDS and sexually transmitted infections") %>%
+    filter(Cause2 != "Musculoskeletal disorders") %>%
+    filter(Cause2 != "Neglected tropical diseases and malaria") %>%
+    filter(Cause2 != "Nutritional deficiencies") %>%
+    filter(Cause2 != "Other infectious diseases") %>%
+    filter(Cause2 != "Respiratory infections and tuberculosis") %>%
+    filter(Cause2 != "Skin and subcutaneous diseases")
+
+
+contingency_table <- xtabs(TBIClassKarlanderWeight ~ TBIClassKarlander + Cause2, data = data)
+contingency_table <- contingency_table[, order(colnames(contingency_table))]
+chi_squared_test <- chisq.test(contingency_table)
+std_residuals <- chi_squared_test$stdres
+
+
+plt_TBIClassKarlander <- ggplot(count_data, aes(x = interaction(TBIClassKarlander, Cause2), y = count, fill = TBIClassKarlander)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+    scale_x_discrete(labels = rep(unique(count_data$Cause2), each = 7)) +
+    labs(title = "Mortality by Category", x = "Category", y = "Count") +
+    get_custom_theme() +
+    theme(panel.spacing = unit(1, "lines")) + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggsave("plt_tbiclasskarlander_cause2.png", plt_TBIClassKarlander, width = 20, height = 20, bg = "white")
+```
+```{r}
+neuro_data <- data %>%
+    filter(Cause2 == "Neurological disorders")
+
+full_df <- expand.grid(
+    TBIClassKarlander = unique(neuro_data$TBIClassKarlander),
+    Cause3 = unique(neuro_data$Cause3)
+)
+
+count_data <- neuro_data %>%
+    group_by(TBIClassKarlander, Cause3) %>%
+    summarise(count = sum(TBIClassKarlanderWeight)) %>%
+    right_join(full_df, by = c("TBIClassKarlander", "Cause3"))
+
+
+
+contingency_table <- xtabs(TBIClassKarlanderWeight ~ TBIClassKarlander + Cause3, data = neuro_data)
+contingency_table <- contingency_table[, order(colnames(contingency_table))]
+chi_squared_test <- chisq.test(contingency_table)
+std_residuals <- chi_squared_test$stdres
+
+
+plt_TBIClassKarlander <- ggplot(count_data, aes(x = interaction(TBIClassKarlander, Cause3), y = count, fill = TBIClassKarlander)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+    scale_x_discrete(labels = rep(unique(count_data$Cause3), each = 7)) +
+    labs(title = "Mortality by Category", x = "Category", y = "Count") +
+    get_custom_theme() +
+    theme(panel.spacing = unit(1, "lines")) + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggsave("plt_tbiclasskarlander_cause3.png", plt_TBIClassKarlander, width = 20, height = 20, bg = "white")
+```
+```{r}
+full_df <- expand.grid(
+    TBIClassKarlander = unique(data$TBIClassKarlander),
+    Cause4 = unique(data$Cause4)
+)
+
+count_data <- data %>%
+    group_by(TBIClassKarlander, Cause4) %>%
+    summarise(count = sum(TBIClassKarlanderWeight)) %>%
+    right_join(full_df, by = c("TBIClassKarlander", "Cause4"))
+
+
+
+contingency_table <- xtabs(TBIClassKarlanderWeight ~ TBIClassKarlander + Cause4, data = data)
+contingency_table <- contingency_table[, order(colnames(contingency_table))]
+chi_squared_test <- chisq.test(contingency_table)
+std_residuals <- chi_squared_test$stdres
+
+
+plt_TBIClassKarlander <- ggplot(count_data, aes(x = interaction(TBIClassKarlander, Cause4), y = count, fill = TBIClassKarlander)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+    scale_x_discrete(labels = rep(unique(count_data$Cause4), each = 7)) +
+    labs(title = "Mortality by Category", x = "Category", y = "Count") +
+    get_custom_theme() +
+    theme(panel.spacing = unit(1, "lines")) + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggsave("plt_tbiclasskarlander_cause4.png", plt_TBIClassKarlander, width = 20, height = 20, bg = "white")
+```
+
+```{r}
+heatmap_data <- as.matrix(contingency_table)
+# heatmap(heatmap_data, Rowv = sort(unique(clean_data$Cause)), Colv = tbiclasskarlander_levels, scale = "row", keep.dendro = FALSE, cexCol = 0.7)
+heatmap(heatmap_data, keep.dendro = FALSE, cexCol = 0.7)
+```
+```{r}
+plt_TBIClassKarlander <- ggplot(count_data, aes(x = interaction(TBIClassKarlander, Cause), y = count, fill = TBIClassKarlander)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+    scale_x_discrete(labels = rep(unique(count_data$Cause), each = 7)) +
+    labs(title = "Mortality by Category", x = "Category", y = "Count") +
+    get_custom_theme() +
+    theme(panel.spacing = unit(1, "lines")) + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggsave("plt_tbiclasskarlander.png", plt_TBIClassKarlander, width = 20, height = 20, bg = "white")
+```
+
+## By PTE
+
+### All Mortality Records
+```{r}
+summary_table <- data %>%
+  select("AgeOfOnset", "Gender", "Race", "Ethnicity", "ECI", "TBIClassKarlander") %>%
+  tbl_summary(
+    by = "TBIClassKarlander",
+    missing = "ifany",
+    statistic = list(
+        all_continuous() ~ "{mean} ({sd})",
+        all_categorical() ~ "{n} ({p}%)"
+    ),
+    label = list(
+      "AgeOfOnset" ~ "Age of Onset"
+    )
+  ) %>%
+  add_stat_label() %>%
+  modify_column_hide(columns = "stat_7") %>%
+  modify_spanning_header(
+    all_stat_cols() ~ "**TBI Classification**"
+  ) %>%
+  as_gt() %>%
+  gt::tab_header(
+    title = "Cohort Demographics"
+  ) 
+  
+# gtsave(summary_table, "summary.docx")
+summary_table
+```
+
+### Non-Garbage Codes
+
+```{r}
+clean_data <- data %>%
+    filter(Cause != "Garbage")
+
+summary_table <- clean_data %>%
+  select("AgeOfOnset", "Gender", "Race", "Ethnicity", "ECI", "TBIClassKarlander") %>%
+  tbl_summary(
+    by = "TBIClassKarlander",
+    missing = "ifany",
+    statistic = list(
+        all_continuous() ~ "{mean} ({sd})",
+        all_categorical() ~ "{n} ({p}%)"
+    ),
+    label = list(
+      "AgeOfOnset" ~ "Age of Onset"
+    )
+  ) %>%
+  add_stat_label() %>%
+  modify_column_hide(columns = "stat_7") %>%
+  modify_spanning_header(
+    all_stat_cols() ~ "**TBI Classification**"
+  ) %>%
+  as_gt() %>%
+  gt::tab_header(
+    title = "Cohort Demographics"
+  ) 
+  
+# gtsave(summary_table, "summary.docx")
+summary_table
+```
+
+```{r}
+full_df <- expand.grid(
+    PTE = unique(clean_data$PTE),
+    Cause = unique(clean_data$Cause)
+)
+
+count_data <- clean_data %>%
+    group_by(PTE, Cause) %>%
+    summarise(count = sum(PTEWeight)) %>%
+    right_join(full_df, by = c("PTE", "Cause"))
+
+contingency_table <- xtabs(PTEWeight ~ PTE + Cause, data = clean_data)
+contingency_table <- contingency_table[, order(colnames(contingency_table))]
+chi_squared_test <- chisq.test(contingency_table)
+std_residuals <- chi_squared_test$stdres
+```
+
+```{r}
+heatmap_data <- as.matrix(contingency_table)
+# heatmap(heatmap_data, Rowv = sort(unique(clean_data$Cause)), Colv = tbiclasskarlander_levels, scale = "row", keep.dendro = FALSE, cexCol = 0.7)
+heatmap(heatmap_data, keep.dendro = FALSE, cexCol = 0.7)
+```
+
+```{r}
+plt_PTE <- ggplot(count_data, aes(x = interaction(PTE, Cause), y = count, fill = PTE)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+    scale_x_discrete(labels = rep(unique(count_data$Cause), each = 2)) +
+    labs(title = "Mortality by Category", x = "Category", y = "Count") +
+    get_custom_theme() +
+    theme(panel.spacing = unit(1, "lines")) + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggsave("plt_PTE.png", plt_PTE, width = 20, height = 20, bg = "white")
+```
+
+### Matching Attempt
+
+```{r}
+clean_data_for_match <- data %>%
+    mutate(PTE = ifelse(PTE == "PTE", 1, 0))
+match <- matchit(PTE ~ AgeOfOnset + Gender, data = clean_data_for_match, ratio = 5)
+matched_data <- match.data(match) %>%
+        mutate(PTE = ifelse(PTE == 1, "PTE", "NTE"))
+
+```
+
+```{r}
+full_df <- expand.grid(
+    PTE = unique(matched_data$PTE),
+    Cause1 = unique(matched_data$Cause1)
+)
+count_data <- matched_data %>%
+    group_by(PTE, Cause1) %>%
+    summarise(count = n()) %>%
+    # mutate(count = ifelse(PTE == "PTE", count, count / 5)) %>%
+    right_join(full_df, by = c("PTE", "Cause1"))
+
+x <- pivot_wider(count_data, names_from = PTE, values_from = count)
+x$NTE[is.na(x$NTE)] <- 0
+x$PTE[is.na(x$PTE)] <- 0
+x$`NTE-Proportion` <- x$NTE / sum(x$NTE)
+x$`PTE-Proportion` <- x$PTE / sum(x$PTE)
+x$ChiSq <- (x$PTE - (x$`NTE-Proportion` * sum(x$PTE)))^2 / (x$`NTE-Proportion` * sum(x$PTE))
+
+median_since_pte <- matched_data %>%
+    group_by(PTE, Cause1) %>%
+    summarise(med = median(FollowUp, na.rm = TRUE)) %>%
+    # mutate(count = ifelse(PTE == "PTE", count, count / 5)) %>%
+    right_join(full_df, by = c("PTE", "Cause1"))
+y <- pivot_wider(median_since_pte, names_from = PTE, values_from = med) %>%
+    rename(`NTE-MedianYearsSinceEpilepsy` = NTE, `PTE-MedianYearsSinceEpilepsy` = PTE)
+
+median_since_tbi <- matched_data %>%
+    group_by(PTE, Cause1) %>%
+    summarise(med = median(FollowUpTBI, na.rm = TRUE)) %>%
+    # mutate(count = ifelse(PTE == "PTE", count, count / 5)) %>%
+    right_join(full_df, by = c("PTE", "Cause1"))
+z <- pivot_wider(median_since_tbi, names_from = PTE, values_from = med) %>%
+    rename(`NTE-MedianYearsSinceTBI` = NTE, `PTE-MedianYearsSinceTBI` = PTE)
+
+x <- x %>%
+    right_join(y, by = c("Cause1")) %>%
+    right_join(z, by = c("Cause1")) %>%
+    select(-`NTE-MedianYearsSinceTBI`)
+
+write.table(x, "clipboard", sep = "\t", row.names = FALSE)
+```
+```{r}
+full_df <- expand.grid(
+    PTE = unique(matched_data$PTE),
+    Cause2 = unique(matched_data$Cause2)
+)
+count_data <- matched_data %>%
+    group_by(PTE, Cause2) %>%
+    summarise(count = n()) %>%
+    # mutate(count = ifelse(PTE == "PTE", count, count / 5)) %>%
+    right_join(full_df, by = c("PTE", "Cause2"))
+
+x <- pivot_wider(count_data, names_from = PTE, values_from = count)
+x$NTE[is.na(x$NTE)] <- 0
+x$PTE[is.na(x$PTE)] <- 0
+x$`NTE-Proportion` <- x$NTE / sum(x$NTE)
+x$`PTE-Proportion` <- x$PTE / sum(x$PTE)
+x$ChiSq <- (x$PTE - (x$`NTE-Proportion` * sum(x$PTE)))^2 / (x$`NTE-Proportion` * sum(x$PTE))
+
+median_since_pte <- matched_data %>%
+    group_by(PTE, Cause2) %>%
+    summarise(med = median(FollowUp, na.rm = TRUE)) %>%
+    # mutate(count = ifelse(PTE == "PTE", count, count / 5)) %>%
+    right_join(full_df, by = c("PTE", "Cause2"))
+y <- pivot_wider(median_since_pte, names_from = PTE, values_from = med) %>%
+    rename(`NTE-MedianYearsSinceEpilepsy` = NTE, `PTE-MedianYearsSinceEpilepsy` = PTE)
+
+median_since_tbi <- matched_data %>%
+    group_by(PTE, Cause2) %>%
+    summarise(med = median(FollowUpTBI, na.rm = TRUE)) %>%
+    # mutate(count = ifelse(PTE == "PTE", count, count / 5)) %>%
+    right_join(full_df, by = c("PTE", "Cause2"))
+z <- pivot_wider(median_since_tbi, names_from = PTE, values_from = med) %>%
+    rename(`NTE-MedianYearsSinceTBI` = NTE, `PTE-MedianYearsSinceTBI` = PTE)
+
+x <- x %>%
+    right_join(y, by = c("Cause2")) %>%
+    right_join(z, by = c("Cause2")) %>%
+    select(-`NTE-MedianYearsSinceTBI`)
+
+write.table(x, "clipboard", sep = "\t", row.names = FALSE)
+```
+
+```{r}
+full_df <- expand.grid(
+    PTE = unique(matched_data$PTE),
+    Cause3 = unique(matched_data$Cause3)
+)
+count_data <- matched_data %>%
+    group_by(PTE, Cause3) %>%
+    summarise(count = n()) %>%
+    # mutate(count = ifelse(PTE == "PTE", count, count / 5)) %>%
+    right_join(full_df, by = c("PTE", "Cause3"))
+
+x <- pivot_wider(count_data, names_from = PTE, values_from = count)
+x$NTE[is.na(x$NTE)] <- 0
+x$PTE[is.na(x$PTE)] <- 0
+x$`NTE-Proportion` <- x$NTE / sum(x$NTE)
+x$`PTE-Proportion` <- x$PTE / sum(x$PTE)
+x$ChiSq <- (x$PTE - (x$`NTE-Proportion` * sum(x$PTE)))^2 / (x$`NTE-Proportion` * sum(x$PTE))
+
+median_since_pte <- matched_data %>%
+    group_by(PTE, Cause3) %>%
+    summarise(med = median(FollowUp, na.rm = TRUE)) %>%
+    # mutate(count = ifelse(PTE == "PTE", count, count / 5)) %>%
+    right_join(full_df, by = c("PTE", "Cause3"))
+y <- pivot_wider(median_since_pte, names_from = PTE, values_from = med) %>%
+    rename(`NTE-MedianYearsSinceEpilepsy` = NTE, `PTE-MedianYearsSinceEpilepsy` = PTE)
+
+median_since_tbi <- matched_data %>%
+    group_by(PTE, Cause3) %>%
+    summarise(med = median(FollowUpTBI, na.rm = TRUE)) %>%
+    # mutate(count = ifelse(PTE == "PTE", count, count / 5)) %>%
+    right_join(full_df, by = c("PTE", "Cause3"))
+z <- pivot_wider(median_since_tbi, names_from = PTE, values_from = med) %>%
+    rename(`NTE-MedianYearsSinceTBI` = NTE, `PTE-MedianYearsSinceTBI` = PTE)
+
+x <- x %>%
+    right_join(y, by = c("Cause3")) %>%
+    right_join(z, by = c("Cause3")) %>%
+    select(-`NTE-MedianYearsSinceTBI`)
+
+write.table(x, "clipboard", sep = "\t", row.names = FALSE)
+```
+
+```{r}
+full_df <- expand.grid(
+    PTE = unique(matched_data$PTE),
+    Cause4 = unique(matched_data$Cause4)
+)
+count_data <- matched_data %>%
+    group_by(PTE, Cause4) %>%
+    summarise(count = n()) %>%
+    # mutate(count = ifelse(PTE == "PTE", count, count / 5)) %>%
+    right_join(full_df, by = c("PTE", "Cause4"))
+
+x <- pivot_wider(count_data, names_from = PTE, values_from = count)
+x$NTE[is.na(x$NTE)] <- 0
+x$PTE[is.na(x$PTE)] <- 0
+x$`NTE-Proportion` <- x$NTE / sum(x$NTE)
+x$`PTE-Proportion` <- x$PTE / sum(x$PTE)
+x$ChiSq <- (x$PTE - (x$`NTE-Proportion` * sum(x$PTE)))^2 / (x$`NTE-Proportion` * sum(x$PTE))
+
+median_since_pte <- matched_data %>%
+    group_by(PTE, Cause4) %>%
+    summarise(med = median(FollowUp, na.rm = TRUE)) %>%
+    # mutate(count = ifelse(PTE == "PTE", count, count / 5)) %>%
+    right_join(full_df, by = c("PTE", "Cause4"))
+y <- pivot_wider(median_since_pte, names_from = PTE, values_from = med) %>%
+    rename(`NTE-MedianYearsSincePTE` = NTE, `PTE-MedianYearsSincePTE` = PTE)
+
+median_since_tbi <- matched_data %>%
+    group_by(PTE, Cause4) %>%
+    summarise(med = median(FollowUpTBI, na.rm = TRUE)) %>%
+    # mutate(count = ifelse(PTE == "PTE", count, count / 5)) %>%
+    right_join(full_df, by = c("PTE", "Cause4"))
+z <- pivot_wider(median_since_tbi, names_from = PTE, values_from = med) %>%
+    rename(`NTE-MedianYearsSinceTBI` = NTE, `PTE-MedianYearsSinceTBI` = PTE)
+
+x <- x %>%
+    right_join(y, by = c("Cause4")) %>%
+    right_join(z, by = c("Cause4")) %>%
+    select(-`NTE-MedianYearsSincePTE`)
+
+write.table(x, "clipboard", sep = "\t", row.names = FALSE)
+```
+
+### Unmatched Data
+
+```{r}
+full_df <- expand.grid(
+    TBIClassKarlander = unique(data$TBIClassKarlander),
+    Cause3 = unique(data$Cause3)
+)
+count_data <- data %>%
+    group_by(TBIClassKarlander, Cause3) %>%
+    summarise(count = n()) %>%
+    # mutate(count = ifelse(PTE == "PTE", count, count / 5)) %>%
+    right_join(full_df, by = c("TBIClassKarlander", "Cause3"))
+
+x <- pivot_wider(count_data, names_from = TBIClassKarlander, values_from = count)
+write.table(x, "clipboard", sep = "\t", row.names = FALSE)
+```
+
+
+```{r}
+specific_data <- matched_data %>%
+    filter(Cause1 == "Injuries")
+
+hist_data_nte <- hist(specific_data$FollowUp[specific_data$PTE == "NTE"], plot = FALSE, breaks = seq(0, 25, 1))
+hist_data_pte <- hist(specific_data$FollowUp[specific_data$PTE == "PTE"], plot = FALSE, breaks = seq(0, 25, 1))
+df_hist_data <- data.frame(
+    breaks = hist_data_nte$mids,
+    count_nte = hist_data_nte$counts / nrow(matched_data[matched_data$PTE == "NTE", ]),
+    count_pte = hist_data_pte$counts / nrow(matched_data[matched_data$PTE == "PTE", ])
+)
+
+line_plot <- ggplot(df_hist_data, aes(x = breaks)) +
+    geom_line(aes(y = count_nte, color = "NTE"), linewidth = 1) +
+    geom_line(aes(y = count_pte, color = "PTE"), linewidth = 1) +
+    labs(title = "Injury Deaths - Years since Epilepsy",
+         x = "Years",
+         y = "Proportion") +
+    get_custom_theme()
+
+ggsave("injury-epilepsy.pdf")
+```
+
+```{r}
+specific_data <- matched_data %>%
+    filter(Cause1 == "Injuries")
+
+hist_data_pte <- hist(specific_data$FollowUpTBI[specific_data$PTE == "PTE"], plot = FALSE, breaks = seq(0, 25, 1))
+df_hist_data <- data.frame(
+    breaks = hist_data_nte$mids,
+    count_pte = hist_data_pte$counts / nrow(matched_data[matched_data$PTE == "PTE", ])
+)
+
+line_plot <- ggplot(df_hist_data, aes(x = breaks)) +
+    geom_line(aes(y = count_pte, color = "PTE"), linewidth = 1) +
+    labs(title = "Injury Deaths - Years since TBI",
+         x = "Years",
+         y = "Proportion") +
+    get_custom_theme()
+ggsave("injury-tbi.pdf")
+```
+
+```{r}
+specific_data <- matched_data %>%
+    filter(Cause1 == "Non-communicable diseases")
+
+hist_data_nte <- hist(specific_data$FollowUp[specific_data$PTE == "NTE"], plot = FALSE, breaks = seq(0, 25, 1))
+hist_data_pte <- hist(specific_data$FollowUp[specific_data$PTE == "PTE"], plot = FALSE, breaks = seq(0, 25, 1))
+df_hist_data <- data.frame(
+    breaks = hist_data_nte$mids,
+    count_nte = hist_data_nte$counts / nrow(matched_data[matched_data$PTE == "NTE", ]),
+    count_pte = hist_data_pte$counts / nrow(matched_data[matched_data$PTE == "PTE", ])
+)
+
+line_plot <- ggplot(df_hist_data, aes(x = breaks)) +
+    geom_line(aes(y = count_nte, color = "NTE"), linewidth = 1) +
+    geom_line(aes(y = count_pte, color = "PTE"), linewidth = 1) +
+    labs(title = "Non-Communicable Disease Deaths - Years since Epilepsy",
+         x = "Years",
+         y = "Proportion") +
+    get_custom_theme()
+ggsave("non-communicable.pdf")
+```
+
+```{r}
+specific_data <- matched_data %>%
+    filter(Cause1 == "Communicable, maternal, neonatal, and nutritional diseases")
+
+hist_data_nte <- hist(specific_data$FollowUp[specific_data$PTE == "NTE"], plot = FALSE, breaks = seq(0, 25, 2))
+hist_data_pte <- hist(specific_data$FollowUp[specific_data$PTE == "PTE"], plot = FALSE, breaks = seq(0, 25, 2))
+df_hist_data <- data.frame(
+    breaks = hist_data_nte$mids,
+    count_nte = hist_data_nte$counts / nrow(matched_data[matched_data$PTE == "NTE", ]),
+    count_pte = hist_data_pte$counts / nrow(matched_data[matched_data$PTE == "PTE", ])
+)
+
+line_plot <- ggplot(df_hist_data, aes(x = breaks)) +
+    geom_line(aes(y = count_nte, color = "NTE"), linewidth = 1) +
+    geom_line(aes(y = count_pte, color = "PTE"), linewidth = 1) +
+    labs(title = "Communicable, maternal, neonatal, and nutritional diseases Deaths - Years since Epilepsy",
+         x = "Years",
+         y = "Proportion") +
+    get_custom_theme()
+ggsave("communicable.pdf")
+```
+
+```{r}
+specific_data <- matched_data %>%
+    filter(Cause3 == "Idiopathic epilepsy")
+
+hist_data_nte <- hist(specific_data$FollowUp[specific_data$PTE == "NTE"], plot = FALSE, breaks = seq(0, 25, 2))
+hist_data_pte <- hist(specific_data$FollowUp[specific_data$PTE == "PTE"], plot = FALSE, breaks = seq(0, 25, 2))
+df_hist_data <- data.frame(
+    breaks = hist_data_nte$mids,
+    count_nte = hist_data_nte$counts / nrow(matched_data[matched_data$PTE == "NTE", ]),
+    count_pte = hist_data_pte$counts / nrow(matched_data[matched_data$PTE == "PTE", ])
+)
+
+line_plot <- ggplot(df_hist_data, aes(x = breaks)) +
+    geom_line(aes(y = count_nte, color = "NTE"), linewidth = 1) +
+    geom_line(aes(y = count_pte, color = "PTE"), linewidth = 1) +
+    labs(title = "Idiopathic epilepsy Deaths - Years since Epilepsy",
+         x = "Years",
+         y = "Proportion") +
+    get_custom_theme()
+ggsave("sudep.pdf")
+```
+
+```{r}
+specific_data <- matched_data %>%
+    filter(Cause2 == "Neoplasms")
+
+hist_data_nte <- hist(specific_data$FollowUp[specific_data$PTE == "NTE"], plot = FALSE, breaks = seq(0, 25, 1))
+hist_data_pte <- hist(specific_data$FollowUp[specific_data$PTE == "PTE"], plot = FALSE, breaks = seq(0, 25, 1))
+df_hist_data <- data.frame(
+    breaks = hist_data_nte$mids,
+    count_nte = hist_data_nte$counts / nrow(matched_data[matched_data$PTE == "NTE", ]),
+    count_pte = hist_data_pte$counts / nrow(matched_data[matched_data$PTE == "PTE", ])
+)
+
+line_plot <- ggplot(df_hist_data, aes(x = breaks)) +
+    geom_line(aes(y = count_nte, color = "NTE"), linewidth = 1) +
+    geom_line(aes(y = count_pte, color = "PTE"), linewidth = 1) +
+    labs(title = "Neoplasm Deaths - Years since Epilepsy",
+         x = "Years",
+         y = "Proportion") +
+    get_custom_theme()
+ggsave("neoplasms.pdf")
+```
+
+```{r}
+specific_data <- matched_data %>%
+    filter(Cause3 == "Self-harm")
+
+hist_data_nte <- hist(specific_data$FollowUp[specific_data$PTE == "NTE"], plot = FALSE, breaks = seq(0, 25, 1))
+hist_data_pte <- hist(specific_data$FollowUp[specific_data$PTE == "PTE"], plot = FALSE, breaks = seq(0, 25, 1))
+df_hist_data <- data.frame(
+    breaks = hist_data_nte$mids,
+    count_nte = hist_data_nte$counts / nrow(matched_data[matched_data$PTE == "NTE", ]),
+    count_pte = hist_data_pte$counts / nrow(matched_data[matched_data$PTE == "PTE", ])
+)
+
+line_plot <- ggplot(df_hist_data, aes(x = breaks)) +
+    geom_line(aes(y = count_nte, color = "NTE"), linewidth = 1) +
+    geom_line(aes(y = count_pte, color = "PTE"), linewidth = 1) +
+    labs(title = "Self-harm Deaths - Years since Epilepsy",
+         x = "Years",
+         y = "Proportion") +
+    get_custom_theme()
+ggsave("suicide.pdf")
+```

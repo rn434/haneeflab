@@ -1,0 +1,2523 @@
+USE CDWWork
+GO
+
+--Get epilepsy concept IDs
+DROP TABLE IF EXISTS #epilepsy_concepts_icd10
+SELECT DISTINCT
+	m.ICD10Code,
+	m.ICD10Description,
+	m.DOMAIN_ID, -- Measurement, Procedure, Condition, NULL, Observation (all are Conditions)
+	m.CONCEPT_ID,
+	m.CONCEPT_NAME
+INTO #epilepsy_concepts_icd10
+FROM OMOPV5Dim.ICD10_CONCEPT AS m
+WHERE
+	1=1
+	AND m.ICD10Code LIKE 'G40%' -- what about any other codes?
+;
+
+-- why is ICD to CONCEPT_ID not 1:1?
+
+DROP TABLE IF EXISTS #epilepsy_concepts_icd9
+SELECT DISTINCT
+	m.ICD9Code,
+	m.ICD9Description,
+	m.DOMAIN_ID,
+	m.CONCEPT_ID,
+	m.CONCEPT_NAME
+INTO #epilepsy_concepts_icd9
+FROM OMOPV5Dim.ICD9_CONCEPT AS m
+WHERE
+	1=1
+	AND m.ICD9Code LIKE '345%'
+;
+
+DROP TABLE IF EXISTS #final_epilepsy_concepts
+SELECT DISTINCT * -- union takes care of DISTINCT
+INTO #final_epilepsy_concepts
+FROM (SELECT CONCEPT_NAME, CONCEPT_ID FROM #epilepsy_concepts_icd10 UNION SELECT CONCEPT_NAME, CONCEPT_ID FROM #epilepsy_concepts_icd9) AS c
+WHERE 
+	1=1
+	AND CONCEPT_NAME != 'Seizure'
+	AND CONCEPT_NAME != 'Seizure disorder'
+	AND CONCEPT_NAME != 'Refractory migraine';
+
+-- why exclude these?
+-- only selecting concepts here
+
+DROP TABLE IF EXISTS #seizure_concepts_icd10
+SELECT DISTINCT
+	m.ICD10Code,
+	m.ICD10Description,
+	m.DOMAIN_ID,
+	m.CONCEPT_ID,
+	m.CONCEPT_NAME
+INTO #seizure_concepts_icd10
+FROM OMOPV5Dim.ICD10_CONCEPT AS m
+WHERE
+	1=1
+	AND m.ICD10Code = 'R40.4'
+	OR m.ICD10Code = 'R56.1'
+	OR m.ICD10Code = 'R56.9'
+;
+
+DROP TABLE IF EXISTS #seizure_concepts_icd9
+SELECT DISTINCT
+	m.ICD9Code,
+	m.ICD9Description,
+	m.DOMAIN_ID,
+	m.CONCEPT_ID,
+	m.CONCEPT_NAME
+INTO #seizure_concepts_icd9
+FROM OMOPV5Dim.ICD9_CONCEPT AS m
+WHERE
+	1=1
+	AND m.ICD9Code = '345.8'
+	OR m.ICD9Code = '780.39'
+;
+
+DROP TABLE IF EXISTS #final_seizure_concepts
+SELECT DISTINCT CONCEPT_NAME, CONCEPT_ID 
+INTO #final_seizure_concepts
+FROM (SELECT CONCEPT_NAME, CONCEPT_ID FROM #seizure_concepts_icd10 UNION SELECT CONCEPT_NAME, CONCEPT_ID FROM #seizure_concepts_icd9) AS c
+
+--Applying VA epilepsy algorithm for administrative data
+--Criteria 2
+--Include dx date as the earliest inpatient encounter with such code
+DROP TABLE IF EXISTS #epilepsy2;
+SELECT
+	co.PERSON_ID,
+	MIN(co.CONDITION_START_DATE) AS FIRST_DX_DATE
+INTO #epilepsy2
+FROM OMOPV5.CONDITION_OCCURRENCE AS co
+	INNER JOIN OMOPV5.VISIT_OCCURRENCE AS vo
+	ON vo.VISIT_OCCURRENCE_ID = co.VISIT_OCCURRENCE_ID
+	LEFT JOIN OMOPV5Map.Institution_Code_CARE_SITE AS ics -- relevance
+	ON ics.CARE_SITE_ID = vo.CARE_SITE_ID
+	LEFT JOIN OUTPAT.Visit AS v
+	ON v.VisitSID = vo.x_Source_ID_Primary
+	LEFT JOIN DIM.StopCode AS sc
+	ON sc.StopCodeSID = v.PrimaryStopCodeSID
+WHERE
+	1=1
+	AND co.CONDITION_CONCEPT_ID IN (SELECT CONCEPT_ID FROM #final_epilepsy_concepts)
+	AND vo.VISIT_CONCEPT_ID = 9201 --Inpat CHECK THIS!!!, check where?
+	--AND co.CONDITION_START_DATE >= '2022-01-01' --EDIT HERE TO CHANGE DATES OF COHORT!
+	--AND co.CONDITION_START_DATE < '2023-01-01'
+	AND sc.StopCode NOT IN (106, 128) -- EEG, EEG Monitoring
+GROUP BY co.PERSON_ID
+HAVING SUM(CASE WHEN co.CONDITION_START_DATE >= '2022-01-01' AND co.CONDITION_START_DATE < '2023-01-01' THEN 1 ELSE 0 END) > 0;
+
+--SELECT TOP 1000 * FROM #epilepsy2;
+--7262
+
+--Criteria 3
+--2 outpat visits with epilepsy related dx code
+DROP TABLE IF EXISTS #epilepsy3_pt_only;
+SELECT
+	co.PERSON_ID
+INTO #epilepsy3_pt_only
+FROM OMOPV5.CONDITION_OCCURRENCE AS co
+	INNER JOIN OMOPV5.VISIT_OCCURRENCE AS vo
+	ON vo.VISIT_OCCURRENCE_ID = co.VISIT_OCCURRENCE_ID
+	LEFT JOIN OUTPAT.Visit AS v
+	ON v.VisitSID = vo.x_Source_ID_Primary
+	LEFT JOIN DIM.StopCode AS sc
+	ON sc.StopCodeSID = v.PrimaryStopCodeSID
+WHERE
+	1=1
+	AND co.CONDITION_CONCEPT_ID IN (SELECT CONCEPT_ID FROM #final_epilepsy_concepts)
+	AND vo.VISIT_CONCEPT_ID = 9202 --Outpat
+	AND co.CONDITION_START_DATE >= '2022-01-01' --EDIT HERE TO CHANGE DATES OF COHORT!
+	AND co.CONDITION_START_DATE < '2023-01-01'
+	AND sc.StopCode NOT IN (106, 128)
+	AND vo.x_Source_Table != 'Fee_Inpatient_Merged' -- why exclude? -- fee table?
+GROUP BY co.PERSON_ID
+HAVING
+	COUNT(DISTINCT vo.VISIT_START_DATE) >= 2
+
+--how to get the actual first_dx_date 
+--1. Get the list of patients who qualify
+--2. Re run code with that subset of patients, getting their set of all outpatient visits which qualify
+--3. Get the day they met criteria, based on that list of visits
+
+DROP TABLE IF EXISTS #epilepsy3_all_visits
+SELECT DISTINCT
+	p.PERSON_ID,
+	co.CONDITION_START_DATE
+INTO #epilepsy3_all_visits
+FROM #epilepsy3_pt_only AS p
+	INNER JOIN OMOPV5.CONDITION_OCCURRENCE AS co
+	ON co.PERSON_ID = p.PERSON_ID
+	INNER JOIN OMOPV5.VISIT_OCCURRENCE AS vo
+	ON vo.VISIT_OCCURRENCE_ID = co.VISIT_OCCURRENCE_ID
+	LEFT JOIN OUTPAT.Visit AS v
+	ON v.VisitSID = vo.x_Source_ID_Primary
+	LEFT JOIN DIM.StopCode AS sc
+	ON sc.StopCodeSID = v.PrimaryStopCodeSID
+WHERE
+	1=1
+	AND co.CONDITION_CONCEPT_ID IN (SELECT CONCEPT_ID FROM #final_epilepsy_concepts)
+	AND vo.VISIT_CONCEPT_ID = 9202 --Outpat
+	AND sc.StopCode NOT IN (106, 128)
+	AND vo.x_Source_Table != 'Fee_Inpatient_Merged'
+
+-- question here 
+
+DROP TABLE IF EXISTS #epilepsy3
+SELECT DISTINCT
+	rv.PERSON_ID,
+	rv.CONDITION_START_DATE AS FIRST_DX_DATE
+INTO #epilepsy3
+FROM (
+	SELECT DISTINCT
+		v1.PERSON_ID,
+		v1.CONDITION_START_DATE,
+		ROW_NUMBER() OVER (PARTITION BY v1.PERSON_ID ORDER BY v1.CONDITION_START_DATE) AS VISIT_RANK
+	FROM #epilepsy3_all_visits AS v1
+	INNER JOIN #epilepsy3_all_visits AS v2
+	ON v1.PERSON_ID = v2.PERSON_ID
+	WHERE ABS(DATEDIFF(DAY, v1.CONDITION_START_DATE, v2.CONDITION_START_DATE)) <= 365
+) AS rv
+WHERE VISIT_RANK = 2
+--14041
+
+--Criteria 1
+DROP TABLE IF EXISTS #asm_concepts
+SELECT DISTINCT
+	c.CONCEPT_ID,
+	c.CONCEPT_NAME
+INTO #asm_concepts
+FROM OMOPV5.CONCEPT AS c
+WHERE
+	1=1
+	AND (
+		LOWER(c.CONCEPT_NAME) LIKE '%brivaracetam%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%cannabidiol%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%carbamazepine%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%cenobamate%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%clobazam%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%diazepam%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%divalproex%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%eslicarbazepine%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%ethosuximide%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%ethotoin%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%ezogabine%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%felbamate%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%fosphenytoin%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%gabapentin%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%lacosamide%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%lamotrigine%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%levetiracetam%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%methsuximide%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%midazolam%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%oxcarbazepine%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%perampanel%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%phenobarbital%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%phenytoin%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%pregabalin%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%primidone%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%rufinamide%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%tiagabine%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%topiramate%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%valproic%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%valproate%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%vigabatrin%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%zonisamide%'
+		)
+	AND c.DOMAIN_ID IN (SELECT DOMAIN_ID FROM OMOPV5.DOMAIN WHERE LOWER(DOMAIN_NAME) = 'drug')
+	AND c.STANDARD_CONCEPT = 'S'
+	AND c.CONCEPT_NAME NOT LIKE '%extract%'
+	AND c.CONCEPT_NAME NOT LIKE '% / %'
+	AND LOWER(c.CONCEPT_NAME) NOT LIKE '%chlordiazepam%'
+	AND LOWER(c.CONCEPT_NAME) NOT LIKE '%diazepam%oral%'
+	AND LOWER(c.CONCEPT_NAME) NOT LIKE '%diazepam%syringe%'
+	AND LOWER(c.CONCEPT_NAME) NOT LIKE '%diazepam%intramusc%'
+	AND LOWER(c.CONCEPT_NAME) NOT LIKE '%midazolam%oral%'
+	AND LOWER(c.CONCEPT_NAME) NOT LIKE '%midazolam%syringe%'
+	AND LOWER(c.CONCEPT_NAME) NOT LIKE '%midazolam%intramusc%'
+	AND LOWER(c.CONCEPT_NAME) NOT LIKE '%midazolam%inject%'
+
+DROP TABLE IF EXISTS #all_asm_exposures
+SELECT DISTINCT
+	de.PERSON_ID,
+	MIN(de.DRUG_EXPOSURE_START_DATE) AS FIRST_EXPOSURE,
+	MAX(de.DRUG_EXPOSURE_END_DATE) AS LATEST_EXPOSURE
+INTO #all_asm_exposures
+FROM OMOPV5.DRUG_EXPOSURE AS de
+	INNER JOIN #asm_concepts AS asm ON asm.CONCEPT_ID = de.DRUG_CONCEPT_ID
+	INNER JOIN OMOPV5.DRUG_STRENGTH AS ds ON ds.DRUG_CONCEPT_ID = de.DRUG_CONCEPT_ID
+	INNER JOIN OMOPV5.CONCEPT AS au ON au.CONCEPT_ID = ds.AMOUNT_UNIT_CONCEPT_ID
+	INNER JOIN OMOPV5.CONCEPT AS di ON di.CONCEPT_ID = ds.INGREDIENT_CONCEPT_ID
+WHERE
+	1=1
+	AND ds.AMOUNT_VALUE != 0.0
+	AND de.DAYS_SUPPLY != 0
+	AND asm.CONCEPT_NAME NOT LIKE '%gabapentin%'
+	AND de.DRUG_EXPOSURE_START_DATE >= '2022-01-01' --EDIT HERE TO CHANGE DATES OF COHORT!
+	AND de.DRUG_EXPOSURE_START_DATE < '2023-01-01'
+GROUP BY de.PERSON_ID, di.CONCEPT_NAME
+HAVING SUM(de.DAYS_SUPPLY) >= 30
+;
+
+--Next, take the person_id for all of these rows
+--Get all condition occurrence of seizure related icd code in that year of ASM usage plus last two years
+DROP TABLE IF EXISTS #epilepsy1_pt_only;
+SELECT DISTINCT
+	asm.PERSON_ID
+INTO #epilepsy1_pt_only
+FROM #all_asm_exposures AS asm
+	INNER JOIN OMOPV5.CONDITION_OCCURRENCE AS co 
+	ON co.PERSON_ID = asm.PERSON_ID
+	INNER JOIN OMOPV5.VISIT_OCCURRENCE AS vo
+	ON vo.VISIT_OCCURRENCE_ID = co.VISIT_OCCURRENCE_ID
+	LEFT JOIN OUTPAT.Visit AS v
+	ON v.VisitSID = vo.x_Source_ID_Primary
+	LEFT JOIN DIM.StopCode AS sc
+	ON sc.StopCodeSID = v.PrimaryStopCodeSID
+WHERE
+	1=1
+	AND (
+		co.CONDITION_CONCEPT_ID IN (SELECT CONCEPT_ID FROM #final_seizure_concepts)
+		OR co.CONDITION_CONCEPT_ID IN (SELECT CONCEPT_ID FROM #final_epilepsy_concepts)
+		)
+	AND co.CONDITION_START_DATE >= '2020-01-01' --EDIT HERE TO CHANGE DATES OF COHORT!
+	AND co.CONDITION_START_DATE < '2023-01-01'
+	AND sc.StopCode NOT IN (106, 128)
+
+--Now look all the way back on their meds and repeat, but with the condition that the condition start date is within 2 years of a ASM
+DROP TABLE IF EXISTS #epilepsy1_exposures
+SELECT DISTINCT
+	p.PERSON_ID,
+	MIN(de.DRUG_EXPOSURE_START_DATE) AS FIRST_EXPOSURE,
+	MAX(de.DRUG_EXPOSURE_END_DATE) AS LATEST_EXPOSURE
+INTO #epilepsy1_exposures
+FROM #epilepsy1_pt_only AS p
+	INNER JOIN OMOPV5.DRUG_EXPOSURE AS de
+	ON de.PERSON_ID = p.PERSON_ID
+	INNER JOIN #asm_concepts AS asm
+	ON asm.CONCEPT_ID = de.DRUG_CONCEPT_ID
+	INNER JOIN OMOPV5.DRUG_STRENGTH AS ds
+	ON ds.DRUG_CONCEPT_ID = de.DRUG_CONCEPT_ID
+	INNER JOIN OMOPV5.CONCEPT AS au
+	ON au.CONCEPT_ID = ds.AMOUNT_UNIT_CONCEPT_ID
+	INNER JOIN OMOPV5.CONCEPT AS di 
+	ON di.CONCEPT_ID = ds.INGREDIENT_CONCEPT_ID
+WHERE
+	1=1
+	AND ds.AMOUNT_VALUE != 0.0
+	AND de.DAYS_SUPPLY != 0
+	AND asm.CONCEPT_NAME NOT LIKE '%gabapentin%'
+GROUP BY p.PERSON_ID, di.CONCEPT_NAME
+HAVING SUM(de.DAYS_SUPPLY) >= 30 -- how was this decided?
+
+--finalize by selected first_dx_date as the earliest ASM exposure
+DROP TABLE IF EXISTS #epilepsy1;
+SELECT DISTINCT
+	asm.PERSON_ID,
+	MIN(asm.FIRST_EXPOSURE) AS FIRST_DX_DATE
+INTO #epilepsy1
+FROM #epilepsy1_exposures AS asm
+	INNER JOIN OMOPV5.CONDITION_OCCURRENCE AS co 
+	ON co.PERSON_ID = asm.PERSON_ID
+	INNER JOIN OMOPV5.VISIT_OCCURRENCE AS vo
+	ON vo.VISIT_OCCURRENCE_ID = co.VISIT_OCCURRENCE_ID
+	LEFT JOIN OUTPAT.Visit AS v
+	ON v.VisitSID = vo.x_Source_ID_Primary
+	LEFT JOIN DIM.StopCode AS sc
+	ON sc.StopCodeSID = v.PrimaryStopCodeSID
+WHERE
+	1=1
+	AND (
+		co.CONDITION_CONCEPT_ID IN (SELECT CONCEPT_ID FROM #final_seizure_concepts)
+		OR co.CONDITION_CONCEPT_ID IN (SELECT CONCEPT_ID FROM #final_epilepsy_concepts)
+		)
+	AND YEAR(asm.FIRST_EXPOSURE) - YEAR(co.CONDITION_START_DATE) <= 2
+	AND YEAR(asm.LATEST_EXPOSURE) - YEAR(co.CONDITION_START_DATE) >= 0
+	AND sc.StopCode NOT IN (106, 128)
+GROUP BY asm.PERSON_ID
+--64656
+
+--Epilepsy cohort combined
+DROP TABLE IF EXISTS #all_epileptic;
+WITH ordered_dx AS (
+SELECT 
+	PERSON_ID,
+	FIRST_DX_DATE,
+	ROW_NUMBER() OVER (PARTITION BY PERSON_ID ORDER BY FIRST_DX_DATE) AS rn
+FROM
+(
+	SELECT * FROM #epilepsy2
+	UNION
+	SELECT * FROM #epilepsy3
+	UNION
+	SELECT * FROM #epilepsy1
+) AS COMBINED
+)
+SELECT DISTINCT
+	ordered_dx.PERSON_ID,
+	pmap.PatientICN,
+	FIRST_DX_DATE
+INTO #all_epileptic
+FROM ordered_dx
+LEFT JOIN OMOPV5Map.SPatient_PERSON AS pmap
+ON pmap.PERSON_ID = ordered_dx.PERSON_ID
+WHERE rn = 1;
+--67852
+
+SELECT TOP 100 * FROM #all_epileptic
+USE [SCS_EEGUtil]
+GO
+
+/****** Object:  Table [EEG].[sk_DRE2_DRUG_EXPOSURES]    Script Date: 4/25/2024 10:05:31 PM ******/
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [EEG].[rz_PTE_all_epileptic](
+       [PERSON_ID] [nvarchar](25) NULL,
+       [PatientICN] [nvarchar](15) NULL,
+       [FIRST_DX_DATE] [datetime2](0) NULL
+)
+GO
+
+INSERT [SCS_EEGUtil].[EEG].[rz_PTE_all_epileptic] (
+[PERSON_ID], 
+[PatientICN], 
+[FIRST_DX_DATE])
+SELECT *
+FROM #all_epileptic
+
+--Then, we check for history of TBI and take only those with a record
+--First, any time before the diagnosis date (can discuss other definitions later)
+--Directly query the OutpatWorkloadVDiagnosis Table instead of OMOP
+USE CDWWork
+GO
+
+DROP TABLE IF EXISTS #cohort_trauma_icd_records
+SELECT DISTINCT
+	coh.PERSON_ID,
+	coh.PatientICN,
+	coh.FIRST_DX_DATE,
+	v.VisitDateTime,
+	icd.ICD10Code,
+	descr.ICD10Description
+INTO #cohort_trauma_icd_records
+FROM #all_epileptic AS coh
+INNER JOIN SPatient.SPatient AS sp
+ON sp.PatientICN = coh.PatientICN
+INNER JOIN Outpat.WorkloadVDiagnosis AS v
+ON sp.PatientSID = v.PatientSID AND sp.Sta3n = v.Sta3n -- why check both?
+INNER JOIN Dim.ICD10 AS icd
+ON icd.ICD10SID = v.ICD10SID
+INNER JOIN Dim.ICD10DescriptionVersion AS descr
+ON descr.ICD10SID = v.ICD10SID
+WHERE
+1=1
+AND icd.ICD10Code
+IN -- put in db?
+('801.0',
+'801.6',
+'310.2',
+'800.00',
+'800.01',
+'800.02',
+'800.03',
+'800.04',
+'800.05',
+'800.06',
+'800.09',
+'800.10',
+'800.11',
+'800.12',
+'800.13',
+'800.14',
+'800.15',
+'800.16',
+'800.19',
+'800.20',
+'800.21',
+'800.22',
+'800.23',
+'800.24',
+'800.25',
+'800.26',
+'800.29',
+'800.30',
+'800.31',
+'800.32',
+'800.33',
+'800.34',
+'800.35',
+'800.36',
+'800.39',
+'800.40',
+'800.41',
+'800.42',
+'800.43',
+'800.44',
+'800.45',
+'800.46',
+'800.49',
+'800.50',
+'800.51',
+'800.52',
+'800.53',
+'800.54',
+'800.55',
+'800.56',
+'800.59',
+'800.60',
+'800.61',
+'800.62',
+'800.63',
+'800.64',
+'800.65',
+'800.66',
+'800.69',
+'800.70',
+'800.71',
+'800.72',
+'800.73',
+'800.74',
+'800.75',
+'800.76',
+'800.79',
+'800.80',
+'800.81',
+'800.82',
+'800.83',
+'800.84',
+'800.85',
+'800.86',
+'800.89',
+'800.90',
+'800.91',
+'800.92',
+'800.93',
+'800.94',
+'800.95',
+'800.96',
+'800.99',
+'801.00',
+'801.01',
+'801.02',
+'801.03',
+'801.04',
+'801.05',
+'801.06',
+'801.09',
+'801.10',
+'801.11',
+'801.12',
+'801.13',
+'801.14',
+'801.15',
+'801.16',
+'801.19',
+'801.20',
+'801.21',
+'801.22',
+'801.23',
+'801.24',
+'801.25',
+'801.26',
+'801.29',
+'801.30',
+'801.31',
+'801.32',
+'801.33',
+'801.34',
+'801.35',
+'801.36',
+'801.39',
+'801.40',
+'801.41',
+'801.42',
+'801.43',
+'801.44',
+'801.45',
+'801.46',
+'801.49',
+'801.50',
+'801.51',
+'801.52',
+'801.53',
+'801.54',
+'801.55',
+'801.56',
+'801.59',
+'801.60',
+'801.61',
+'801.62',
+'801.63',
+'801.64',
+'801.65',
+'801.66',
+'801.69',
+'801.70',
+'801.71',
+'801.72',
+'801.73',
+'801.74',
+'801.75',
+'801.76',
+'801.79',
+'801.80',
+'801.81',
+'801.82',
+'801.83',
+'801.84',
+'801.85',
+'801.86',
+'801.89',
+'801.90',
+'801.91',
+'801.92',
+'801.93',
+'801.94',
+'801.95',
+'801.96',
+'801.99',
+'803.00',
+'803.01',
+'803.02',
+'803.03',
+'803.04',
+'803.05',
+'803.06',
+'803.09',
+'803.10',
+'803.11',
+'803.12',
+'803.13',
+'803.14',
+'803.15',
+'803.16',
+'803.19',
+'803.20',
+'803.21',
+'803.22',
+'803.23',
+'803.24',
+'803.25',
+'803.26',
+'803.29',
+'803.30',
+'803.31',
+'803.32',
+'803.33',
+'803.34',
+'803.35',
+'803.36',
+'803.39',
+'803.40',
+'803.41',
+'803.42',
+'803.43',
+'803.44',
+'803.45',
+'803.46',
+'803.49',
+'803.50',
+'803.51',
+'803.52',
+'803.53',
+'803.54',
+'803.55',
+'803.56',
+'803.59',
+'803.60',
+'803.61',
+'803.62',
+'803.63',
+'803.64',
+'803.65',
+'803.66',
+'803.69',
+'803.70',
+'803.71',
+'803.72',
+'803.73',
+'803.74',
+'803.75',
+'803.76',
+'803.79',
+'803.80',
+'803.81',
+'803.82',
+'803.83',
+'803.84',
+'803.85',
+'803.86',
+'803.89',
+'803.90',
+'803.91',
+'803.92',
+'803.93',
+'803.94',
+'803.95',
+'803.96',
+'803.99',
+'804.00',
+'804.01',
+'804.02',
+'804.03',
+'804.04',
+'804.05',
+'804.06',
+'804.09',
+'804.10',
+'804.11',
+'804.12',
+'804.13',
+'804.14',
+'804.15',
+'804.16',
+'804.19',
+'804.20',
+'804.21',
+'804.22',
+'804.23',
+'804.24',
+'804.25',
+'804.26',
+'804.29',
+'804.30',
+'804.31',
+'804.32',
+'804.33',
+'804.34',
+'804.35',
+'804.36',
+'804.39',
+'804.40',
+'804.41',
+'804.42',
+'804.43',
+'804.44',
+'804.45',
+'804.46',
+'804.49',
+'804.50',
+'804.51',
+'804.52',
+'804.53',
+'804.54',
+'804.55',
+'804.56',
+'804.59',
+'804.60',
+'804.61',
+'804.62',
+'804.63',
+'804.64',
+'804.65',
+'804.66',
+'804.69',
+'804.70',
+'804.71',
+'804.72',
+'804.73',
+'804.74',
+'804.75',
+'804.76',
+'804.79',
+'804.80',
+'804.81',
+'804.82',
+'804.83',
+'804.84',
+'804.85',
+'804.86',
+'804.89',
+'804.90',
+'804.91',
+'804.92',
+'804.93',
+'804.94',
+'804.95',
+'804.96',
+'804.99',
+'850.0',
+'850.1',
+'850.11',
+'850.12',
+'850.2',
+'850.3',
+'850.4',
+'850.5',
+'850.9',
+'851.00',
+'851.01',
+'851.02',
+'851.03',
+'851.04',
+'851.05',
+'851.06',
+'851.09',
+'851.10',
+'851.11',
+'851.12',
+'851.13',
+'851.14',
+'851.15',
+'851.16',
+'851.19',
+'851.20',
+'851.21',
+'851.22',
+'851.23',
+'851.24',
+'851.25',
+'851.26',
+'851.29',
+'851.30',
+'851.31',
+'851.32',
+'851.33',
+'851.34',
+'851.35',
+'851.36',
+'851.39',
+'851.40',
+'851.41',
+'851.42',
+'851.43',
+'851.44',
+'851.45',
+'851.46',
+'851.49',
+'851.50',
+'851.51',
+'851.52',
+'851.53',
+'851.54',
+'851.55',
+'851.56',
+'851.59',
+'851.60',
+'851.61',
+'851.62',
+'851.63',
+'851.64',
+'851.65',
+'851.66',
+'851.69',
+'851.70',
+'851.71',
+'851.72',
+'851.73',
+'851.74',
+'851.75',
+'851.76',
+'851.79',
+'851.80',
+'851.81',
+'851.82',
+'851.83',
+'851.84',
+'851.85',
+'851.86',
+'851.89',
+'851.90',
+'851.91',
+'851.92',
+'851.93',
+'851.94',
+'851.95',
+'851.96',
+'851.99',
+'852.00',
+'852.01',
+'852.02',
+'852.03',
+'852.04',
+'852.05',
+'852.06',
+'852.09',
+'852.10',
+'852.11',
+'852.12',
+'852.13',
+'852.14',
+'852.15',
+'852.16',
+'852.19',
+'852.20',
+'852.21',
+'852.22',
+'852.23',
+'852.24',
+'852.25',
+'852.26',
+'852.29',
+'852.30',
+'852.31',
+'852.32',
+'852.33',
+'852.34',
+'852.35',
+'852.36',
+'852.39',
+'852.40',
+'852.41',
+'852.42',
+'852.43',
+'852.44',
+'852.45',
+'852.46',
+'852.49',
+'852.50',
+'852.51',
+'852.52',
+'852.53',
+'852.54',
+'852.55',
+'852.56',
+'852.59',
+'853.00',
+'853.01',
+'853.02',
+'853.03',
+'853.04',
+'853.05',
+'853.06',
+'853.09',
+'853.10',
+'853.11',
+'853.12',
+'853.13',
+'853.14',
+'853.15',
+'853.16',
+'853.19',
+'854.00',
+'854.01',
+'854.02',
+'854.03',
+'854.04',
+'854.05',
+'854.06',
+'854.09',
+'854.10',
+'854.11',
+'854.12',
+'854.13',
+'854.14',
+'854.15',
+'854.16',
+'854.19',
+'905.0',
+'907.0',
+'959.01',
+'V15.52',
+'S02.0XXS',
+'S02.110G',
+'S02.111A',
+'S02.112A',
+'S02.112K',
+'S02.118A',
+'S02.118K',
+'S02.91XD',
+'S04.032A',
+'S04.049S',
+'S06.0X0A',
+'S06.0X2D',
+'S06.0X7S',
+'S06.0X8A',
+'S06.2X6A',
+'S06.2X7D',
+'S06.2X9A',
+'S06.300A',
+'S06.302A',
+'S06.306S',
+'S06.315D',
+'S06.316D',
+'S06.317A',
+'S06.317S',
+'S06.330S',
+'S06.339A',
+'S06.342S',
+'S06.348A',
+'S06.351A',
+'S06.362S',
+'S06.365D',
+'S06.366S',
+'S06.377A',
+'S06.380S',
+'S06.381S',
+'S06.382D',
+'S06.383D',
+'S06.388D',
+'S06.389S',
+'S06.4X4S',
+'S06.4X8A',
+'S06.5X2D',
+'S06.5X5A',
+'S06.6X5A',
+'S06.6X6D',
+'S06.6X8A',
+'S06.6X9S',
+'S06.894D',
+'S06.9X0S',
+'S06.9X3D',
+'S06.9X8D',
+'S02.110A',
+'S02.112S',
+'S02.113S',
+'S02.118B',
+'S02.19XB',
+'S02.19XG',
+'S02.8XXK',
+'S02.91XA',
+'S02.92XB',
+'S02.92XS',
+'S04.049A',
+'S06.0X8S',
+'S06.1X0S',
+'S06.1X5A',
+'S06.1X7D',
+'S06.2X8A',
+'S06.315S',
+'S06.316S',
+'S06.318S',
+'S06.325S',
+'S06.330D',
+'S06.337S',
+'S06.341A',
+'S06.349A',
+'S06.351S',
+'S06.355S',
+'S06.359S',
+'S06.360S',
+'S06.363S',
+'S06.364D',
+'S06.368S',
+'S06.371A',
+'S06.374S',
+'S06.378A',
+'S06.378S',
+'S06.379D',
+'S06.380D',
+'S06.381A',
+'S06.384D',
+'S06.389D',
+'S06.4X0S',
+'S06.4X1A',
+'S06.4X5S',
+'S06.4X8S',
+'S06.5X0D',
+'S06.5X1S',
+'S06.6X0S',
+'S06.894S',
+'S06.898D',
+'S06.899A',
+'S06.9X2D',
+'S06.9X7D',
+'S06.9X8A',
+'S02.0XXD',
+'S02.10XD',
+'S02.110D',
+'S02.110K',
+'S02.112G',
+'S02.113K',
+'S02.119G',
+'S02.92XD',
+'S06.0X2S',
+'S06.0X5A',
+'S06.0X5S',
+'S06.0X6D',
+'S06.0X9S',
+'S06.1X0A',
+'S06.1X3D',
+'S06.1X4D',
+'S06.1X8S',
+'S06.2X0A',
+'S06.305A',
+'S06.307D',
+'S06.307S',
+'S06.308S',
+'S06.309A',
+'S06.312A',
+'S06.319S',
+'S06.324D',
+'S06.327A',
+'S06.338S',
+'S06.343S',
+'S06.344D',
+'S06.350A',
+'S06.354D',
+'S06.358A',
+'S06.363D',
+'S06.367S',
+'S06.374D',
+'S06.375S',
+'S06.377S',
+'S06.382A',
+'S06.385D',
+'S06.386A',
+'S06.4X1D',
+'S06.4X3D',
+'S06.4X7S',
+'S06.4X8D',
+'S06.5X3D',
+'S06.5X6D',
+'S06.5X8A',
+'S06.6X4A',
+'S06.6X4S',
+'S02.111B',
+'S02.111S',
+'S02.118G',
+'S02.8XXB',
+'S04.02XD',
+'S04.031S',
+'S04.041A',
+'S06.0X3A',
+'S06.1X3A',
+'S06.2X1D',
+'S06.2X4D',
+'S06.2X8S',
+'S06.300D',
+'S06.300S',
+'S06.308D',
+'S06.318A',
+'S06.320A',
+'S06.324A',
+'S06.326A',
+'S06.329D',
+'S06.334D',
+'S06.335S',
+'S06.338D',
+'S06.339D',
+'S06.341D',
+'S06.344S',
+'S06.347A',
+'S06.350S',
+'S06.358S',
+'S06.359D',
+'S06.360A',
+'S06.361D',
+'S06.361S',
+'S06.362D',
+'S06.365A',
+'S06.369D',
+'S06.371S',
+'S06.384A',
+'S06.386D',
+'S06.388A',
+'S06.389A',
+'S06.4X0D',
+'S06.4X6A',
+'S06.4X6D',
+'S06.4X7D',
+'S06.6X1S',
+'S06.6X7D',
+'S06.6X7S',
+'S06.893S',
+'S06.896S',
+'S06.897D',
+'S02.110B',
+'S02.111K',
+'S02.113A',
+'S02.119A',
+'S02.119D',
+'S02.119K',
+'S02.19XA',
+'S02.91XG',
+'S02.92XG',
+'S04.032D',
+'S04.042S',
+'S06.0X0S',
+'S06.0X2A',
+'S06.0X6A',
+'S06.0X7D',
+'S06.1X8A',
+'S06.1X9S',
+'S06.2X2S',
+'S06.2X5D',
+'S06.309S',
+'S06.310A',
+'S06.312D',
+'S06.313A',
+'S06.314D',
+'S06.321D',
+'S06.322D',
+'S06.326S',
+'S06.331D',
+'S06.335D',
+'S06.336A',
+'S06.342A',
+'S06.342D',
+'S06.343D',
+'S06.346A',
+'S06.348S',
+'S06.350D',
+'S06.351D',
+'S06.352S',
+'S06.353A',
+'S06.361A',
+'S06.364S',
+'S06.366D',
+'S06.367A',
+'S06.369A',
+'S06.371D',
+'S06.373D',
+'S06.375D',
+'S06.376S',
+'S06.379S',
+'S06.386S',
+'S06.387A',
+'S02.111D',
+'S02.118S',
+'S02.19XD',
+'S02.8XXG',
+'S04.039S',
+'S04.041S',
+'S06.0X5D',
+'S06.1X2A',
+'S06.1X4A',
+'S06.1X6S',
+'S06.2X0D',
+'S06.2X0S',
+'S06.2X2A',
+'S06.2X4S',
+'S06.2X9D',
+'S06.304S',
+'S06.306A',
+'S06.316A',
+'S06.333S',
+'S06.334A',
+'S06.340A',
+'S06.349D',
+'S06.352A',
+'S06.368D',
+'S06.370A',
+'S06.370D',
+'S06.372A',
+'S06.372S',
+'S06.380A',
+'S06.4X9D',
+'S06.5X0A',
+'S06.5X3S',
+'S06.5X4D',
+'S06.5X6A',
+'S06.5X6S',
+'S06.5X9A',
+'S06.6X9D',
+'S06.9X3A',
+'S06.9X4A',
+'S06.9X7S',
+'S02.111G',
+'S02.112D',
+'S02.119S',
+'S04.031A',
+'S04.041D',
+'S04.049D',
+'S06.0X3D',
+'S06.0X4D',
+'S06.0X9A',
+'S06.1X1D',
+'S06.1X6D',
+'S06.1X7A',
+'S06.2X2D',
+'S06.2X4A',
+'S06.2X8D',
+'S06.301S',
+'S06.305S',
+'S06.306D',
+'S06.313D',
+'S06.318D',
+'S06.322S',
+'S06.332D',
+'S06.336S',
+'S06.337A',
+'S06.338A',
+'S06.346S',
+'S06.347S',
+'S06.352D',
+'S06.356A',
+'S06.358D',
+'S06.359A',
+'S06.364A',
+'S06.372D',
+'S06.373A',
+'S06.375A',
+'S06.381D',
+'S06.384S',
+'S06.387D',
+'S06.5X1A',
+'S06.6X3D',
+'S06.892A',
+'S06.892D',
+'S06.894A',
+'S06.9X4S',
+'S06.9X6D',
+'S06.9X9A',
+'S02.10XA',
+'S02.10XS',
+'S02.118D',
+'S02.8XXS',
+'S02.92XK',
+'S04.042D',
+'S06.0X1A',
+'S06.0X4A',
+'S06.0X6S',
+'S06.0X8D',
+'S06.1X2S',
+'S06.1X4S',
+'S06.1X9A',
+'S06.2X6D',
+'S06.308A',
+'S06.310D',
+'S06.315A',
+'S06.320D',
+'S06.320S',
+'S06.325A',
+'S06.327S',
+'S06.333D',
+'S06.340D',
+'S06.341S',
+'S06.348D',
+'S06.349S',
+'S06.353S',
+'S06.354A',
+'S06.355A',
+'S06.356D',
+'S06.357S',
+'S06.365S',
+'S06.370S',
+'S06.376D',
+'S06.377D',
+'S06.382S',
+'S06.4X0A',
+'S06.4X9A',
+'S06.5X7S',
+'S06.6X0A',
+'S06.897A',
+'S06.9X0D',
+'S06.9X5A',
+'S07.1XXD',
+'S02.10XB',
+'S02.110S',
+'S02.19XK',
+'S04.032S',
+'S04.039A',
+'S04.039D',
+'S04.042A',
+'S06.0X0D',
+'S06.1X0D',
+'S06.1X1S',
+'S06.1X7S',
+'S06.1X9D',
+'S06.2X3S',
+'S06.2X9S',
+'S06.302S',
+'S06.303D',
+'S06.314S',
+'S06.321S',
+'S06.323D',
+'S06.327D',
+'S06.328D',
+'S06.329S',
+'S06.330A',
+'S06.335A',
+'S06.339S',
+'S06.345D',
+'S06.346D',
+'S06.357D',
+'S06.363A',
+'S06.368A',
+'S06.373S',
+'S06.379A',
+'S06.385S',
+'S06.4X2D',
+'S06.4X2S',
+'S06.4X3S',
+'S06.5X4S',
+'S06.5X5D',
+'S06.5X8D',
+'S06.5X8S',
+'S06.5X9D',
+'S06.6X2D',
+'S06.6X3A',
+'S06.6X9A',
+'S06.891A',
+'S06.893A',
+'S06.895A',
+'S06.9X6A',
+'S07.1XXA',
+'S02.0XXK',
+'S02.10XK',
+'S02.119B',
+'S02.8XXA',
+'S02.8XXD',
+'S02.91XK',
+'S04.02XA',
+'S04.02XS',
+'S04.031D',
+'S06.0X3S',
+'S06.0X7A',
+'S06.0X9D',
+'S06.1X1A',
+'S06.1X5S',
+'S06.2X3A',
+'S06.2X3D',
+'S06.2X7S',
+'S06.302D',
+'S06.303A',
+'S06.305D',
+'S06.309D',
+'S06.311A',
+'S06.312S',
+'S06.314A',
+'S06.317D',
+'S06.319A',
+'S06.325D',
+'S06.329A',
+'S06.336D',
+'S06.337D',
+'S06.340S',
+'S06.345A',
+'S06.360D',
+'S06.366A',
+'S06.367D',
+'S06.374A',
+'S06.4X2A',
+'S06.4X5A',
+'S06.5X3A',
+'S06.890D',
+'S06.895D',
+'S06.896A',
+'S06.9X2A',
+'S02.0XXA',
+'S02.0XXB',
+'S02.113D',
+'S02.92XA',
+'S06.0X4S',
+'S06.2X1A',
+'S06.2X1S',
+'S06.2X5S',
+'S06.2X6S',
+'S06.301D',
+'S06.303S',
+'S06.304A',
+'S06.304D',
+'S06.307A',
+'S06.311D',
+'S06.311S',
+'S06.319D',
+'S06.323A',
+'S06.323S',
+'S06.324S',
+'S06.326D',
+'S06.328A',
+'S06.331A',
+'S06.331S',
+'S06.332A',
+'S06.332S',
+'S06.334S',
+'S06.343A',
+'S06.347D',
+'S06.356S',
+'S06.369S',
+'S06.376A',
+'S06.383A',
+'S06.4X1S',
+'S06.4X3A',
+'S06.4X7A',
+'S06.4X9S',
+'S06.5X0S',
+'S06.5X2A',
+'S06.5X5S',
+'S06.6X1A',
+'S06.6X1D',
+'S06.6X2A',
+'S06.6X4D',
+'S06.6X5D',
+'S06.6X5S',
+'S06.893D',
+'S06.895S',
+'S06.9X0A',
+'S06.9X5D',
+'S02.0XXG',
+'S02.10XG',
+'S02.112B',
+'S02.113B',
+'S02.113G',
+'S02.19XS',
+'S02.91XB',
+'S02.91XS',
+'S06.0X1D',
+'S06.0X1S',
+'S06.1X2D',
+'S06.1X3S',
+'S06.1X5D',
+'S06.1X6A',
+'S06.1X8D',
+'S06.2X5A',
+'S06.2X7A',
+'S06.301A',
+'S06.310S',
+'S06.313S',
+'S06.321A',
+'S06.322A',
+'S06.328S',
+'S06.333A',
+'S06.344A',
+'S06.345S',
+'S06.353D',
+'S06.354S',
+'S06.355D',
+'S06.357A',
+'S06.362A',
+'S06.378D',
+'S06.383S',
+'S06.385A',
+'S06.387S',
+'S06.388S',
+'S06.4X4A',
+'S06.4X5D',
+'S06.4X6S',
+'S06.5X1D',
+'S06.5X2S',
+'S06.5X7A',
+'S06.5X9S',
+'S06.6X0D',
+'S06.6X6A',
+'S06.6X8D',
+'S06.891D',
+'S06.892S',
+'S06.9X1D',
+'S06.9X1S',
+'S06.9X8S',
+'S06.9X9S',
+'S06.898A',
+'S06.899S',
+'S07.1XXS',
+'Z87.820',
+'S06.6X6S',
+'S06.6X8S',
+'S06.890S',
+'S06.897S',
+'S06.899D',
+'S06.9X1A',
+'S06.9X3S',
+'S06.9X5S',
+'S06.9X6S',
+'S06.4X4D',
+'S06.5X4A',
+'S06.5X7D',
+'S06.6X2S',
+'S06.6X3S',
+'S06.6X7A',
+'S06.890A',
+'S06.891S',
+'S06.896D',
+'S06.898S',
+'S06.9X2S',
+'S06.9X4D',
+'S06.9X7A',
+'S06.9X9D',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.039S',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041A',
+'S04.041D',
+'S04.041D',
+'S04.041D',
+'S02.110D',
+'S02.10XK',
+'S02.10XD',
+'S02.110D',
+'S02.10XK',
+'S02.110D',
+'S02.10XK',
+'S02.10XK',
+'S02.110D',
+'S02.10XK',
+'S02.10XK',
+'S02.10XK',
+'S02.110D',
+'S02.110D',
+'S02.10XK',
+'S02.110D',
+'S02.10XK',
+'S02.10XK',
+'S02.110D',
+'S02.10XK',
+'S02.10XD',
+'S02.10XD',
+'S02.110D',
+'S02.110D',
+'S02.110D',
+'S02.10XK',
+'S02.10XK',
+'S02.110D',
+'S02.10XK',
+'S02.110D',
+'S02.10XK',
+'S02.110D',
+'S02.10XK',
+'S02.10XK',
+'S02.110D',
+'S02.10XK',
+'S02.10XK',
+'S02.112S',
+'S02.112S',
+'S02.110S',
+'S02.111K',
+'S02.112S',
+'S02.112S',
+'S02.110S',
+'S02.111K',
+'S02.111K',
+'S02.112S',
+'S02.113A',
+'S02.112S',
+'S02.112S',
+'S02.111K',
+'S02.113A',
+'S02.111K',
+'S02.112S',
+'S02.113A',
+'S02.111K',
+'S02.112S',
+'S02.113A',
+'S02.111K',
+'S02.112S',
+'S02.112S',
+'S02.112S',
+'S02.111K',
+'S02.112S',
+'S02.113A',
+'S02.111K',
+'S02.111K',
+'S02.112S',
+'S02.111K',
+'S02.110S',
+'S02.113A',
+'S02.113K',
+'S02.113K',
+'S02.19XA',
+'S02.113K',
+'S02.118K',
+'S02.19XA',
+'S02.19XA',
+'S02.19XA',
+'S02.19XA',
+'S02.19XA',
+'S02.19XA',
+'S02.19XA',
+'S02.113K',
+'S02.118K',
+'S02.19XA',
+'S02.19XA',
+'S02.113K',
+'S02.113K',
+'S02.118K',
+'S02.19XA',
+'S02.113K',
+'S02.113K',
+'S02.19XB',
+'S02.113K',
+'S02.118K',
+'S02.19XB',
+'S02.19XB',
+'S02.118K',
+'S02.113K',
+'S02.19XA',
+'S02.118K',
+'S02.118K',
+'S02.19XB',
+'S02.19XB',
+'S02.118K',
+'S02.19XB',
+'S02.113K',
+'S02.19XB',
+'S02.118S',
+'S02.118S',
+'S02.19XB',
+'S02.113K',
+'S02.113K',
+'S02.19XB',
+'S02.19XB',
+'S02.118S',
+'S02.118S',
+'S02.19XB',
+'S02.118S',
+'S02.19XB',
+'S02.113K',
+'S02.118S',
+'S02.19XB',
+'S02.19XB',
+'S02.19XB',
+'S02.113K',
+'S02.19XB',
+'S02.118S',
+'S02.19XB',
+'S02.113S',
+'S02.19XB',
+'S02.118S',
+'S02.118S',
+'S02.19XB',
+'S02.118S',
+'S02.19XB',
+'S02.19XB',
+'S02.118S',
+'S02.113S',
+'S02.19XB',
+'S02.118S',
+'S02.118S',
+'S02.19XB',
+'S02.19XB',
+'S02.113S',
+'S02.118S',
+'S02.19XB',
+'S02.19XB',
+'S02.119B',
+'S02.19XD',
+'S02.19XK',
+'S02.119B',
+'S02.19XD',
+'S02.19XK',
+'S02.119B',
+'S02.19XD',
+'S02.19XK',
+'S02.19XK',
+'S02.118A',
+'S02.119B',
+'S02.19XK',
+'S02.19XD',
+'S02.119B',
+'S02.118A',
+'S02.19XD',
+'S02.119B',
+'S02.118A',
+'S02.19XG',
+'S02.19XK',
+'S02.119B',
+'S02.118A',
+'S02.19XG',
+'S02.19XK',
+'S02.119B',
+'S02.19XG',
+'S02.19XK',
+'S02.119B',
+'S02.19XG',
+'S02.19XK',
+'S02.119D',
+'S02.19XG',
+'S02.19XK',
+'S02.119D',
+'S02.19XG',
+'S02.19XK',
+'S02.8XXA',
+'S02.19XK',
+'S02.118B',
+'S02.119K',
+'S02.19XK',
+'S02.118B',
+'S02.119K',
+'S02.19XK',
+'S02.118B',
+'S02.8XXA',
+'S02.119K',
+'S02.19XK',
+'S02.118B',
+'S02.8XXA',
+'S02.119K',
+'S02.19XK',
+'S02.118B',
+'S02.8XXA',
+'S02.119K',
+'S02.19XK',
+'S02.118B',
+'S02.8XXA',
+'S02.119K',
+'S02.19XK',
+'S02.118B',
+'S02.8XXA',
+'S02.119K',
+'S02.19XK',
+'S02.118B',
+'S02.8XXA',
+'S02.119K',
+'S02.19XK',
+'S02.118B',
+'S02.8XXA',
+'S02.119K',
+'S02.19XK',
+'S02.118B',
+'S02.8XXA',
+'S02.118B',
+'S02.19XK',
+'S02.8XXA',
+'S02.118B',
+'S02.19XS',
+'S02.8XXA',
+'S02.119K',
+'S02.119K',
+'S02.8XXA',
+'S02.118D',
+'S02.19XS',
+'S02.8XXA',
+'S02.119K',
+'S02.118D',
+'S02.19XS',
+'S02.119K',
+'S02.8XXB',
+'S02.118D',
+'S02.19XS',
+'S02.119S',
+'S02.8XXB',
+'S02.118D',
+'S02.19XS',
+'S02.119S',
+'S02.8XXB',
+'S02.118D',
+'S02.19XS',
+'S02.119S',
+'S02.8XXB',
+'S02.118D',
+'S02.19XS',
+'S02.119S',
+'S02.8XXB',
+'S02.118D',
+'S02.19XS',
+'S02.119S',
+'S02.8XXB',
+'S02.19XS',
+'S02.118G',
+'S02.8XXD',
+'S02.8XXA',
+'S02.118G',
+'S02.8XXD',
+'S02.8XXA',
+'S02.118G',
+'S02.19XA',
+'S02.8XXD',
+'S02.19XA',
+'S02.8XXD',
+'S02.8XXA',
+'S02.19XA',
+'S02.8XXD',
+'S02.118G',
+'S02.8XXA',
+'S02.19XA',
+'S02.8XXD',
+'S02.118G',
+'S02.8XXA',
+'S02.19XA',
+'S02.8XXD',
+'S02.118G',
+'S02.8XXA',
+'S02.19XA',
+'S02.8XXD',
+'S02.118G',
+'S02.8XXB',
+'S02.19XA',
+'S02.8XXD',
+'S02.118G',
+'S02.8XXB',
+'S02.19XA',
+'S02.8XXD',
+'S02.118G',
+'S02.10XA',
+'S02.10XG',
+'S02.10XG',
+'S02.92XK',
+'S02.91XD',
+'S02.92XD',
+'S02.92XD',
+'S02.91XD',
+'S02.92XD',
+'S02.92XK',
+'S02.91XD',
+'S02.92XD',
+'S02.92XK',
+'S02.91XD',
+'S02.92XD',
+'S02.92XK',
+'S02.91XD',
+'S02.92XD',
+'S02.92XK',
+'S02.91XD',
+'S02.92XD',
+'S02.92XK',
+'S02.111D',
+'S02.111K',
+'S02.111D',
+'S02.110D',
+'S02.8XXK',
+'S02.19XD',
+'S02.8XXG',
+'S02.8XXK',
+'S02.19XD',
+'S02.8XXG',
+'S02.8XXK',
+'S02.8XXK',
+'S02.8XXG',
+'S02.8XXK',
+'S02.8XXG',
+'S02.19XD')
+
+SELECT TOP 1000 * FROM #cohort_trauma_icd_records ORDER BY PERSON_ID
+
+DROP TABLE IF EXISTS #pte_only
+SELECT DISTINCT
+	coh.PERSON_ID,
+	coh.PatientICN
+INTO #pte_only
+FROM #cohort_trauma_icd_records AS coh
+WHERE VisitDateTime < FIRST_DX_DATE
+--3435
+
+SELECT COUNT(*) FROM #pte_only
+
+SELECT * FROM #pte_only
+
+USE SCS_EEGUtil
+GO
+
+ALTER TABLE EEG.rz_PTE_all_epileptic ADD IS_PTE int;
+
+UPDATE SCS_EEGUtil.EEG.rz_PTE_all_epileptic
+SET IS_PTE = CASE WHEN PatientICN IN (SELECT PatientICN FROM #pte_only) THEN 1 ELSE 0 END;
+
+USE CDWWork
+GO
+
+--SELECT * FROM #cohort_trauma_icd_records WHERE PERSON_ID in (SELECT PERSON_ID FROM #pte_only) ORDER BY PERSON_ID
+
+--Save this PTE only table so I can work with it easily
+
+--Duration between first TBI
+
+--Get SDoH ICD Codes
+DROP TABLE IF EXISTS #cohort_sdoh_records
+SELECT DISTINCT
+	coh.PERSON_ID,
+	coh.PatientICN,
+	v.VisitDateTime,
+	m.ICD10Code,
+	descr.ICD10Description
+INTO #cohort_sdoh_records
+FROM SCS_EEGUtil.EEG.rz_PTE_all_epileptic AS coh
+INNER JOIN SPatient.SPatient AS sp
+ON sp.PatientICN = coh.PatientICN
+INNER JOIN Outpat.WorkloadVDiagnosis AS v
+ON sp.PatientSID = v.PatientSID AND sp.Sta3n = v.Sta3n
+INNER JOIN Dim.ICD10 AS m
+ON m.ICD10SID = v.ICD10SID
+INNER JOIN Dim.ICD10DescriptionVersion AS descr
+ON descr.ICD10SID = v.ICD10SID
+WHERE
+	1=1
+	AND m.ICD10Code LIKE 'Z65.0%' 
+OR m.ICD10Code LIKE 'Z65.1%' 
+OR m.ICD10Code LIKE 'Z65.2%'  
+OR m.ICD10Code LIKE 'Z65.3%'  
+OR m.ICD10Code LIKE 'Z65.4%'  
+OR m.ICD10Code LIKE 'Y92.14%'  
+OR m.ICD10Code LIKE 'Z65.8%'  
+OR m.ICD10Code LIKE 'Z65.9%' 
+OR m.ICD10Code LIKE 'O9A.3%'
+OR m.ICD10Code LIKE 'O9A.4%'
+OR m.ICD10Code LIKE 'O9A.5%' 
+OR m.ICD10Code LIKE 'T74%'
+OR m.ICD10Code LIKE 'T76%' 
+OR m.ICD10Code LIKE 'X92%' 
+OR m.ICD10Code LIKE 'X93%'
+OR m.ICD10Code LIKE 'X94%' 
+OR m.ICD10Code LIKE 'X95%' 
+OR m.ICD10Code LIKE 'X96%' 
+OR m.ICD10Code LIKE 'X97%' 
+OR m.ICD10Code LIKE 'X98%'
+OR m.ICD10Code LIKE 'X99%' 
+OR m.ICD10Code LIKE 'Y00%' 
+OR m.ICD10Code LIKE 'Y01%'
+OR m.ICD10Code LIKE 'Y02%' 
+OR m.ICD10Code LIKE 'Y03%' 
+OR m.ICD10Code LIKE 'Y04%' 
+OR m.ICD10Code LIKE 'Y07%' 
+OR m.ICD10Code LIKE 'Y08%' 
+OR m.ICD10Code LIKE 'Y09%' 
+OR m.ICD10Code LIKE 'Y35%' 
+OR m.ICD10Code LIKE 'Y36%' 
+OR m.ICD10Code LIKE 'Y37%' 
+OR m.ICD10Code LIKE 'Y38%' 
+OR m.ICD10Code LIKE 'Z04.4%' 
+OR m.ICD10Code LIKE 'Z04.7%' 
+OR m.ICD10Code LIKE 'Z04.81%'
+OR m.ICD10Code LIKE 'Z65.5%'
+OR m.ICD10Code LIKE 'Z69%'
+OR m.ICD10Code LIKE 'Z91.4%' 
+OR m.ICD10Code LIKE 'Z56%'
+OR m.ICD10Code LIKE 'Z59.4%' 
+OR m.ICD10Code LIKE 'Z59.5%'
+OR m.ICD10Code LIKE 'Z59.6%' 
+OR m.ICD10Code LIKE 'Z59.7%' 
+OR m.ICD10Code LIKE 'Z59.8%'
+OR m.ICD10Code LIKE 'Z59.9%' 
+OR m.ICD10Code LIKE 'Z62%' 
+OR m.ICD10Code LIKE 'Z63%' 
+OR m.ICD10Code LIKE 'Z59.0%' 
+OR m.ICD10Code LIKE 'Z59.1%' 
+OR m.ICD10Code LIKE 'Z59.2%' 
+OR m.ICD10Code LIKE 'Z59.3%'
+OR m.ICD10Code LIKE 'Z55%'
+OR m.ICD10Code LIKE 'Z60%' 
+
+--Get cohort history of ICD codes
+--SELECT TOP 574158 * FROM #cohort_sdoh_records ORDER BY PERSON_ID ASC
+
+--Get sex, race/ethnicity, rurality, age, zip code
+USE CDWWork
+GO
+DROP TABLE IF EXISTS #demographics
+SELECT DISTINCT
+	coh.*,
+	sp.Gender,
+	sp.BirthDateTime,
+	sp.VeteranFlag,
+	r.Race,
+	eth.Ethnicity
+FROM SCS_EEGUtil.EEG.rz_PTE_all_epileptic AS coh
+	INNER JOIN SPatient.SPatient AS sp
+	ON sp.PatientICN = coh.PatientICN
+	INNER JOIN PatSub.PatientEthnicity AS eth
+	ON eth.PatientSID = sp.PatientSID AND eth.Sta3n = sp.Sta3n
+	INNER JOIN PatSub.PatientRace AS r
+	ON r.PatientSID = sp.PatientSID AND r.Sta3n = sp.Sta3n
+
+--Get utilization records/outcomes -- should this be compared to a group of the non PTE?
+--Get their ASMs
+DROP TABLE IF EXISTS #asm_concepts
+SELECT DISTINCT
+	c.CONCEPT_ID,
+	c.CONCEPT_NAME
+INTO #asm_concepts
+FROM OMOPV5.CONCEPT AS c
+WHERE
+	1=1
+	AND (
+		LOWER(c.CONCEPT_NAME) LIKE '%brivaracetam%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%cannabidiol%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%carbamazepine%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%cenobamate%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%clobazam%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%diazepam%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%divalproex%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%eslicarbazepine%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%ethosuximide%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%ethotoin%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%ezogabine%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%felbamate%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%fosphenytoin%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%gabapentin%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%lacosamide%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%lamotrigine%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%levetiracetam%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%methsuximide%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%midazolam%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%oxcarbazepine%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%perampanel%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%phenobarbital%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%phenytoin%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%pregabalin%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%primidone%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%rufinamide%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%tiagabine%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%topiramate%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%valproic%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%valproate%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%vigabatrin%'
+		OR LOWER(c.CONCEPT_NAME) LIKE '%zonisamide%'
+		)
+	AND c.DOMAIN_ID IN (SELECT DOMAIN_ID FROM OMOPV5.DOMAIN WHERE LOWER(DOMAIN_NAME) = 'drug')
+	AND c.STANDARD_CONCEPT = 'S'
+	AND c.CONCEPT_NAME NOT LIKE '%extract%'
+	AND c.CONCEPT_NAME NOT LIKE '% / %'
+	AND LOWER(c.CONCEPT_NAME) NOT LIKE '%chlordiazepam%'
+	AND LOWER(c.CONCEPT_NAME) NOT LIKE '%diazepam%oral%'
+	AND LOWER(c.CONCEPT_NAME) NOT LIKE '%diazepam%syringe%'
+	AND LOWER(c.CONCEPT_NAME) NOT LIKE '%diazepam%intramusc%'
+	AND LOWER(c.CONCEPT_NAME) NOT LIKE '%midazolam%oral%'
+	AND LOWER(c.CONCEPT_NAME) NOT LIKE '%midazolam%syringe%'
+	AND LOWER(c.CONCEPT_NAME) NOT LIKE '%midazolam%intramusc%'
+	AND LOWER(c.CONCEPT_NAME) NOT LIKE '%midazolam%inject%'
+
+DROP TABLE IF EXISTS #asm_exposures_cohort
+SELECT DISTINCT
+	coh.PERSON_ID,
+	coh.PatientICN,
+	de.DRUG_CONCEPT_ID,
+	asm.CONCEPT_NAME AS DRUG_NAME,
+	de.DRUG_EXPOSURE_START_DATE,
+	de.DRUG_EXPOSURE_END_DATE,
+	de.QUANTITY,
+	de.DAYS_SUPPLY,
+	ds.AMOUNT_VALUE,
+	au.CONCEPT_NAME AS AMOUNT_UNIT,
+	di.CONCEPT_NAME AS INGREDIENT,
+	de.QUANTITY * ds.AMOUNT_VALUE / de.DAYS_SUPPLY AS DAILY_DOSE,
+	de.ROUTE_SOURCE_VALUE,
+	de.x_Source_Table
+INTO #asm_exposures_cohort
+FROM (SELECT * FROM SCS_EEGUtil.EEG.rz_PTE_all_epileptic WHERE IS_PTE = 1) AS coh
+	INNER JOIN OMOPV5.DRUG_EXPOSURE AS de ON de.PERSON_ID = coh.PERSON_ID
+	INNER JOIN #asm_concepts AS asm ON asm.CONCEPT_ID = de.DRUG_CONCEPT_ID
+	INNER JOIN OMOPV5.DRUG_STRENGTH AS ds ON ds.DRUG_CONCEPT_ID = de.DRUG_CONCEPT_ID
+	INNER JOIN OMOPV5.CONCEPT AS au ON au.CONCEPT_ID = ds.AMOUNT_UNIT_CONCEPT_ID
+	INNER JOIN OMOPV5.CONCEPT AS di ON di.CONCEPT_ID = ds.INGREDIENT_CONCEPT_ID
+WHERE
+	1=1
+	AND ds.AMOUNT_VALUE != 0.0
+	AND de.DAYS_SUPPLY != 0
+	--AND asm.CONCEPT_NAME NOT LIKE '%gabapentin%'
+	AND LOWER(asm.CONCEPT_NAME) NOT LIKE '%inject%'
+	AND LOWER(asm.CONCEPT_NAME) NOT LIKE '%intramusc%'
+	AND LOWER(asm.CONCEPT_NAME) NOT LIKE '%syringe%'
+
+SELECT * FROM #asm_exposures_cohort
+
+USE [SCS_EEGUtil]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [EEG].[rz_PTE_ASMs](
+       [PERSON_ID] [nvarchar](25) NULL,
+       [DRUG_CONCEPT_ID] [nvarchar](50) NULL,
+       [DRUG_NAME] [nvarchar](200) NULL,
+       [DRUG_EXPOSURE_START_DATE] [date] NULL,
+       [DRUG_EXPOSURE_END_DATE] [date] NULL,
+       [QUANTITY] [nvarchar](10) NULL,
+       [DAYS_SUPPLY] [nvarchar](5) NULL,
+       [AMOUNT_VALUE] [varchar](20) NULL,
+       [AMOUNT_UNIT] [nvarchar](50) NULL,
+       [INGREDIENT] [nvarchar](50) NULL,
+       [x_Source_Table] [nvarchar](25) NULL,
+       [PatientICN] [nvarchar](15) NULL,
+       [DAILY_DOSE] [nvarchar](50) NULL,
+       [ROUTE_SOURCE_VALUE] [nvarchar](50) NULL
+)
+GO
+
+INSERT [SCS_EEGUtil].[EEG].[rz_PTE_ASMs] ([PERSON_ID], [DRUG_CONCEPT_ID], [DRUG_NAME]
+, [DRUG_EXPOSURE_START_DATE], [DRUG_EXPOSURE_END_DATE], [QUANTITY], [DAYS_SUPPLY], [AMOUNT_VALUE]
+, [AMOUNT_UNIT], [INGREDIENT], [x_Source_Table], [PatientICN], [DAILY_DOSE], [ROUTE_SOURCE_VALUE])
+SELECT PERSON_ID, DRUG_CONCEPT_ID, DRUG_NAME
+, DRUG_EXPOSURE_START_DATE, DRUG_EXPOSURE_END_DATE, QUANTITY, DAYS_SUPPLY, AMOUNT_VALUE
+, AMOUNT_UNIT, INGREDIENT, x_Source_Table, PatientICN, DAILY_DOSE, ROUTE_SOURCE_VALUE
+FROM #asm_exposures_cohort
+
+--Get MRI
+USE CDWWork
+GO
+DROP TABLE IF EXISTS #mri
+SELECT DISTINCT
+	coh.PERSON_ID,
+	coh.PatientICN,
+	p.VProcedureDateTime,
+	cpt.CPTCode,
+	cpt.CPTDescription
+INTO #mri
+FROM SCS_EEGUtil.EEG.rz_PTE_all_epileptic AS coh
+	INNER JOIN CDWWork.SPatient.SPatient AS sp
+	ON sp.PatientICN = coh.PatientICN
+	INNER JOIN CDWWork.Outpat.WorkloadVProcedure AS p
+	ON p.PatientSID = sp.PatientSID AND p.Sta3n = sp.Sta3n
+	INNER JOIN CDWWork.Dim.CPT AS cpt
+	ON cpt.CPTSID = p.CPTSID
+WHERE cpt.CPTCode IN ('70551', '70552', '70553', '70557', '70558', '70559')
+
+SELECT PERSON_ID, PatientICN, VProcedureDateTime, CPTCode, CPTDescription FROM #mri ORDER BY PERSON_ID, VProcedureDateTime 
+
+--Get EEG
+USE CDWWork
+GO
+DROP TABLE IF EXISTS #eeg
+SELECT DISTINCT
+	coh.PERSON_ID,
+	coh.PatientICN,
+	psc.StopCode AS PRIMARY_SC,
+	ssc.StopCode AS SECONDARY_SC,
+	v.VisitDateTime,
+	v.Sta3n
+INTO #eeg
+FROM SCS_EEGUtil.EEG.rz_PTE_all_epileptic AS coh
+	LEFT JOIN OMOPV5.VISIT_OCCURRENCE AS vo
+	ON vo.PERSON_ID = coh.PERSON_ID
+	LEFT JOIN OUTPAT.Visit AS v
+	ON v.VisitSID = vo.x_Source_ID_Primary
+	LEFT JOIN DIM.StopCode AS psc
+	ON psc.StopCodeSID = v.PrimaryStopCodeSID
+	LEFT JOIN DIM.StopCode AS ssc
+	ON ssc.StopCodeSID = v.SecondaryStopCodeSID
+WHERE
+	1=1
+	AND psc.StopCode = 106
+	OR psc.StopCode = 128
+	OR ssc.StopCode = 106
+	OR ssc.StopCode = 128
+;
+
+SELECT * FROM #eeg
+
+--Get CT
+USE CDWWork
+GO
+DROP TABLE IF EXISTS #ct
+SELECT DISTINCT
+	coh.PERSON_ID,
+	coh.PatientICN,
+	p.VProcedureDateTime,
+	cpt.CPTCode,
+	cpt.CPTDescription
+INTO #ct
+FROM SCS_EEGUtil.EEG.rz_PTE_all_epileptic AS coh
+	INNER JOIN CDWWork.SPatient.SPatient AS sp
+	ON sp.PatientICN = coh.PatientICN
+	INNER JOIN CDWWork.Outpat.WorkloadVProcedure AS p
+	ON p.PatientSID = sp.PatientSID AND p.Sta3n = sp.Sta3n
+	INNER JOIN CDWWork.Dim.CPT AS cpt
+	ON cpt.CPTSID = p.CPTSID
+WHERE cpt.CPTCode IN ('70450', '70460', '70470')
+
+SELECT * FROM #ct ORDER BY PERSON_ID, VProcedureDateTime 
+
+--Get ECoE usage
+--Just save the counts of ECoE visits
+DROP TABLE IF EXISTS #ecoe_stops
+SELECT DISTINCT
+	coh.PERSON_ID,
+	COUNT(DISTINCT vo.VISIT_START_DATE) AS N_ECoE_VISITS
+INTO #ecoe_stops
+FROM SCS_EEGUtil.EEG.rz_PTE_all_epileptic AS coh
+	LEFT JOIN OMOPV5.VISIT_OCCURRENCE AS vo
+	ON vo.PERSON_ID = coh.PERSON_ID
+	LEFT JOIN OUTPAT.Visit AS v
+	ON v.VisitSID = vo.x_Source_ID_Primary
+	LEFT JOIN DIM.StopCode AS psc
+	ON psc.StopCodeSID = v.PrimaryStopCodeSID
+	LEFT JOIN DIM.StopCode AS ssc
+	ON ssc.StopCodeSID = v.SecondaryStopCodeSID
+WHERE 
+	1=1
+	AND psc.StopCode = 345 OR ssc.StopCode = 345
+	AND v.Sta3n IN ('523', '689', '512', '558', '652', '521', '546', '573', '607', '580', '671', '648', '663', '662', '501', '691', '618') -- why only these
+GROUP BY coh.PERSON_ID
+
+SELECT * FROM #ecoe_stops
+
+--Get neurology clinic usage
+--Save counts of neurology clinic visits
+
+DROP TABLE IF EXISTS #neuro_stops
+SELECT DISTINCT
+coh.PERSON_ID,
+CAST(COUNT(DISTINCT vo.VISIT_START_DATE) AS DECIMAL) / ((DATEDIFF(DAY, MIN(coh.FIRST_DX_DATE), '2023-01-01') + 1) / 365.25)  AS N_NEURO_VISITS,
+MIN(CAST(coh.FIRST_DX_DATE AS DATE)) AS DX,
+MIN(CAST(vo.VISIT_START_DATE AS DATE)) AS VSD,
+MIN(CAST(v.VisitDateTime AS DATE)) AS VDT
+INTO #neuro_stops
+FROM (SELECT * FROM SCS_EEGUtil.EEG.rz_PTE_all_epileptic WHERE IS_PTE = 1) AS coh
+	LEFT JOIN OMOPV5.VISIT_OCCURRENCE AS vo
+	ON vo.PERSON_ID = coh.PERSON_ID
+	LEFT JOIN OUTPAT.Visit AS v
+	ON v.VisitSID = vo.x_Source_ID_Primary
+	LEFT JOIN DIM.StopCode AS psc
+	ON psc.StopCodeSID = v.PrimaryStopCodeSID
+	LEFT JOIN DIM.StopCode AS ssc
+	ON ssc.StopCodeSID = v.SecondaryStopCodeSID
+WHERE 
+	(psc.StopCode = 315 OR ssc.StopCode = 315)
+	AND CAST(v.VisitDateTime AS DATE) > CAST(coh.FIRST_DX_DATE AS DATE)
+	AND CAST(v.VisitDateTime AS DATE) < CAST('2023-01-01' AS DATE)
+GROUP BY coh.PERSON_ID
+
+SELECT * FROM #neuro_stops
+
+--Get primary care clinic usage
+--Save counts of primary care clinic visits
+DROP TABLE IF EXISTS #pcp_stops
+SELECT DISTINCT
+coh.PERSON_ID,
+CAST(COUNT(DISTINCT vo.VISIT_START_DATE) AS DECIMAL) / ((DATEDIFF(DAY, MIN(coh.FIRST_DX_DATE), '2023-01-01') + 1) / 365.25) AS PCP_VISITS_PER_YEAR,
+MIN(coh.FIRST_DX_DATE) AS FIRST_DX_DATE
+INTO #pcp_stops
+FROM [ORD_Haneef_202402056D].[Dflt].[PTE_COHORT_IDs] AS coh
+	LEFT JOIN OMOPV5.VISIT_OCCURRENCE AS vo
+	ON vo.PERSON_ID = coh.PERSON_ID
+	LEFT JOIN OUTPAT.Visit AS v
+	ON v.VisitSID = vo.x_Source_ID_Primary
+	LEFT JOIN DIM.StopCode AS psc
+	ON psc.StopCodeSID = v.PrimaryStopCodeSID
+	LEFT JOIN DIM.StopCode AS ssc
+	ON ssc.StopCodeSID = v.SecondaryStopCodeSID
+WHERE 
+	((psc.StopCode = 301 OR ssc.StopCode = 301) --General IM
+	OR (psc.StopCode = 323 OR ssc.StopCode = 323)) --Primary Care Medicine
+	AND vo.VISIT_START_DATE > CAST(coh.FIRST_DX_DATE AS DATE)
+	AND vo.VISIT_START_DATE < CAST('2023-01-01' AS DATE)
+GROUP BY coh.PERSON_ID
+
+SELECT * FROM #pcp_stops
+
+--ER visits for seizure related diagnosis
+--We are interested in number of visits
+
+--Figure out how to do this without OMOP later just so we can learn
+
+--SHOULD CONCEPT 262 ER + inpatient visit ever be used?
+
+--Inpat = 9201
+--ED = 9203
+
+--number of days hospitalized for a seizure related diagnosis
+--We want number of days hospitalized and number of separate hospitalizations
+DROP TABLE IF EXISTS #pte
+SELECT * INTO #pte FROM SCS_EEGUtil.EEG.rz_PTE_all_epileptic
+WHERE IS_PTE = 1
+
+DROP TABLE IF EXISTS #ed
+SELECT
+	vo.VISIT_START_DATE,
+	vo.VISIT_END_DATE,
+	vo.x_Source_ID_Primary,
+	coh.PERSON_ID,
+	coh.FIRST_DX_DATE
+INTO #ed
+FROM #pte AS coh
+LEFT JOIN CDWWork.OMOPV5.CONDITION_OCCURRENCE AS co
+	ON co.PERSON_ID = coh.PERSON_ID
+LEFT JOIN CDWWork.OMOPV5.VISIT_OCCURRENCE AS vo
+	ON vo.VISIT_OCCURRENCE_ID = co.VISIT_OCCURRENCE_ID
+WHERE 
+	(co.CONDITION_CONCEPT_ID IN (SELECT CONCEPT_ID FROM #final_seizure_concepts)
+	OR co.CONDITION_CONCEPT_ID IN (SELECT CONCEPT_ID FROM #final_epilepsy_concepts))
+	AND vo.VISIT_CONCEPT_ID = 9203 --ED
+	AND vo.VISIT_START_DATE > CAST(coh.FIRST_DX_DATE AS DATE)
+	AND vo.VISIT_START_DATE < '2023-01-01'
+
+DROP TABLE IF EXISTS #inpat
+SELECT
+	vo.VISIT_START_DATE,
+	vo.VISIT_END_DATE,
+	vo.x_Source_ID_Primary,
+	coh.PERSON_ID,
+	coh.FIRST_DX_DATE
+INTO #inpat
+FROM #pte AS coh
+LEFT JOIN CDWWork.OMOPV5.CONDITION_OCCURRENCE AS co
+	ON co.PERSON_ID = coh.PERSON_ID
+LEFT JOIN CDWWork.OMOPV5.VISIT_OCCURRENCE AS vo
+	ON vo.VISIT_OCCURRENCE_ID = co.VISIT_OCCURRENCE_ID
+WHERE 
+	(co.CONDITION_CONCEPT_ID IN (SELECT CONCEPT_ID FROM #final_seizure_concepts)
+	OR co.CONDITION_CONCEPT_ID IN (SELECT CONCEPT_ID FROM #final_epilepsy_concepts))
+	AND vo.VISIT_CONCEPT_ID = 9201
+	AND vo.VISIT_START_DATE > CAST(coh.FIRST_DX_DATE AS DATE)
+	AND vo.VISIT_START_DATE < '2023-01-01'
+
+SELECT * FROM #inpat --WHERE PERSON_ID = 7873406
+SELECT * FROM #ed
+
+--Getting the cohort
+SELECT COUNT(DISTINCT PatientICN) FROM SCS_EEGUtil.EEG.rz_PTE_all_epileptic
+
+--Get the addresses
+DROP TABLE IF EXISTS #cohort_zip4
+SELECT DISTINCT
+	coh.*,
+	ad.Zip4,
+	ad.AddressChangeDateTime
+INTO #cohort_zip4
+FROM (SELECT PERSON_ID, PatientICN, FIRST_DX_DATE FROM SCS_EEGUtil.EEG.rz_PTE_all_epileptic WHERE IS_PTE = 1) AS coh
+LEFT JOIN CDWWork.SPatient.SPatient AS sp
+	ON sp.PatientICN = coh.PatientICN
+LEFT JOIN CDWWork.SPatient.SPatientAddress AS ad
+	--ON ad.PatientICN = coh.PatientICN
+	ON ad.Sta3n = sp.Sta3n AND ad.PatientSID = sp.PatientSID
+--WHERE coh.FIRST_DX_DATE > ad.AddressChangeDateTime
+;
+
+SELECT DISTINCT PERSON_ID FROM #cohort_zip4 WHERE Zip4 IS NOT NULL AND LEN(Zip4) = 9 ORDER BY PERSON_ID --GROUP BY PERSON_ID HAVING COUNT(PERSON_ID) >= 2
+--Using GISAddress Table (No dates on the address)
+--6 people don't have any records (OK)
+--301 people have multiple records
+--Potentially usable, but we don't know when the address is from!
+
+--Using Address Table
+--Everyone has 2+ records, but from when?
+--PostalCode is pretty much NULL
+--Address Start and End is NULL quite often, which makes sense. Typically, an address is only associated with a single visit, so you get one datetime.
+--Zip4 contains the Zip if Zip4 is not known, it appears. 
+--So there is pretty much always an AddressChangeDateTime
+
+--So what do we do if we only have Zip? We filter the ADI data using 5 digit zip.
+--Unique zip data set will just be 5 digit zips
+--Keep all rows which start with a given 5 digits instead of matching exactly
+--Then, when calculating ADI for someone for a given location, if it is 5 digits then average across all matching 5 digits, if it is 9 digits then get the ADI
+--If a given zip is 5 digits, but exists in 9 digit form as well for a person, then remove the row which is 5 digits
+--Then, get a single ADI for each person
+
+WITH ZipCode9 AS (
+	SELECT PERSON_ID, Zip4
+	FROM #cohort_zip4
+	WHERE LEN(Zip4) = 9
+),
+ZipCode5 AS (
+	SELECT PERSON_ID, Zip4
+	FROM #cohort_zip4
+	WHERE LEN(Zip4) = 5
+),
+Matched5 AS (
+	SELECT z5.PERSON_ID, z5.Zip4
+	FROM ZipCode5 AS z5
+	INNER JOIN ZipCode9 AS z9
+		ON z5.PERSON_ID = z9.PERSON_ID AND z5.Zip4 = LEFT(z9.Zip4, 5)
+)
+SELECT DISTINCT coh.PERSON_ID, coh.Zip4
+FROM #cohort_zip4 AS coh
+LEFT JOIN Matched5 AS m
+	ON coh.PERSON_ID = m.PERSON_ID AND coh.Zip4 = m.Zip4
+WHERE LEN(coh.Zip4) = 9 OR m.Zip4 IS NULL AND coh.Zip4 IS NOT NULL
+--ORDER BY coh.PERSON_ID
+
+--I want to take all locations someone has lived after their diagnosis (or has lived in general) and then average the ADI
+--I think this will give the most representative value
+SELECT COUNT(DISTINCT PERSON_ID) FROM #cohort_zip4
+--Note that 1960 patients only have this, after their diagnosis. Checking the amount who have it for all time (entire cohort) 
+
+--Getting CC utilization amount
+--Writing a table into the research DB
+/*
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [ORD_Haneef_202402056D].[Dflt].[PTE_COHORT_IDs](
+	[PERSON_ID] [nvarchar](25) NULL,
+	[PatientICN] [nvarchar](15) NULL
+)
+GO
+*/
+
+INSERT [ORD_Haneef_202402056D].[Dflt].[PTE_COHORT_IDs] (
+	[PERSON_ID], 
+	[PatientICN])
+SELECT PERSON_ID, PatientICN
+FROM #pte
+
+/*
+ALTER TABLE [ORD_Haneef_202402056D].[Dflt].[PTE_COHORT_IDs]
+ADD FIRST_DX_DATE date
+
+UPDATE [ORD_Haneef_202402056D].[Dflt].[PTE_COHORT_IDs]
+SET FIRST_DX_DATE = pte.FIRST_DX_DATE
+FROM #pte AS pte
+WHERE [ORD_Haneef_202402056D].[Dflt].[PTE_COHORT_IDs].PERSON_ID = pte.PERSON_ID
+*/
+
+/*Possible measures of CC utilization include:
+-claim ICDs (total or seizure/epilepsy-related)
+-claim procedures
+-total claims/total claim amt
+
+Which dates should be assessed? Or should I just pull all time like above
+All time, but after first dx date
+*/
+
+--Total individual claims
+USE [ORD_Haneef_202402056D]
+GO
+
+DROP TABLE IF EXISTS #cc_all_claims
+SELECT DISTINCT
+	CAST(COUNT(cl.Adjudication_Date) AS DECIMAL) / ((DATEDIFF(DAY, MIN(coh.FIRST_DX_DATE), '2023-01-01') + 1) / 365.25) AS N_CLAIMS,
+	CAST(
+		COUNT(
+			CASE WHEN 
+			cl.Primary_ICD LIKE 'G40%' 
+			OR cl.Primary_ICD = 'R404' 
+			OR cl.Primary_ICD = 'R561' 
+			OR cl.Primary_ICD = 'R569' 
+			THEN 1 END)
+		AS DECIMAL) / ((DATEDIFF(DAY, MIN(coh.FIRST_DX_DATE), '2023-01-01') + 1) / 365.25) AS N_SZ_RELATED,
+	coh.PERSON_ID
+	--MIN(cl.Adjudication_Date) AS Adjudication_Date,
+	--MIN(coh.FIRST_DX_DATE) AS FIRST_DX_DATE
+INTO #cc_all_claims
+FROM [ORD_Haneef_202402056D].[Dflt].[PTE_COHORT_IDs] AS coh
+	LEFT JOIN Src.IVC_CDS_CDS_Claim_Header AS cl
+	ON cl.Patient_ICN = coh.PatientICN
+WHERE 1=1
+	AND cl.Adjudication_Date >= coh.FIRST_DX_DATE
+GROUP BY coh.PERSON_ID
+
+SELECT * FROM #cc_all_claims
+
+--Seizure/Epilepsy related ICDs

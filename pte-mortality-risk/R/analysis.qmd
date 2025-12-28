@@ -1,0 +1,1300 @@
+---
+title: "PTE vs. Non-PTE Mortality"
+author: "Rohan Nagabhirava"
+date: "`r Sys.Date()`"
+css: styles.css
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+options(encoding = "UTF-8")
+```
+
+# Loading Libraries
+
+```{r libraries, include=FALSE}
+library("dplyr")
+library("ggplot2")
+library("ggfortify")
+library("ggsci")
+library("glue")
+library("gridExtra")
+library("gt")
+library("gtsummary")
+library("lubridate")
+library("patchwork")
+library("ranger")
+library("rlang")
+library("RODBC")
+library("survival")
+library("survminer")
+library("tidyr")
+```
+
+# Accessory Functions
+
+```{r accessories}
+convert_datetime_columns <- function(df) {
+  new_df <- df
+  datetime_columns <- colnames(df)[grepl("DateTime", colnames(df))]
+  new_df[datetime_columns] <- lapply(
+    df[datetime_columns],
+    function(x) {
+      parsed_dates = as_date(parse_date_time(x, orders = c("ymd HMS", "ymd")))
+      return(parsed_dates)
+    }
+  )
+  return(new_df) 
+}
+
+# sometimes latest visit is after death? due to scheduled visits?
+calculate_follow_up <- function(
+    FirstDXDateTime, 
+    DeathDateTime, 
+    LatestVisitDateTime,
+    units
+) {
+  follow_up <- ifelse(
+    !is.na(DeathDateTime),
+    interval(FirstDXDateTime, DeathDateTime) %>% 
+      as.numeric(units),
+    interval(FirstDXDateTime, LatestVisitDateTime) %>% 
+      as.numeric(units)
+  )
+  return(follow_up)
+}
+
+get_custom_theme <- function() {
+  custom_theme <- theme_grey() + theme(
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
+  return(custom_theme)
+}
+
+
+calculate_range <- function(data, variable, by, ...) {
+  range_value <- max(data[[variable]], na.rm = TRUE) - min(data[[variable]], na.rm = TRUE)
+  tibble::tibble(range = range_value)
+}
+
+italicize_parentheses <- function(x) {
+  gsub("\\(([^)]+)\\)", "(<i>\\1</i>)", x)
+}
+  
+format_pvalue <- function(p) {
+  ifelse(p < 0.001, "<0.001***",
+    ifelse(p < 0.01, sprintf("%.3f**", p),
+      ifelse(p < 0.05, sprintf("%.3f*", p),
+        sprintf("%.3f", p)
+      )
+    )
+  )
+}
+
+hist_plot <- function(data, x, binwidth, min, max, step, title, xlabel, ylabel) {
+  plt <- ggplot(data = data, aes_string(x = x, fill = "as.factor(PTE)", y = "..density..")) +
+    geom_histogram(position = "identity", alpha = 0.5, binwidth = binwidth, na.rm = TRUE) +
+    scale_fill_manual(
+      values = c("0" = "blue", "1" = "red"),
+      labels = c("0" = "Non-PTE", "1" = "PTE")
+    ) +
+    scale_x_continuous(
+      breaks = seq(min, max, by = step),
+      labels = seq(min, max, by = step)
+    ) +
+    labs(
+      title = title,
+      x = xlabel,
+      y = ylabel,
+      fill = "PTE"
+    ) +
+    get_custom_theme() +
+    theme(
+      legend.position = c(0.8, 0.8), 
+      legend.background = element_rect(fill = "white", color = "black"),
+      legend.title = element_blank()
+    )
+  return(plt)
+}
+
+bar_plot <- function(data, x, title, xlabel, ylabel) {
+  summary_data <- data %>%
+    group_by(across(all_of(c("PTE", x)))) %>%
+    summarise(count = n()) %>%
+    mutate(proportion = count / sum(count)) %>%
+    ungroup()
+
+  plt <- ggplot(data = summary_data, aes_string(x = x, y = "proportion", fill = "as.factor(PTE)")) +
+    geom_bar(stat = "identity", position = "dodge", alpha = 0.5, color = "black") +
+    scale_fill_manual(
+      values = c("0" = "blue", "1" = "red"),
+      labels = c("0" = "Non-PTE", "1" = "PTE")
+    ) +
+    geom_text(
+      aes(label = scales::percent(proportion, accuracy = 0.1)),
+      position = position_dodge(width = 0.9),
+      vjust = -0.5,
+      color = "black"
+    ) +
+    labs(
+      title = title,
+      x = xlabel,
+      y = ylabel,
+      fill = "PTE"
+    ) +
+    get_custom_theme() +
+    theme(
+      legend.position = c(0.8, 0.8),
+      legend.background = element_rect(fill = "white", color = "black"),
+      legend.title = element_blank()  
+    )
+  return(plt)
+}
+
+calculate_weights <- function(data, cols, group) {
+  index <- data[, c(cols, group)]
+  
+  tab1 <- table(data[cols]) / nrow(data)
+  tab2 <- table(index) / nrow(data)
+
+  n_groups <- dim(tab2)[length(cols) + 1]
+  rwt <- rep(tab1, times = n_groups) / tab2
+
+  return(rwt[as.matrix(index)])
+}
+
+my_km_plot <- function(km_fit, title) {
+  n_categories <- length(km_fit$strata) / 2
+  palette_opaque <- pal_jama()(n_categories)
+  palette_translucent <- alpha(palette_opaque, 0.4)
+  palette <- as.vector(rbind(palette_opaque, palette_translucent))
+  
+  if (grepl("Year of Onset", title)) {
+    max_years = 5
+  }
+  else {
+    max_years = 10
+  }
+  
+  surv_plt <- ggsurvplot(
+    km_fit,
+    data = data,
+    censor = FALSE,
+    conf.int = TRUE,
+
+    xlim = c(0, max_years),
+    xlab = "Years",
+    break.x.by = 1,
+    ylim = c(0, 1),
+    ylab = "Survival",
+    break.y.by = 0.1,
+    surv.scale = "percent",
+
+    legend = "right",
+    legend.title = element_blank(),
+    legend.text = element_text(size = 6),
+
+    title = title,
+    ggtheme = get_custom_theme(),
+    palette = palette
+  )
+  return(surv_plt)
+}
+
+assign_asterisks <- function(pvalue) {
+  if (pvalue < 0.001) {
+    return("***")
+  }
+  else if (pvalue < 0.01) {
+    return("**")
+  }
+  else if (pvalue < 0.05) {
+    return("**")
+  }
+  return("")
+}
+  
+    
+```
+
+# Query
+
+```{r query, include=FALSE}
+conn <- tryCatch({
+  odbcDriverConnect(
+    "driver={SQL Server};server=vhacdwrb03.vha.med.va.gov;database=SCS_EEGUtil;trusted_connection=true"
+  )
+}, warning = function(w) {
+  message("Not connected to VA network, loading fake-data.csv...")
+  return(NULL)
+}, error = function(e) {
+  message("Not connected to VA network, loading fake-data.csv...")
+  return(NULL)
+})
+
+if (is.null(conn)) {
+  raw_data <- read.csv("../dummy_data/combined.csv")
+} else {
+  raw_data <- sqlQuery(
+    conn,
+    "SELECT coh.PatientICN, coh.FirstDXDateTime, coh.BirthDateTime, coh.LatestVisitDateTime, coh.DeathDateTime, dem.Gender, dem.Race, dem.Ethnicity, dem.ServiceConnectedPercent, elix.ECI, tbi.TBIDateTime, tbi.TBIICDCode, tbi.ICD10 FROM[EEG].[rn_cohort2] coh INNER JOIN [EEG].[rn_demographics] dem ON coh.PatientICN = dem.PatientICN INNER JOIN [EEG].[rn_elix2] elix ON coh.PatientICN = elix.PatientICN LEFT JOIN [EEG].[rn_tbi] tbi ON coh.PatientICN = tbi.PatientICN ;"
+  )
+  odbcClose(conn)
+}
+
+```
+
+# Data Transformation
+
+```{r data-transformation, include=FALSE}
+data <- raw_data
+
+data <- convert_datetime_columns(data)
+
+data[["DeathObserved"]] <- ifelse(
+  !is.na(data[["DeathDateTime"]]),
+  TRUE,
+  FALSE
+)
+
+
+data[["YearsOfFollowUp"]] <- ifelse(
+  !is.na(data[["DeathDateTime"]]),
+  interval(data[["FirstDXDateTime"]], data[["DeathDateTime"]]) %>% 
+    as.numeric("years"),
+  interval(data[["FirstDXDateTime"]], data[["LatestVisitDateTime"]]) %>% 
+    as.numeric("years")
+)
+  
+
+data[["YearsFromTBIToPTE"]] <- interval(
+  data[["TBIDateTime"]], 
+  data[["FirstDXDateTime"]]
+) %>%
+  as.numeric("years")
+
+data[["PTE"]] <- ifelse(
+  is.na(data[["YearsFromTBIToPTE"]]), 
+  0, 
+  as.numeric(data[["YearsFromTBIToPTE"]] < 5)
+)
+
+data[["AgeOfOnset"]] <- interval(
+  data[["BirthDateTime"]], 
+  data[["FirstDXDateTime"]]
+) %>%
+  as.numeric("years")
+
+data[["YearOfOnset"]] <- as.numeric(
+  format(data[["FirstDXDateTime"]], "%Y")
+)
+
+data[["ServiceConnectedPercent"]][is.na(data[["ServiceConnectedPercent"]])] <- 0
+
+age_breaks <- c(0, 30, 40, 50, 60, 70, 80, Inf)
+age_labels <- c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+")
+data[["AgeOfOnsetDiscrete"]] <- cut(
+  round(data[["AgeOfOnset"]]),
+  breaks = age_breaks,
+  labels = age_labels,
+  right = FALSE
+)
+
+year_breaks <- c(2004, 2009, 2014, 2019, 2024)
+year_labels <- c("2004-2008", "2009-2013", "2014-2018", "2019-2023")
+data[["YearOfOnsetDiscrete"]] <- cut(
+  data[["YearOfOnset"]],
+  breaks = year_breaks,
+  labels = year_labels,
+  right = FALSE
+)
+
+eci_breaks <- c(-Inf, 0, 25, 50, Inf)
+eci_labels <- c("[-inf,0)", "[0,25)", "[25,50)", "[50,inf)")
+data[["ECIDiscrete"]] <- cut(
+  data[["ECI"]],
+  breaks = eci_breaks,
+  labels = eci_labels,
+  right = FALSE
+)
+
+service_connected_breaks <- c(0, 10, 40, 70, 100, Inf)
+service_connected_labels <- c("0", "10-30", "40-60", "70-90", "100")
+data[["ServiceConnectedPercentDiscrete"]] <- cut(
+  data[["ServiceConnectedPercent"]],
+  breaks = service_connected_breaks,
+  labels = service_connected_labels,
+  right = FALSE
+)
+
+# sometimes death before dx?
+data <- data[data$YearsOfFollowUp >= 0, ]
+data <- data[2004 <= year(data$FirstDXDateTime) & year(data$FirstDXDateTime) < 2024, ]
+data <- data[data$AgeOfOnset > 0, ]
+```
+
+# Variable Distributions
+Here, we show the distributions of the continuous variables of interest. We also show the distributions of the discretized versions of each of these variables after being grouped into buckets. 
+
+```{r distributions}
+# hist_plot(
+#   data = data,
+#   x = "AgeOfOnset",
+#   binwidth = 1,
+#   min = 0,
+#   max = 100,
+#   step = 10,
+#   title = "Age of Onset by PTE Status",
+#   xlabel = "Age of Onset",
+#   ylabel = "Proportion"
+# )
+# 
+# bar_plot(
+#   data = data,
+#   x = "AgeOfOnsetDiscrete",
+#   title = "Age of Onset (Discrete) by PTE Status",
+#   xlabel = "Age of Onset (Discrete)",
+#   ylabel = "Proportion"
+# )
+# 
+# hist_plot(
+#   data = data,
+#   x = "YearOfOnset",
+#   binwidth = 1,
+#   min = 2004,
+#   max = 2024,
+#   step = 5,
+#   title = "Year of Onset by PTE Status",
+#   xlabel = "Year of Onset",
+#   ylabel = "Proportion"
+# )
+# 
+# bar_plot(
+#   data = data,
+#   x = "YearOfOnsetDiscrete",
+#   title = "Year of Onset (Discrete) by PTE Status",
+#   xlabel = "Year of Onset (Discrete)",
+#   ylabel = "Proportion"
+# )
+# 
+# hist_plot(
+#   data = data,
+#   x = "ECI",
+#   binwidth = 1,
+#   min = -30,
+#   max = 100,
+#   step = 10,
+#   title = "ECI by PTE Status",
+#   xlabel = "ECI",
+#   ylabel = "Proportion"
+# )
+# 
+# bar_plot(
+#   data = data,
+#   x = "ECIDiscrete",
+#   title = "ECI (Discrete) by PTE Status",
+#   xlabel = "ECI (Discrete)",
+#   ylabel = "Proportion"
+# )
+# 
+# hist_plot(
+#   data = data,
+#   x = "ServiceConnectedPercent",
+#   binwidth = 10,
+#   min = 0,
+#   max = 100,
+#   step = 10,
+#   title = "Service Connection by PTE Status",
+#   xlabel = "Service Connection (%)",
+#   ylabel = "Proportion"
+# )
+# 
+# bar_plot(
+#   data = data,
+#   x = "ServiceConnectedPercentDiscrete",
+#   title = "Service Connection (Discrete) by PTE Status",
+#   xlabel = "Service Connection (Discrete)",
+#   ylabel = "Proportion"
+# )
+# 
+# ggplot(data = data, aes(x = YearsFromTBIToPTE)) +
+#   geom_histogram(position = "identity", alpha = 0.5, binwidth = 1, na.rm = TRUE) +
+#   scale_x_continuous(
+#     breaks = seq(0, 25, by = 5),
+#     labels = seq(0, 25, by = 5)  
+#   ) +
+#   labs(
+#     title = "Years Elapsed from TBI to Epilepsy Diagnosis",
+#     x = "Years",
+#     y = "Count"
+#   ) +
+#   get_custom_theme()
+
+```
+
+# Demographics
+
+This section compares the variables collected in this study between individuals with PTE and non-PTE. See https://pubmed.ncbi.nlm.nih.gov/28498196 for ECI calculation.
+
+```{r demographics, include=FALSE}
+# race_counts <- table(data$Race, data$PTE)
+# p_values <- apply(race_counts, 1, function(row) {
+#   if (row["FALSE"] > 0 && row["TRUE"] > 0) {
+#     test <- prop.test(c(row["FALSE"], row["TRUE"]), c(sum(data$PTE == FALSE), sum(data$PTE == TRUE)))
+#     return(test$p.value)
+#   } else {
+#     return(NA)
+#   }
+# })
+# p_values <- as.data.frame(p_values)
+# p_values$Race <- rownames(p_values)
+# print(p_values$p_values)
+# 
+# # Custom function to format p-values
+# format_pvalue_custom <- function(p) {
+#   ifelse(p < 0.001, "<0.001", format(p, digits = 3, scientific = FALSE))
+# }
+# 
+# # Create summary table
+# summary_table <- data %>%
+#   select("AgeOfOnset", "Gender", "Race", "Ethnicity", "ECI", "ServiceConnectedPercent", "PTE") %>%
+#   tbl_summary(
+#     by = "PTE",
+#     missing = "ifany",
+#     type = all_continuous() ~ "continuous2",
+#     statistic = all_continuous() ~ "{mean} ({sd})",
+#     label = list(
+#       "AgeOfOnset" ~ "Age of Onset",
+#       "ServiceConnectedPercent" ~ "Service Connection"
+#     )
+#   ) %>%
+#   add_p(
+#     pvalue_fun = format_pvalue_custom
+#   ) %>%
+#   bold_p(t = 0.01) %>%
+#   add_stat_label() %>%
+#   bold_labels() %>%
+#   modify_header(
+#     stat_1 = "**Non-PTE**\n\nN = {style_number(n)}",
+#     stat_2 = "**PTE**\n\nN = {style_number(n)}"
+#   ) %>%
+#   modify_spanning_header(
+#     all_stat_cols() ~ "**Epilepsy Classification**"
+#   ) %>%
+#   modify_table_body(
+#     ~ .x %>%
+#       dplyr::mutate(across(where(is.character), italicize_parentheses))
+#   ) %>%
+#   as_gt() %>%
+#   gt::tab_header(
+#     title = "Complete Cohort"
+#   ) %>%
+#   gt::fmt_markdown(columns = everything()) %>%
+#   gt::fmt_number(
+#     columns =  c(p.value),
+#     decimals = 3
+#   )
+# 
+# summary_table
+# 
+# 
+# summary_table <- data[data[["ServiceConnectedPercent"]] == 0, ] %>%
+#   select("AgeOfOnset", "Gender", "Race", "Ethnicity", "ECI", "PTE") %>%
+#   tbl_summary(
+#     by = "PTE",
+#     missing = "ifany",
+#     type = all_continuous() ~ "continuous2",
+#     statistic = all_continuous() ~ "{mean} ({sd})",
+#     label = list(
+#       "AgeOfOnset" ~ "Age of Onset"
+#     )
+#   ) %>%
+#   add_p(
+#     pvalue_fun = format_pvalue_custom
+#   ) %>%
+#   bold_p(t = 0.01) %>%
+#   add_stat_label() %>%
+#   bold_labels() %>%
+#   modify_header(
+#     stat_1 = "**Non-PTE**\n\nN = {style_number(n)}",
+#     stat_2 = "**PTE**\n\nN = {style_number(n)}"
+#   ) %>%
+#   modify_spanning_header(
+#     all_stat_cols() ~ "**Epilepsy Classification**"
+#   ) %>%
+#   modify_table_body(
+#     ~ .x %>%
+#       dplyr::mutate(across(where(is.character), italicize_parentheses))
+#   ) %>%
+#   as_gt() %>%
+#   gt::tab_header(
+#     title = "Service Connection of 0%"
+#   ) %>%
+#   gt::fmt_markdown(columns = everything()) %>%
+#   gt::fmt_number(
+#     columns =  c(p.value),
+#     decimals = 3
+#   )
+# 
+# summary_table
+# 
+# 
+# summary_table <- data[data[["ServiceConnectedPercent"]] == 100, ] %>%
+#   select("AgeOfOnset", "Gender", "Race", "Ethnicity", "ECI", "PTE") %>%
+#   tbl_summary(
+#     by = "PTE",
+#     missing = "ifany",
+#     type = all_continuous() ~ "continuous2",
+#     statistic = all_continuous() ~ "{mean} ({sd})",
+#     label = list(
+#       "AgeOfOnset" ~ "Age of Onset"
+#     )
+#   ) %>%
+#   add_p(
+#     pvalue_fun = format_pvalue_custom
+#   ) %>%
+#   bold_p(t = 0.01) %>%
+#   add_stat_label() %>%
+#   bold_labels() %>%
+#   modify_header(
+#     stat_1 = "**Non-PTE**\n\nN = {style_number(n)}",
+#     stat_2 = "**PTE**\n\nN = {style_number(n)}"
+#   ) %>%
+#   modify_spanning_header(
+#     all_stat_cols() ~ "**Epilepsy Classification**"
+#   ) %>%
+#   modify_table_body(
+#     ~ .x %>%
+#       dplyr::mutate(across(where(is.character), italicize_parentheses))
+#   ) %>%
+#   as_gt() %>%
+#   gt::tab_header(
+#     title = "Service Connection of 100%"
+#   ) %>%
+#   gt::fmt_markdown(columns = everything()) %>%
+#   gt::fmt_number(
+#     columns =  c(p.value),
+#     decimals = 3
+#   )
+# 
+# summary_table
+
+```
+# Unadjusted Kaplan-Meier
+```{r unadjusted-unstratified}
+# formula_string <- "Surv(round(YearsOfFollowUp, digits=1), DeathObserved) ~ PTE"
+# 
+# km_fit_unadjusted <- survfit(
+#   as.formula(formula_string),
+#   data = data,
+#   conf.int = 0.99
+# )
+# 
+# surv_plt_unadjusted <- my_km_plot(
+#   km_fit = km_fit_unadjusted,
+#   title = glue("Kaplan-Meier Survival \nUnstratified \nUnadjusted")
+# )
+# 
+# 
+# print(surv_plt_unadjusted)
+# 
+# stats <- data.frame(matrix(ncol = 6, nrow = 1))
+# colnames(stats) <- c("log_rank_test", "log_rank_pvalue", "log_rank_significance", "z_test", "z_pvalue", "z_significance")
+# 
+# cox <- coxph(
+#   as.formula(formula_string),
+#   data = data,
+#   robust = TRUE
+# )
+# 
+# log_rank_stat <- summary(cox)$sctest["test"]
+# log_rank_pvalue <- summary(cox)$sctest["pvalue"]
+# 
+# stats["log_rank_test"] <- log_rank_stat
+# stats["log_rank_pvalue"] <- log_rank_pvalue
+# stats["log_rank_significance"] <- assign_asterisks(log_rank_pvalue)
+# 
+# summary_km <- summary(km_fit_unadjusted, times = 10)
+# x <- summary_km$n.risk
+# n <- x / summary_km$surv
+# prop_test <- prop.test(x = x, n = n)
+# 
+# z_test <- sqrt(prop_test$statistic) * ifelse((x[1] / n[1]) < (x[2] / n[2]), -1, 1)
+# z_pvalue <- prop_test$p.value
+# z_significance <- assign_asterisks(z_pvalue)
+# 
+# stats["z_test"] <- z_test
+# stats["z_pvalue"] <- z_pvalue
+# stats["z_significance"] <- z_significance
+# 
+# print(stats)
+
+
+```
+
+# Unstratified Kaplan-Meier
+
+```{r adjusted-unstratified}
+
+# target_cols <- rbind(
+#   c("AgeOfOnsetDiscrete", "Age of Onset", "age_labels"),
+#   c("YearOfOnsetDiscrete", "Year of Onset", "year_labels"),
+#   c("ECIDiscrete", "ECI", "eci_labels"),
+#   c("ServiceConnectedPercentDiscrete", "Service Connection", "service_connected_labels")
+# )
+# stats <- data.frame(matrix(ncol = 6, nrow = length(target_cols[, 2])))
+# rownames(stats) <- c(target_cols[, 2])
+# colnames(stats) <- c("log_rank_test", "log_rank_pvalue", "log_rank_significance", "z_test", "z_pvalue", "z_significance")
+# for (i in 1:nrow(target_cols)) {
+#   temp_data <- data
+# 
+#   row <- target_cols[i, ]
+#   target_col <- row[1]
+#   target_col_display <- row[2]
+# 
+#   formula_string <- "Surv(round(YearsOfFollowUp, digits=1), DeathObserved) ~ PTE"
+# 
+#   temp_data$Weights <- calculate_weights(
+#     data = temp_data,
+#     cols = c(target_col),
+#     group = c("PTE")
+#   )
+# 
+#   km_fit_adjusted <- survfit(
+#     as.formula(formula_string),
+#     data = temp_data,
+#     weights = Weights,
+#     conf.int = 0.99
+#   )
+# 
+#   surv_plt_adjusted <- my_km_plot(
+#     km_fit = km_fit_adjusted,
+#     title = glue("Kaplan-Meier Survival \nUnstratified \nAdjusted by {target_col_display}")
+#   )
+# 
+#   print(surv_plt_adjusted)
+#   
+#   cox_adjusted <- coxph(
+#     as.formula(formula_string),
+#     data = temp_data,
+#     weights = Weights,
+#     robust = TRUE
+#   )
+#   
+#   log_rank_stat <- summary(cox_adjusted)$sctest["test"]
+#   log_rank_pvalue <- summary(cox_adjusted)$sctest["pvalue"]
+#   
+#   stats[target_col_display, "log_rank_test"] <- log_rank_stat
+#   stats[target_col_display, "log_rank_pvalue"] <- log_rank_pvalue
+#   stats[target_col_display, "log_rank_significance"] <- assign_asterisks(log_rank_pvalue)
+#   
+#   summary_km <- summary(km_fit_adjusted, times = 10)
+#   x <- summary_km$n.risk
+#   n <- x / summary_km$surv
+#   prop_test <- prop.test(x = x, n = n)
+#   
+#   z_test <- sqrt(prop_test$statistic) * ifelse((x[1] / n[1]) < (x[2] / n[2]), -1, 1)
+#   z_pvalue <- prop_test$p.value
+#   z_significance <- assign_asterisks(z_pvalue)
+#   
+#   stats[target_col_display, "z_test"] <- z_test
+#   stats[target_col_display, "z_pvalue"] <- z_pvalue
+#   stats[target_col_display, "z_significance"] <- z_significance
+# }
+# 
+# # temp_data <- data
+# # 
+# # temp_data$Weights <- calculate_weights(
+# #   data = temp_data,
+# #   cols = target_cols[, 1],
+# #   group = c("PTE")
+# # )
+# # 
+# # km_fit_adjusted <- survfit(
+# #   as.formula(formula_string),
+# #   data = temp_data,
+# #   weights = Weights,
+# #   conf.int = 0.99
+# # )
+# # 
+# # surv_plt_adjusted <- my_km_plot(
+# #   km_fit = km_fit_adjusted,
+# #   title = glue("Kaplan-Meier Survival \nUnstratified \nAdjusted by All")
+# # )
+# # 
+# # print(surv_plt_adjusted)
+# # 
+# # cox_adjusted <- coxph(
+# #   as.formula(formula_string),
+# #   data = temp_data,
+# #   weights = Weights,
+# #   robust = TRUE
+# # )
+# # 
+# # log_rank_stat <- summary(cox_adjusted)$sctest["test"]
+# # log_rank_pvalue <- summary(cox_adjusted)$sctest["pvalue"]
+# # 
+# # stats["All", "log_rank_test"] <- log_rank_stat
+# # stats["All", "log_rank_pvalue"] <- log_rank_pvalue
+# # stats["All", "log_rank_significance"] <- assign_asterisks(log_rank_pvalue)
+# # 
+# # summary_km <- summary(km_fit_adjusted, times = 10)
+# # x <- summary_km$n.risk
+# # n <- x / summary_km$surv
+# # prop_test <- prop.test(x = x, n = n)
+# # 
+# # z_test <- sqrt(prop_test$statistic) * ifelse((x[1] / n[1]) < (x[2] / n[2]), -1, 1)
+# # z_pvalue <- prop_test$p.value
+# # z_significance <- assign_asterisks(z_pvalue)
+# # 
+# # stats["All", "z_test"] <- z_test
+# # stats["All", "z_pvalue"] <- z_pvalue
+# # stats["All", "z_significance"] <- z_significance
+# 
+# print(stats)
+# 
+# 
+# ```
+# 
+# # Stratification
+# 
+# ```{r stratified}
+# 
+# # for (i in 1:1) {
+# for (i in 1:nrow(target_cols)) {
+#   temp_data <- data
+#   row <- target_cols[i, ]
+#   target_col <- row[1]
+#   target_col_display <- row[2]
+#   strata <- get(row[3])
+# 
+#   formula_string <- glue("Surv(round(YearsOfFollowUp, digits=1), DeathObserved) ~ {target_col} + PTE")
+# 
+#   temp_data$Weights <- calculate_weights(
+#     data = temp_data,
+#     cols = target_cols[-i, 1],
+#     group = c("PTE")
+#   )
+# 
+#   km_fit_unadjusted <- survfit(
+#     as.formula(formula_string),
+#     data = temp_data,
+#     robust = TRUE,
+#     conf.int = 0.95
+#   )
+#   km_fit_adjusted <- survfit(
+#     as.formula(formula_string),
+#     data = temp_data,
+#     weights = Weights,
+#     robust = TRUE,
+#     conf.int = 0.95
+#   )
+# 
+#   surv_plt_unadjusted <- my_km_plot(
+#     km_fit = km_fit_unadjusted,
+#     title = glue("Kaplan-Meier Survival \nStratified by {target_col_display} \nUnadjusted")
+#   )
+#   surv_plt_adjusted <- my_km_plot(
+#     km_fit = km_fit_adjusted,
+#     title = glue("Kaplan-Meier Survival \nStratified by {target_col_display} \nAdjusted")
+#   )
+#   
+#   print(surv_plt_unadjusted)
+#   print(surv_plt_adjusted)
+# 
+#   stats <- data.frame(matrix(ncol = 6, nrow = length(strata)))
+#   rownames(stats) <- strata
+#   colnames(stats) <- c("log_rank_test", "log_rank_pvalue", "log_rank_significance", "z_test", "z_pvalue", "z_significance")
+#   for (stratum in strata) {
+#     stratum_data <- temp_data[temp_data[[target_col]] == stratum, ]
+#     
+#     km_fit <- survfit(
+#       Surv(round(YearsOfFollowUp, digits=1), DeathObserved) ~ PTE,
+#       data = stratum_data,
+#       weights = Weights,
+#       robust = TRUE
+#     )
+#     
+#     cox_model <- coxph(
+#       Surv(round(YearsOfFollowUp, digits=1), DeathObserved) ~ PTE,
+#       data = stratum_data,
+#       weights = Weights,
+#       robust = TRUE
+#     )
+#     
+#     log_rank_stat <- summary(cox_model)$sctest["test"]
+#     log_rank_pvalue <- summary(cox_model)$sctest["pvalue"]
+#     
+#     stats[stratum, "log_rank_test"] <- log_rank_stat
+#     stats[stratum, "log_rank_pvalue"] <- log_rank_pvalue
+#     stats[stratum, "log_rank_significance"] <- assign_asterisks(log_rank_pvalue)
+#     
+#     summary_km <- summary(km_fit, times = 10)
+#     x <- summary_km$n.risk
+#     n <- x / summary_km$surv
+#     prop_test <- prop.test(x = x, n = n)
+#     
+#     z_test <- sqrt(prop_test$statistic) * ifelse((x[1] / n[1]) < (x[2] / n[2]), -1, 1)
+#     z_pvalue <- prop_test$p.value
+#     z_significance <- assign_asterisks(z_pvalue)
+#     
+#     stats[stratum, "z_test"] <- z_test
+#     stats[stratum, "z_pvalue"] <- z_pvalue
+#     stats[stratum, "z_significance"] <- z_significance
+# 
+#   }
+# 
+#   cat(target_col_display)
+#   print(stats)
+# 
+# }
+# 
+# 
+# ```
+# 
+# ## Importance of Service Connection
+# 
+# ```{r service}
+# temp_data <- data
+# row <- target_cols[1, ]
+# target_col <- row[1]
+# target_col_display <- row[2]
+# strata <- get(row[3])
+# 
+# formula_string <- glue("Surv(round(YearsOfFollowUp, digits=1), DeathObserved) ~ {target_col} + PTE")
+# 
+# temp_data$Weights <- calculate_weights(
+#   data = temp_data,
+#   cols = c("YearOfOnsetDiscrete", "ECIDiscrete"),
+#   group = c("PTE")
+# )
+# 
+# km_fit_adjusted <- survfit(
+#   as.formula(formula_string),
+#   data = temp_data,
+#   weights = Weights,
+#   robust = TRUE,
+#   conf.int = 0.95
+# )
+# 
+# surv_plt_adjusted <- my_km_plot(
+#   km_fit = km_fit_adjusted,
+#   title = glue("Kaplan-Meier Survival \nStratified by {target_col_display} \nAdjusted (no SC)")
+# )
+# 
+# print(surv_plt_adjusted)
+# 
+# stats <- data.frame(matrix(ncol = 6, nrow = length(strata)))
+# rownames(stats) <- strata
+# colnames(stats) <- c("log_rank_test", "log_rank_pvalue", "log_rank_significance", "z_test", "z_pvalue", "z_significance")
+# for (stratum in strata) {
+#   stratum_data <- temp_data[temp_data[[target_col]] == stratum, ]
+#   
+#   km_fit <- survfit(
+#     Surv(round(YearsOfFollowUp, digits=1), DeathObserved) ~ PTE,
+#     data = stratum_data,
+#     weights = Weights,
+#     robust = TRUE
+#   )
+#   
+#   cox_model <- coxph(
+#     Surv(round(YearsOfFollowUp, digits=1), DeathObserved) ~ PTE,
+#     data = stratum_data,
+#     weights = Weights,
+#     robust = TRUE
+#   )
+#   
+#   log_rank_stat <- summary(cox_model)$sctest["test"]
+#   log_rank_pvalue <- summary(cox_model)$sctest["pvalue"]
+#   
+#   stats[stratum, "log_rank_test"] <- log_rank_stat
+#   stats[stratum, "log_rank_pvalue"] <- log_rank_pvalue
+#   stats[stratum, "log_rank_significance"] <- assign_asterisks(log_rank_pvalue)
+#   
+#   summary_km <- summary(km_fit, times = 10)
+#   x <- summary_km$n.risk
+#   n <- x / summary_km$surv
+#   prop_test <- prop.test(x = x, n = n)
+#   
+#   z_test <- sqrt(prop_test$statistic) * ifelse((x[1] / n[1]) < (x[2] / n[2]), -1, 1)
+#   z_pvalue <- prop_test$p.value
+#   z_significance <- assign_asterisks(z_pvalue)
+#   
+#   stats[stratum, "z_test"] <- z_test
+#   stats[stratum, "z_pvalue"] <- z_pvalue
+#   stats[stratum, "z_significance"] <- z_significance
+# 
+# }
+# 
+# cat(target_col_display)
+# print(stats)
+# 
+# ```
+# 
+# 
+# ```{r cox}
+# formula_string = 'Surv(round(YearsOfFollowUp, digits=1), DeathObserved) ~ AgeOfOnset + PTE'
+# cox <- coxph(
+#   formula = as.formula(formula_string),
+#   data = data
+#   )
+# print(summary(cox))
+# 
+# new_df <- with(
+#   data,
+#   data.frame(
+#     AgeOfOnset = rep(mean(AgeOfOnset, na.RM = TRUE), 1),
+#     YearOfOnset = rep(mean(YearOfOnset, na.RM = TRUE), 1),
+#     ECI = rep(mean(ECI, na.RM = TRUE), 1),
+#     ServiceConnectedPercent = rep(mean(ServiceConnectedPercent, na.RM = TRUE), 1),
+#     PTE = c(0, 1)
+#   )
+# )
+# 
+# surv_plt <- ggsurvplot(
+#   survfit(cox, newdata = new_df),
+#   data = data,
+#   censor = FALSE,
+#   conf.int = TRUE,
+# 
+#   xlim = c(0, 10),
+#   xlab = "Years",
+#   break.x.by = 1,
+#   ylim = c(0, 1),
+#   ylab = "Survival",
+#   break.y.by = 0.1,
+#   surv.scale = "percent",
+# 
+#   legend = "right",
+#   legend.title = element_blank(),
+#   legend.text = element_text(size = 6),
+# 
+#   title = "title",
+#   ggtheme = get_custom_theme()
+# )
+# surv_plt
+```
+
+# Changing the Analysis
+
+I decided that the reweighting procedure according to frequency weights that I got from *link* has a flaw. The procedure requires the binning of continuous variables into discrete categories. This is fine when the distributions of the continuous variable are similar within a category across all groups. However, this is not the case here due to the different shapes of the age distribution in PTE and non-PTE. Though the differences observed may only be around half a year, that can lead to significant variations with sample sizes this large.
+
+As a result, it is more ideal to have a model that can offer some sort of continuous adjustment. The Cox Proportional Hazards model works great in this situation because it is a regression model of the hazard to the patient at each given point in time. The examples I had seen have been using categorical variables for this as well, but it works well, and probably better, for continuous variables. 
+
+It is also much easier to conduct than frequency weighting since covariates can easily be added to the model to adjust for them. Once the coefficients for the hazard of different variables are estimated, the information can be used to plot predicted survival curves.
+
+Lastly, the p-values offered by the Cox model seem to be much more reasonable than what the weighting procedure gave. I still do not have a great explanation for this.
+
+```{r changing-analysis}
+overall_age <- hist_plot(
+  data = data,
+  x = "AgeOfOnset",
+  binwidth = 1,
+  min = 0,
+  max = 100,
+  step = 10,
+  title = "Age of Onset by PTE Status",
+  xlabel = "Age of Onset",
+  ylabel = "Proportion"
+)
+
+age_label <- "50-59"
+
+t_test <- t.test(
+  data[data$AgeOfOnsetDiscrete == age_label & data$PTE == 0, "AgeOfOnset"],
+  data[data$AgeOfOnsetDiscrete == age_label & data$PTE == 1, "AgeOfOnset"]
+)
+mean_non_pte <- t_test$estimate[["mean of x"]]
+mean_pte <- t_test$estimate[["mean of y"]]
+
+subset_age <- hist_plot(
+  data = data[data$AgeOfOnsetDiscrete == age_label, ],
+  x = "AgeOfOnset",
+  binwidth = 1,
+  min = 0,
+  max = 100,
+  step = 10,
+  title = glue("Age of Onset by PTE Status\nfor Age Group {age_label}"),
+  xlabel = "Age of Onset",
+  ylabel = "Proportion"
+) + 
+  geom_vline(aes(xintercept = mean_non_pte), color = "blue", linetype = "dashed") +
+  geom_vline(aes(xintercept = mean_pte), color = "red", linetype = "dashed") +
+  # annotate("text", x = mean_non_pte, y = .2, label = glue("Mean Age in Non-PTE: {round(mean_non_pte, 2)}"), color = "blue") + 
+  # annotate("text", x = mean_pte, y = .2, label = glue("Mean Age in PTE: {round(mean_pte, 2)}"), color = "red") + 
+  annotate("text", x = 55, y = .3, label = glue("t-statistic: {round(t_test$statistic, 2)}\np-value: {format.pval(t_test$p.value, digits = 2)}"), color = "black")
+
+
+grid.arrange(overall_age, subset_age, ncol = 2)
+
+```
+
+# Analysis
+
+The Cox Proportional Hazards model with multiple covariates can be interpreted as follows:
+
+I chose not use ECI or Year of Onset as covariates. I don't think year of onset has shown to be all that relevant in terms of being a confounder for mortality. ECI is an index meant to predict in-hospital mortality, and we are looking at all-cause mortality here, so I do not think it is all that relevant. I will continue looking for alternative measures that would be applicable. A better measure would be to find comorbidities that may happen as a result of a TBI, but that is probably something for a separate project.
+
+I am using Service Connection for now ven though the information we have is not for Service Connection at Onset, but rather for right now. There is a column, Outpat.PatientServiceConnectedPercent, but using it will require that I rewrite some of the SQL due to the way the first diagnosis date is presently determined. Also, is Service Connection the same regardless of the visit?
+
+I continue to stratify by age group because collapsing all the groups down into on can take away some of the nuances regarding the effect of PTE being different in different age groups.
+
+``` {r cox-stratified}
+formula_string = 'Surv(round(YearsOfFollowUp, digits=1), DeathObserved) ~ AgeOfOnset + ServiceConnectedPercent + PTE'
+for (age_label in age_labels) {
+  target_data <- data[data$AgeOfOnsetDiscrete == age_label, ]
+  cox <- coxph(
+    formula = as.formula(formula_string),
+    data = target_data
+  )
+  coeffs <- summary(cox)$coefficients
+  coeffs$p <- format_pvalue(coeffs[, "Pr(>|z|)"])
+  
+  new_data <- with(
+    target_data,
+    data.frame(
+      AgeOfOnset = rep(mean(AgeOfOnset, na.RM = TRUE), 1),
+      YearOfOnset = rep(mean(YearOfOnset, na.RM = TRUE), 1),
+      ECI = rep(mean(ECI, na.RM = TRUE), 1),
+      ServiceConnectedPercent = rep(mean(ServiceConnectedPercent, na.RM = TRUE), 1),
+      PTE = c(0, 1)
+    )
+  )
+  
+  cox_survival_plot <- ggsurvplot(
+    survfit(cox, newdata = new_data),
+    data = target_data,
+    censor = FALSE,
+    conf.int = TRUE,
+  
+    xlim = c(0, 10),
+    xlab = "Years",
+    break.x.by = 1,
+    ylim = c(0, 1),
+    ylab = "Survival",
+    break.y.by = 0.1,
+    surv.scale = "percent",
+  
+    legend = "right",
+    legend.title = element_blank(),
+    legend.text = element_text(size = 6),
+    legend.labs = c("Non-PTE", "PTE"),
+  
+    title = glue("Predicted Survival of Age Group {age_label}"),
+    ggtheme = get_custom_theme()
+  )
+  
+  print(cox_survival_plot)
+  print(summary(cox))
+  
+  # table_grob <- tableGrob(coeffs)
+  # grid.arrange(as.grob(cox_survival_plot$plot), table_grob, ncol = 1)
+  
+  
+}
+
+
+```
+
+## Isolate Severe TBI
+
+Here, we isolate severe TBI according to the ICD code of the traumatic brain injury.
+
+There are a few weaknesses to this approach:
+
+1. Many of the PTE patients (33.4%) have codes V15.52 or Z87.820, which are the ICD-9 and ICD-10 codes for personal history of traumatic brain injury and do not clarify the severity. This also opens up to another weakness since these codes might be put in at visits after the original TBI, which makes our 5-year lookback period for TBI imperfect. We should probably run the code without looking for these codes
+
+2. These codes are those that were put in at the visit closest to, but before, a patient's diagnosis of epilepsy. As a result, if they had a severe TBI before that, and still within 5 years, it would be overshadowed by a more recent TBI that may have not been classified as severe.
+
+3. I could not find an authoritative source on which codes can be considered severe and which would be mild/moderate. I used my own judgement to determine severity by looking at the ICD code definitions. In general, I considered severe TBI to involve an intracranial hemorrhage and/or greater than a 1 hour loss of consciousness.
+
+4. Only 7% of the PTE patients were classified as having severe TBI. This can probably be remedied to some extent by fixing the above concerns.
+
+I will have to rerun SQL code with the constraints of severe TBI ICD codes to get a more accurate picture. I can do this Thursday and e-mail the results.
+
+```{r find-severe-tbi}
+
+severe_code_regex_icd9 <- "^8(50\\.[234]|[0-9]*[345])$"
+
+data_pte_icd10 <- data[data$PTE == 1 & data$ICD10 == 1, ]
+matching_icn_icd9 <- data_pte_icd10[grep(severe_code_regex_icd9, data_pte_icd10[["TBIICDCode"]]), "PatientICN"]
+
+severe_code_prefixes_icd10 <- c(
+  "S06.1",
+  "S06.3",
+  "S06.4",
+  "S06.5",
+  "S06.6",
+  "S06.A",
+  "S06.2X3",
+  "S06.2X4",
+  "S06.2X5",
+  "S06.2X6",
+  "S06.9X3",
+  "S06.9X4",
+  "S06.9X5",
+  "S06.9X6",
+  "S06.813",
+  "S06.814",
+  "S06.815",
+  "S06.816"
+)
+
+data_pte_icd10 <- data[data$PTE == 1 & data$ICD10 == 1, ]
+
+matching_rows <- apply(
+  data_pte_icd10,
+  1,
+  function(row) {
+    any(
+      startsWith(
+        row[["TBIICDCode"]],
+        severe_code_prefixes_icd10
+      )
+    )
+  }
+)
+
+matching_icn_icd10 <- data_pte_icd10[matching_rows, "PatientICN"]
+
+data$SevereTBIPTE <- 0
+data[data$PatientICN %in% c(matching_icn_icd9, matching_icn_icd10), ]$SevereTBIPTE <- 1
+
+# ICD_counts <- as.data.frame(table(data[data$PTE == 1, "TBIICDCode"]))
+# colnames(ICD_counts) <- c("ICD_Code", "Count")
+# ICD_counts <- ICD_counts[order(-ICD_counts$Count), ]
+# print(head(ICD_counts, 20))
+
+
+```
+
+## Analysis of Severe TBI
+
+```{r severe-tbi-pte-analysis}
+
+formula_string = 'Surv(round(YearsOfFollowUp, digits=1), DeathObserved) ~ AgeOfOnset + ServiceConnectedPercent + SevereTBIPTE'
+for (age_label in age_labels) {
+  target_data <- data[data$AgeOfOnsetDiscrete == age_label, ]
+  cox <- coxph(
+    formula = as.formula(formula_string),
+    data = target_data
+  )
+  
+  new_data <- with(
+    target_data,
+    data.frame(
+      AgeOfOnset = rep(mean(AgeOfOnset, na.RM = TRUE), 1),
+      YearOfOnset = rep(mean(YearOfOnset, na.RM = TRUE), 1),
+      ECI = rep(mean(ECI, na.RM = TRUE), 1),
+      ServiceConnectedPercent = rep(mean(ServiceConnectedPercent, na.RM = TRUE), 1),
+      SevereTBIPTE = c(0, 1)
+    )
+  )
+  
+  cox_survival_plot <- ggsurvplot(
+    survfit(cox, newdata = new_data),
+    data = target_data,
+    censor = FALSE,
+    conf.int = TRUE,
+  
+    xlim = c(0, 10),
+    xlab = "Years",
+    break.x.by = 1,
+    ylim = c(0, 1),
+    ylab = "Survival",
+    break.y.by = 0.1,
+    surv.scale = "percent",
+  
+    legend = "right",
+    legend.title = element_blank(),
+    legend.text = element_text(size = 6),
+  
+    title = glue("Predicted Survival of Age Group {age_label}"),
+    ggtheme = get_custom_theme()
+  )
+  print(cox_survival_plot)
+  print(summary(cox))
+  
+}
+
+cat(target_col_display)
+print(stats)
+
+```
+
+
+```{r cox, echo=FALSE}
+formula_string <- 'Surv(round(YearsOfFollowUp, digits=1), DeathObserved) ~ AgeOfOnset + PTE'
+cox <- coxph(
+  formula = as.formula(formula_string),
+  data = data
+  )
+print(summary(cox))
+
+new_df <- with(
+  data,
+  data.frame(
+    PTE = c(0, 1),
+    AgeOfOnset = rep(mean(AgeOfOnset, na.rm = TRUE), 2)
+  )
+)
+
+fit <- survfit(cox, newdata = new_df)
+ggsurvplot(
+  fit,
+  data = data,
+  censor = FALSE,
+  conf.int = TRUE,
+
+  xlim = c(0, 10),
+  xlab = "Years",
+  break.x.by = 1,
+  ylim = c(0, 1),
+  ylab = "Survival",
+  break.y.by = 0.1,
+  surv.scale = "percent",
+
+  legend = "right",
+  legend.title = element_blank(),
+  legend.text = element_text(size = 6),
+
+  ggtheme = get_custom_theme()
+)
+
+```
+
+```{r extra-code, include=FALSE}
+# pairwise_results <- pairwise_survdiff(
+#   Surv(round(YearsOfFollowUp, digits = 1), DeathObserved) ~ PTE + AgeOfOnsetDiscrete,
+#   data = data
+# )
+# pairwise_p_values <- pairwise_results[["p.value"]]
+# row_names <- rownames(pairwise_p_values)
+# target_row_names <- row_names[grep("^PTE=TRUE", row_names)]
+# target_col_names <- gsub("TRUE", "FALSE", target_row_names)
+# target_p_values <- pairwise_p_values[cbind(target_row_names, target_col_names)]
+# target_p_names <- trimws(unlist(lapply(strsplit(target_row_names, ", "), function(x) x[2])))
+# p_values_df <- data.frame(
+#   AgeOfOnsetDiscrete = target_p_names,
+#   p_value = target_p_values
+# )
+
+# tab1 <- with(data, table(as.numeric(AgeOfOnsetDiscrete))) / nrow(data)
+# tab2 <- with(data, table(as.numeric(AgeOfOnsetDiscrete), as.numeric(PTE) + 1)) / nrow(data)
+# weights <- rep(tab1, 2) / tab2
+# index <- with(data, cbind(as.numeric(AgeOfOnsetDiscrete), as.numeric(PTE) + 1))
+
+
+# tmp <- calculate_weights(
+#   data = temp_data,
+#   cols = c("AgeOfOnsetDiscrete"),
+#   group = c("PTE")
+# )
+
+
+```

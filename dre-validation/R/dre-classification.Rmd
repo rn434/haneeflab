@@ -1,0 +1,957 @@
+---
+title: "DRE Classification"
+author: "Rohan Nagabhirava"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+  word_document:
+    toc: true
+  pdf_document:
+    toc: true
+css: styles.css
+---
+
+# Analysis Setup
+
+This section includes options for knitting of the Rmd document, loading of the necessary libraries for the analysis, definitions of functions to streamline analysis down the line, and the connection to the database.
+
+```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+options(encoding = "UTF-8")
+```
+
+```{r}
+# install.packages("C:/Users/VHAHOUNAGABR/OneDrive - Department of Veterans Affairs/dre-validation/IRanges_2.42.0.zip", repos = NULL, type = "win.binary")
+# install.packages("C:/Users/VHAHOUNAGABR/OneDrive - Department of Veterans Affairs/dre-validation/BiocGenerics_0.54.0.zip", repos = NULL, type = "win.binary")
+# install.packages("C:/Users/VHAHOUNAGABR/OneDrive - Department of Veterans Affairs/dre-validation/S4Vectors_0.46.0.zip", repos = NULL, type = "win.binary")
+
+library("caret")
+library("data.table")
+library("DiagrammeR")
+library("e1071")
+library("future.apply")
+library("ggplot2")
+library("glmnet")
+library("IRanges")
+library("lubridate")
+# library("MASS")
+library("MLmetrics")
+library("parallel")
+library("pROC")
+library("randomForest")
+library("rpart")
+library("rpart.plot")
+library("slider")
+library("stringr")
+library("tidyr")
+library("xgboost")
+
+library("dplyr")
+```
+
+# Accessory Functions
+
+```{r}
+logistic_regression_stats <- function(model, test_data) {
+    test_probs <- predict(model, newdata = test_data, type = "response")
+    test_preds <- ifelse(test_probs > 0.5, 1, 0)
+    
+    print(confusionMatrix(factor(test_preds), factor(test_data$dre), positive = "1"))
+    print(paste("F1 Score: ", F1_Score(y_pred = test_preds, y_true = test_data$dre, positive = "1")))
+    
+    roc_obj <- roc(test_data$dre, test_probs)
+    auc_value <- auc(roc_obj)
+    print(auc_value)
+    
+    plot(roc_obj, col = "blue", main = "ROC Curve")
+    
+    print(summary(model))
+}
+
+xgboost_with_stats <- function(X_train, y_train, X_test, y_test) {
+    dtrain <- xgb.DMatrix(data = X_train, label = y_train)
+    dtest <- xgb.DMatrix(data = X_test, label = y_test)
+    
+    params <- list(
+        objective = "binary:logistic",
+        eval_metric = "logloss"
+    )
+    
+    model <- xgb.train(
+        params = params,
+        data = dtrain,
+        nrounds = 100,
+        watchlist = list(train = dtrain, test = dtest),
+        early_stopping_rounds = 10,
+        verbose = 1
+    )
+    
+    test_probs <- predict(model, X_test)
+    test_preds <- ifelse(test_probs > 0.5, 1, 0)
+    
+    print(confusionMatrix(factor(test_preds), factor(y_test), positive = "1"))
+    print(paste("F1 Score: ", F1_Score(y_pred = test_preds, y_true = test_data$dre, positive = "1")))
+    
+    roc_obj <- roc(y_test, test_probs)
+    auc_value <- auc(roc_obj)
+    print(auc_value)
+    
+    plot(roc_obj, col = "blue", main = "ROC Curve")
+    
+    num_trees <- model$best_iteration
+}
+
+decision_tree_with_stats <- function(model, test_data) {
+    rpart.plot(model, type = 2, extra = 104, fallen.leaves = TRUE)
+    
+    test_probs <- predict(model, newdata = test_data, type = "prob")[, 2]
+    test_preds <- ifelse(test_probs > 0.5, 1, 0)
+    
+    print(confusionMatrix(factor(test_preds), factor(test_data$dre), positive = "1"))
+    print(paste("F1 Score: ", F1_Score(y_pred = test_preds, y_true = test_data$dre, positive = "1")))
+    
+    roc_obj <- roc(test_data$dre, test_probs)
+    auc_value <- auc(roc_obj)
+    print(auc_value)
+    
+    plot(roc_obj, col = "blue", main = "ROC Curve")
+}
+
+merge_with_iranges <- function(dt) {
+    ir <- IRanges(start = as.numeric(dt$start_date), end = as.numeric(dt$end_date))
+    reduced <- reduce(ir)
+    data.table(
+        start_date = as.Date(start(reduced), origin = "1970-01-01"),
+        end_date = as.Date(end(reduced), origin = "1970-01-01")
+    )
+}
+
+merge_asm_intervals <- function(start_dates, end_dates) {
+    ir <- IRanges(start = as.numeric(start_dates), end = as.numeric(end_dates))
+    reduced <- reduce(ir)
+    sum(width(reduced))
+}
+
+get_patient_windows <- function(subdt, window_size_days) {
+    unique_start_dates <- unique(subdt$start_date)
+    windows <- data.table(
+        window_start = unique_start_dates,
+        window_end = unique_start_dates + (window_size_days - 1)
+    )
+    return(windows)
+}
+
+compute_max_asms <- function(PatientSSN, patient_data, window_size_days, min_asm_days) {
+    windows <- get_patient_windows(patient_data, window_size_days)
+    setkey(patient_data, start_date, end_date)
+
+    max_asms <- 0
+    max_med_days <- 0
+
+    for (i in 1:nrow(windows)) {
+        win_start <- windows[i, window_start]
+        win_end <- windows[i, window_end]
+
+        overlaps <- patient_data[
+            start_date <= win_end & end_date >= win_start
+        ][
+            , .(
+                INGREDIENT,
+                clipped_start = pmax(start_date, win_start),
+                clipped_end = pmin(end_date, win_end)
+            )
+        ]
+        
+        merged <- overlaps[, {
+            ir <- IRanges(start = as.numeric(clipped_start), end = as.numeric(clipped_end))
+            reduced <- reduce(ir)
+            total_days <- sum(width(reduced))
+            .(total_days = total_days)
+        }, by = INGREDIENT]
+        
+        merged <- merged[total_days >= min_asm_days]
+
+        max_asms <- max(max_asms, nrow(merged))
+        max_med_days <- max(max_med_days, sum(merged$total_days))
+    }
+
+    return(data.table(PatientSSN = PatientSSN, rolling_distinct_asms = max_asms, rolling_med_days = max_med_days))
+}
+```
+
+# Loading Data
+
+## CSV Files
+
+```{r}
+raw_cohort_df <- read.csv("C:/Users/VHAHOUNAGABR/OneDrive - Department of Veterans Affairs/dre-validation/rn_cohort_20250609.csv", header = TRUE, sep = ",")
+andrea_cohort_df <- read.csv("C:/Users/VHAHOUNAGABR/OneDrive - Department of Veterans Affairs/dre-validation/DRE2024v3_Cohort_phase1_20240418_deidentified", header = TRUE, sep = ",")
+
+# raw_id_ssn_map <- read.csv("C:/Users/VHAHOUNAGABR/OneDrive - Department of Veterans Affairs/Documents/tmp", header = TRUE, sep = ",", colClasses = c("last4ssn" = "character"))
+raw_rated_df <- read.csv("C:/Users/VHAHOUNAGABR/OneDrive - Department of Veterans Affairs/dre-validation/DRE_status.csv", header = TRUE, sep = ",")
+raw_asm_complete_df <- read.csv("C:/Users/VHAHOUNAGABR/OneDrive - Department of Veterans Affairs/dre-validation/ASM_completelist_20250609.csv", header = TRUE, sep = ",")
+raw_intractable_df <- read.csv("C:/Users/VHAHOUNAGABR/OneDrive - Department of Veterans Affairs/dre-validation/DRE2024v3_intractableCode.csv", header = TRUE, sep = ",")
+raw_eeg_df <- read.csv("C:/Users/VHAHOUNAGABR/OneDrive - Department of Veterans Affairs/dre-validation/DRE2024v3_EEG.csv", header = TRUE, sep = ",")
+raw_mri_df <- read.csv("C:/Users/VHAHOUNAGABR/OneDrive - Department of Veterans Affairs/dre-validation/DRE2024v3_MRI.csv", header = TRUE, sep = ",")
+raw_comorbidities_df <- read.csv("C:/Users/VHAHOUNAGABR/OneDrive - Department of Veterans Affairs/dre-validation/bipolar_migraine_neuropathic_tbi.csv", header = TRUE, sep = ",")
+raw_first_seizure_df <- read.csv("C:/Users/VHAHOUNAGABR/OneDrive - Department of Veterans Affairs/dre-validation/first_seizure.csv", header = TRUE, sep = ",")
+```
+
+## Dr. Rehman Low Dose Criteria
+
+```{r}
+rehman_low_1 <- data.frame(
+    INGREDIENT = c("gabapentin", "carbamazepine", "oxcarbazepine", "lamotrigine", "topiramate", "zonisamide", "primidone", "valproate"),
+    min_dose = c(900, 400, 600, 200, 200, 200, 250, 1000)
+)
+rehman_low_2 <- data.frame(
+    INGREDIENT = c("gabapentin", "carbamazepine", "oxcarbazepine", "lamotrigine", "topiramate", "zonisamide", "primidone", "valproate"),
+    min_dose = c(1200, 400, 600, 200, 200, 200, 250, 500)
+)
+```
+
+## Strict ASMs
+
+These are defined as ASMs that do not have other indications or off-label uses.
+
+Dr. Kellogg: I edited my list to fit what you shared during our last meeting. I saw you did not have methsuximide in the list. Only one person in our cohort was ever on methsuximide, but I am also including it in this list. Please let me know if you disagree.
+
+```{r}
+strict_asms <- data.frame(
+    INGREDIENT = c(
+        "brivaracetam", 
+        "cenobamate", 
+        "eslicarbazepine",
+        "ethosuximide", 
+        "felbamate", 
+        "ganaxolone",
+        "lacosamide", 
+        "levetiracetam", 
+        "methsuximide",
+        "perampanel", 
+        "rufinamide", 
+        "stiripentol",
+        "tiagabine", 
+        "vigabatrin"
+    )
+)
+```
+
+# Cleaning Data
+
+## DRE Ratings
+
+* 896 patients who were finally rated as "yes" or "no" (excluding "undetermined").
+* I am not currently using the etiology in any filtering.
+
+```{r}
+rated_df <- raw_rated_df %>%
+    mutate(dre = ifelse(
+        DREstatusRater1 == DREstatusRater2, 
+        DREstatusRater1, 
+        ifelse(
+            Rater1ReconciledDRE != "NULL",
+            Rater1ReconciledDRE, 
+            Rater2ReconciledDRE
+        )
+    )) %>%
+    mutate(dre = ifelse(
+        dre == "yes", 
+        1, 
+        ifelse(
+            dre == "no",
+            0,
+            NA
+        )
+    )) %>%
+    filter(!is.na(dre)) %>%
+    mutate(etiology = ifelse(
+        etiologyRater1 == etiologyRater2, 
+        etiologyRater1, 
+        ifelse(
+            Rater1ReconciledEtiology != "NULL",
+            Rater1ReconciledEtiology, 
+            Rater2ReconciledEtiology
+        )
+    )) %>%
+    filter(!(etiology %in% c("NoSeizure", "OtherNES", "Physiologic", "PNES"))) %>%
+    dplyr::select(PatientSSN, dre, etiology)
+
+true_raw_rated_df <- raw_rated_df %>%
+    mutate(trueEtiologyRater1 = ifelse(
+        Rater1ReconciledEtiology %in% c("NULL", ""),
+        etiologyRater1,
+        Rater1ReconciledEtiology
+    )) %>%
+    mutate(trueEtiologyRater2 = ifelse(
+        Rater2ReconciledEtiology %in% c("NULL", ""),
+        etiologyRater2,
+        Rater2ReconciledEtiology
+    )) %>%
+    inner_join(raw_cohort_df, by = c("PatientSSN")) %>%
+    select(
+        id,
+        DREstatusRater1,
+        trueEtiologyRater1,
+        etiologyRater1,
+        Rater1ReconciledDRE,
+        Rater1ReconciledEtiology,
+        DREstatusRater2,
+        trueEtiologyRater2,
+        etiologyRater2,
+        Rater2ReconciledDRE,
+        Rater2ReconciledEtiology
+    )
+
+no_etiology_df <- true_raw_rated_df %>%
+    filter(trueEtiologyRater1 == "" & trueEtiologyRater2 == "") 
+
+one_etiology_missing_df <- true_raw_rated_df %>%
+    filter(trueEtiologyRater1 == "" | trueEtiologyRater2 == "") %>%
+    filter(!(id %in% no_etiology_df$id))
+
+disconcordant_etiology_df <- true_raw_rated_df %>%
+    filter((trueEtiologyRater1 != trueEtiologyRater2)) %>%
+    filter(!(id %in% one_etiology_missing_df$id)) %>%
+    filter(!(id %in% no_etiology_df$id))
+
+write.csv(no_etiology_df, "no-etiology.csv")
+write.csv(one_etiology_missing_df, "one-etiology-missing.csv")
+write.csv(disconcordant_etiology_df, "disconcodant-etiology.csv")
+
+```
+
+## First Seizure
+
+```{r}
+first_seizure_df <- raw_first_seizure_df %>%
+    mutate(FirstSeizureDate = as.Date(FirstSeizureDate, format = "%Y-%m-%d")) %>%
+    inner_join(raw_cohort_df, by = "PatientSSN") %>%
+    select(PatientSSN, PatientICN, FirstSeizureDate)
+```
+
+## ASMs
+
+Starting with 379,406 rows.
+
+1. Only use ASMs from IB_BillClaimRxOutpat and RxOut_RxOutpatFill (218,733 rows remain)
+
+2. Exclude midazolam and diazepam (still 218,733 rows, assuming these were already removed in the file I got (2025-06-09))
+
+3. Only keep start dates before 2024-01-01. Change all end dates beyond 2024-01-01 to 2024-01-01. (208,704 rows remain)
+
+4. Restrict to patients who had DRE rated as "yes" or "no" (134,269 rows remain). From what I can tell, there is data for patients not in our cohort in this file (~1,800 distinct patients as opposed to ~1,000). 
+
+5. Only keep medications where the prescription is at least a 30 day supply (121,417 rows remain). At this point, there are two non-DRE patients who don't have any medications meeting these criteria.
+
+Built the following:
+
+* strict_asm_df (26,942 rows) of prescriptions for the "strict" ASMs from above
+* asm_low_dose_1_excluded_df (106,969 rows) using Dr. Rehman's 1st low dose criteria
+* asm_low_dose_2_excluded_df (106,009 rows) using Dr. Rehman's 2nd low dose criteria
+* asm_gaba_prega_excluded_df (101,434 rows) excluding gabapentin and pregabalin
+* asm_gaba_prega_low_dose_1_excluded_df (101,182 rows) excluding low doses per criteria 1 
+* asm_gaba_prega_low_dose_2_excluded_df (101,217 rows) excluding low doses per criteria 2 
+
+
+```{r}
+asm_complete_df <- raw_asm_complete_df %>%
+    filter(x_Source_Table %in% c("IB_BillClaimRxOutpat", "RxOut_RxOutpatFill")) %>%
+    mutate(INGREDIENT = tolower(INGREDIENT)) %>%
+    filter(!(INGREDIENT %in% c("midazolam", "diazepam"))) %>%
+    mutate(start_date = as.Date(DRUG_EXPOSURE_START_DATE, format = "%m/%d/%Y")) %>%
+    mutate(end_date = as.Date(DRUG_EXPOSURE_END_DATE, format = "%m/%d/%Y")) %>%
+    # filter(start_date < "2024-01-01") %>%
+    # mutate(end_date = as.Date(ifelse(end_date > "2024-01-01", as.Date("2024-01-01"), as.Date(end_date)))) %>%
+    filter(PatientSSN %in% rated_df$PatientSSN) %>%
+    filter(as.numeric(end_date - start_date, "days") >= 30)
+
+strict_asm_df <- asm_complete_df %>%
+    filter(INGREDIENT %in% strict_asms$INGREDIENT)
+
+asm_low_dose_1_excluded_df <- asm_complete_df %>%
+    left_join(rehman_low_1, by = "INGREDIENT") %>%
+    filter(is.na(min_dose) | DAILY_DOSE >= min_dose) %>%
+    dplyr::select(-min_dose)
+    
+asm_low_dose_2_excluded_df <- asm_complete_df %>%
+    left_join(rehman_low_2, by = "INGREDIENT") %>%
+    filter(is.na(min_dose) | DAILY_DOSE >= min_dose) %>%
+    dplyr::select(-min_dose)
+
+asm_gaba_prega_excluded_df <- asm_complete_df %>%
+    filter(!(INGREDIENT %in% c("gabapentin", "pregabalin")))
+
+asm_gaba_prega_low_dose_1_excluded_df <- asm_gaba_prega_excluded_df %>%
+    left_join(rehman_low_1, by = "INGREDIENT") %>%
+    filter(is.na(min_dose) | DAILY_DOSE >= min_dose) %>%
+    dplyr::select(-min_dose)
+
+asm_gaba_prega_low_dose_2_excluded_df <- asm_gaba_prega_excluded_df %>%
+    left_join(rehman_low_2, by = "INGREDIENT") %>%
+    filter(is.na(min_dose) | DAILY_DOSE >= min_dose) %>%
+    dplyr::select(-min_dose)
+```
+   
+## Counting Rolling ASMs
+
+This part of the code takes the longest to run. I tried to multithread it so save some time.
+
+```{r} 
+dt <- asm_complete_df
+setDT(dt)
+
+merged_dt <- dt[, merge_with_iranges(.SD), by = .(PatientSSN, INGREDIENT)]
+
+patient_list <- split(merged_dt, by = "PatientSSN")
+num_cores <- detectCores() - 1
+
+future::plan(multisession, workers = 12)
+
+rolling_asm_counts <- future_lapply(names(patient_list), function(pid) {
+    compute_max_asms(pid, patient_list[[pid]], window_size_days = 365, min_asm_days = 30) # keeping at 30 means no additional filtering is being done
+})
+
+rolling_asm_counts <- data.table::rbindlist(rolling_asm_counts)
+rolling_asm_counts[, PatientSSN := as.numeric(PatientSSN)]
+setnames(rolling_asm_counts, c("rolling_distinct_asms", "rolling_med_days"), c("rolling_asm_count", "rolling_med_days"))
+
+average_asm_counts <- dt[, {
+    duration_days <- as.numeric(max(end_date) - min(start_date))
+    duration_years <- duration_days / 365.25
+
+    asm_days <- .SD[, .(
+        asm_days = sum(as.integer(end_date - start_date + 1))
+    ), by = INGREDIENT]
+
+    total_asm_days <- sum(asm_days$asm_days)
+    avg_asm_days_per_year <- total_asm_days / duration_years
+
+    num_distinct_asms <- uniqueN(INGREDIENT)
+    avg_asms_per_year <- num_distinct_asms / duration_years
+
+    .(
+        avg_asm_days_per_year = avg_asm_days_per_year,
+        total_asm_days = total_asm_days
+    )
+}, by = PatientSSN]
+```
+```{r} 
+dt <- asm_gaba_prega_low_dose_2_excluded_df
+setDT(dt)
+
+merged_dt <- dt[, merge_with_iranges(.SD), by = .(PatientSSN, INGREDIENT)]
+
+patient_list <- split(merged_dt, by = "PatientSSN")
+num_cores <- detectCores() - 1
+
+future::plan(multisession, workers = 12)
+
+gaba_prega_low_dose_2_excluded_rolling_asm_counts <- future_lapply(names(patient_list), function(pid) {
+    compute_max_asms(pid, patient_list[[pid]], window_size_days = 365, min_asm_days = 60) # keeping at 30 means no additional filtering is being done
+})
+
+gaba_prega_low_dose_2_excluded_rolling_asm_counts <- data.table::rbindlist(gaba_prega_low_dose_2_excluded_rolling_asm_counts)
+gaba_prega_low_dose_2_excluded_rolling_asm_counts[, PatientSSN := as.numeric(PatientSSN)]
+setnames(gaba_prega_low_dose_2_excluded_rolling_asm_counts, c("rolling_distinct_asms", "rolling_med_days"), c("gaba_prega_low_dose_2_excluded_rolling_asm_count", "gaba_prega_low_dose_2_excluded_rolling_med_days"))
+
+gaba_prega_low_dose_2_excluded_average_asm_counts <- dt[, {
+    duration_days <- as.numeric(max(end_date) - min(start_date))
+    duration_years <- duration_days / 365.25
+
+    asm_days <- .SD[, .(
+        asm_days = sum(as.integer(end_date - start_date + 1))
+    ), by = INGREDIENT]
+
+    total_asm_days <- sum(asm_days$asm_days)
+    avg_asm_days_per_year <- total_asm_days / duration_years
+
+    num_distinct_asms <- uniqueN(INGREDIENT)
+    avg_asms_per_year <- num_distinct_asms / duration_years
+
+    .(
+        gaba_prega_low_dose_2_excluded_avg_asm_days_per_year = avg_asm_days_per_year,
+        gaba_prega_low_dose_2_excluded_total_asm_days = total_asm_days
+    )
+}, by = PatientSSN]
+```
+```{r}
+dt <- strict_asm_df
+setDT(dt)
+
+merged_dt <- dt[, merge_with_iranges(.SD), by = .(PatientSSN, INGREDIENT)]
+
+patient_list <- split(merged_dt, by = "PatientSSN")
+num_cores <- detectCores() - 1
+
+future::plan(multisession, workers = 12)
+
+strict_rolling_asm_counts <- future_lapply(names(patient_list), function(pid) {
+    compute_max_asms(pid, patient_list[[pid]], window_size_days = 365, min_asm_days = 30)
+})
+
+strict_rolling_asm_counts <- data.table::rbindlist(strict_rolling_asm_counts)
+strict_rolling_asm_counts[, PatientSSN := as.numeric(PatientSSN)]
+setnames(strict_rolling_asm_counts, c("rolling_distinct_asms", "rolling_med_days"), c("strict_rolling_asm_count", "strict_rolling_med_days"))
+
+strict_average_asm_counts <- dt[, {
+    duration_days <- as.numeric(max(end_date) - min(start_date))
+    duration_years <- duration_days / 365.25
+
+    asm_days <- .SD[, .(
+        asm_days = sum(as.integer(end_date - start_date + 1))
+    ), by = INGREDIENT]
+
+    total_asm_days <- sum(asm_days$asm_days)
+    avg_asm_days_per_year <- total_asm_days / duration_years
+
+    num_distinct_asms <- uniqueN(INGREDIENT)
+    avg_asms_per_year <- num_distinct_asms / duration_years
+
+    .(
+        strict_avg_asm_days_per_year = avg_asm_days_per_year,
+        strict_total_asm_days = total_asm_days
+    )
+}, by = PatientSSN]
+```
+
+## Getting Counts for ASMs, ICD Codes, and EEG/MRI
+
+```{r}
+asm_complete_counts_df <- asm_complete_df %>%
+    group_by(PatientSSN, INGREDIENT) %>%
+    summarise(
+        total_days = merge_asm_intervals(start_date, end_date),
+        .groups = "drop"
+    ) %>%
+    filter(total_days >= 60) %>%
+    group_by(PatientSSN) %>%
+    summarise(asm_complete_count = n_distinct(INGREDIENT), .groups = "drop")
+
+asm_complete_counts_min_180_df <- asm_complete_df %>%
+    group_by(PatientSSN, INGREDIENT) %>%
+    summarise(
+        total_days = merge_asm_intervals(start_date, end_date),
+        .groups = "drop"
+    ) %>%
+    filter(total_days >= 180) %>%
+    group_by(PatientSSN) %>%
+    summarise(asm_complete_count_min_180 = n_distinct(INGREDIENT), .groups = "drop")
+
+asm_complete_counts_min_365_df <- asm_complete_df %>%
+    group_by(PatientSSN, INGREDIENT) %>%
+    summarise(
+        total_days = merge_asm_intervals(start_date, end_date),
+        .groups = "drop"
+    ) %>%
+    filter(total_days >= 365) %>%
+    group_by(PatientSSN) %>%
+    summarise(asm_complete_count_min_365 = n_distinct(INGREDIENT), .groups = "drop")
+
+strict_asm_counts_df <- strict_asm_df %>%
+    group_by(PatientSSN, INGREDIENT) %>%
+    summarise(
+        total_days = merge_asm_intervals(start_date, end_date),
+        .groups = "drop"
+    ) %>%
+    filter(total_days >= 60) %>%
+    group_by(PatientSSN) %>%
+    summarise(strict_asm_count = n_distinct(INGREDIENT), .groups = "drop")
+
+asm_low_dose_1_excluded_counts_df <- asm_low_dose_1_excluded_df %>%
+    group_by(PatientSSN, INGREDIENT) %>%
+    summarise(
+        total_days = merge_asm_intervals(start_date, end_date),
+        .groups = "drop"
+    ) %>%
+    filter(total_days >= 60) %>%
+    group_by(PatientSSN) %>%
+    summarise(asm_low_dose_1_excluded_count = n_distinct(INGREDIENT), .groups = "drop")
+
+asm_low_dose_2_excluded_counts_df <- asm_low_dose_2_excluded_df %>%
+    group_by(PatientSSN, INGREDIENT) %>%
+    summarise(
+        total_days = merge_asm_intervals(start_date, end_date),
+        .groups = "drop"
+    ) %>%
+    filter(total_days >= 60) %>%
+    group_by(PatientSSN) %>%
+    summarise(asm_low_dose_2_excluded_count = n_distinct(INGREDIENT), .groups = "drop")
+
+asm_gaba_prega_excluded_counts_df <- asm_gaba_prega_excluded_df %>%
+    group_by(PatientSSN, INGREDIENT) %>%
+    summarise(
+        total_days = merge_asm_intervals(start_date, end_date),
+        .groups = "drop"
+    ) %>%
+    filter(total_days >= 60) %>%
+    group_by(PatientSSN) %>%
+    summarise(asm_gaba_prega_excluded_count = n_distinct(INGREDIENT), .groups = "drop")
+
+asm_gaba_prega_low_dose_1_excluded_counts_df <- asm_gaba_prega_low_dose_1_excluded_df %>%
+    group_by(PatientSSN, INGREDIENT) %>%
+    summarise(
+        total_days = merge_asm_intervals(start_date, end_date),
+        .groups = "drop"
+    ) %>%
+    filter(total_days >= 60) %>%
+    group_by(PatientSSN) %>%
+    summarise(asm_gaba_prega_low_dose_1_excluded_count = n_distinct(INGREDIENT), .groups = "drop")
+
+asm_gaba_prega_low_dose_2_excluded_counts_df <- asm_gaba_prega_low_dose_2_excluded_df %>%
+    group_by(PatientSSN, INGREDIENT) %>%
+    summarise(
+        total_days = merge_asm_intervals(start_date, end_date),
+        .groups = "drop"
+    ) %>%
+    filter(total_days >= 60) %>%
+    group_by(PatientSSN) %>%
+    summarise(asm_gaba_prega_low_dose_2_excluded_count = n_distinct(INGREDIENT), .groups = "drop")
+
+intractable_counts_df <- raw_intractable_df %>%
+    mutate(VisitDate = as.Date(VisitDate, "%Y-%m-%d")) %>%
+    group_by(PatientICN) %>%
+    summarise(intractable_count = n())
+
+eeg_counts_df <- raw_eeg_df %>%
+    mutate(VisitDate = as.Date(VisitDateTime, "%m/%d/%Y")) %>%
+    group_by(PatientICN) %>%
+    summarise(eeg_count = n())
+
+mri_counts_df <- raw_mri_df %>%
+    mutate(VisitDate = as.Date(VProcedureDateTime, "%Y-%m-%d")) %>%
+    group_by(PatientICN) %>%
+    summarise(mri_count = n())
+```
+
+## Combining all Features
+
+```{r}
+combined_df <- raw_cohort_df %>%
+    inner_join(rated_df, by = "PatientSSN") %>%
+    left_join(asm_complete_counts_df, by = "PatientSSN") %>%
+    left_join(asm_complete_counts_min_180_df, by = "PatientSSN") %>%
+    left_join(strict_asm_counts_df, by = "PatientSSN") %>%
+    left_join(rolling_asm_counts, by = "PatientSSN") %>%
+    left_join(strict_rolling_asm_counts, by = "PatientSSN") %>%
+    left_join(gaba_prega_low_dose_2_excluded_rolling_asm_counts, by = "PatientSSN") %>%
+    left_join(average_asm_counts, by = "PatientSSN") %>%
+    left_join(strict_average_asm_counts, by = "PatientSSN") %>%
+    left_join(gaba_prega_low_dose_2_excluded_average_asm_counts, by = "PatientSSN") %>%
+    left_join(asm_low_dose_1_excluded_counts_df, by = "PatientSSN") %>%
+    left_join(asm_low_dose_2_excluded_counts_df, by = "PatientSSN") %>%
+    left_join(asm_gaba_prega_excluded_counts_df, by = "PatientSSN") %>%
+    left_join(asm_gaba_prega_low_dose_1_excluded_counts_df, by = "PatientSSN") %>%
+    left_join(asm_gaba_prega_low_dose_2_excluded_counts_df, by = "PatientSSN") %>%
+    left_join(intractable_counts_df, by = "PatientICN") %>%
+    left_join(eeg_counts_df, by = "PatientICN") %>%
+    left_join(mri_counts_df, by = "PatientICN") %>%
+    left_join(raw_comorbidities_df, by = "PatientSSN") %>%
+    mutate(eeg_mri_count = eeg_count + mri_count) %>%
+    mutate(intractable_code = as.numeric(intractable_count >= 1)) %>%
+    mutate(eeg_code = as.numeric(eeg_count >= 1)) %>%
+    mutate(mri_code = as.numeric(mri_count >= 1)) %>%
+    mutate(eeg_mri_code = as.numeric(eeg_mri_count >= 1)) %>%
+    mutate(`rolling_asm_count_ge_3` = as.numeric(rolling_asm_count >= 3)) %>%
+    mutate(`rolling_asm_count_ge_4` = as.numeric(rolling_asm_count >= 4)) %>%
+    mutate(`rolling_asm_count_ge_5` = as.numeric(rolling_asm_count >= 5)) %>%
+    # mutate(`strict_rolling_asm_count_ge_2` = as.numeric(strict_rolling_asm_count >= 2)) %>%
+    # mutate(`strict_rolling_asm_count_ge_3` = as.numeric(strict_rolling_asm_count >= 3)) %>%
+    mutate(age = as.numeric(as.Date("2024-01-01") - as.Date(BirthDate, format = "%m/%d/%Y"), "days") / 365.25) %>%
+    mutate(sexF = ifelse(Gender == "F", 1, 0))
+    # filter(PatientSSN %in% first_seizure_df[!is.na(first_seizure_df$FirstSeizureDate), ]$PatientSSN)
+
+combined_df[is.na(combined_df)] <- 0
+
+# combined_df <- combined_df %>%
+#     filter(site_type == "ECoE")
+
+clean_combined_df <- combined_df %>%
+    dplyr::select(
+        -PatientICN,
+        -lname,
+        -fname,
+        -PatientSSN,
+        -PERSON_ID,
+        -BirthDate,
+        -rated,
+        -Gender
+    ) %>%
+    mutate(across(-c("site_type", "etiology"), ~ as.numeric(.))) %>%
+    mutate(dre = as.factor(dre))
+```
+
+```{r}
+set.seed(1)
+
+stable_analysis_df <- clean_combined_df
+```
+
+# Sandbox
+
+```{r}
+stable_analysis_df <- stable_analysis_df %>%
+    mutate(
+        dre_predicted = ifelse(
+            asm_gaba_prega_low_dose_2_excluded_count >= 4,
+            1,
+            # 0
+            ifelse(
+                asm_gaba_prega_low_dose_2_excluded_count >= 3 & (intractable_count >= 1 | eeg_mri_count >= 4),
+                1,
+                # 0
+                ifelse(
+                    gaba_prega_low_dose_2_excluded_rolling_asm_count >= 2 & (intractable_count >= 2 | eeg_count >= 4 | mri_count >= 4),
+                    1,
+                    0
+                    # ifelse(
+                    #     gaba_prega_low_dose_2_excluded_rolling_asm_count >= 1 & (intractable_count >= 2 | eeg_count >= 4 | mri_count >= 4),
+                    #     1,
+                    #     0
+                    # )
+                )
+            )
+        )
+    ) %>%
+    mutate(dre_predicted = factor(dre_predicted)) %>%
+    mutate(dre = factor(dre))
+
+
+confusionMatrix(stable_analysis_df$dre_predicted, stable_analysis_df$dre, positive = "1")
+print(paste("F1 Score: ", F1_Score(y_pred = stable_analysis_df$dre_predicted, y_true = stable_analysis_df$dre, positive = "1")))
+
+# model <- glm(dre ~ asm_gaba_prega_low_dose_2_excluded_count + intractable_count + eeg_mri_count, data = stable_analysis_df, family = "binomial")
+# 
+# logistic_regression_stats(model = model, test_data = stable_analysis_df)
+```
+
+# Reasons for Disconcordance
+
+```{r}
+debug_df <- combined_df %>%
+    select(PatientSSN, dre, asm_complete_count, rolling_asm_count, intractable_count, eeg_count, mri_count)
+```
+
+# SVM
+
+## ECoE (80/20 Test/Train)
+
+```{r}
+analysis_df <- stable_analysis_df %>%
+    filter(site_type == "ECoE") %>%
+    dplyr::select(-site_type)
+
+sample_i <- sample(nrow(analysis_df), size = 0.8 * nrow(analysis_df))
+train_data <- analysis_df[sample_i, ]
+test_data <- analysis_df[-sample_i, ]
+
+svm_model <- svm(dre ~ ., data = train_data, kernel = "radial", probability = TRUE)
+
+pred_class <- predict(svm_model, test_data)
+pred_prob <- predict(svm_model, test_data, probability = TRUE)
+prob_values <- attr(pred_prob, "probabilities")[, "1"]
+
+confusionMatrix(pred_class, test_data$dre, positive = "1")
+print(paste("F1 Score: ", F1_Score(y_pred = pred_class, y_true = test_data$dre, positive = "1")))
+
+roc_obj <- roc(test_data$dre, prob_values)
+auc_value <- auc(roc_obj)
+print(paste("AUC: ", auc_value))
+plot(roc_obj, col = "blue", main = "ROC Curve - SVM")
+
+# w <- t(svm_model$coefs) %*% svm_model$SV
+# print("Weights:")
+# print(w)
+```
+
+## Associate (80/20 Test/Train)
+
+### Linear SVM (as prior models)
+
+```{r}
+analysis_df <- stable_analysis_df %>%
+    filter(site_type == "Associate") %>%
+    dplyr::select(-site_type)
+
+sample_i <- sample(nrow(analysis_df), size = 0.8 * nrow(analysis_df))
+train_data <- analysis_df[sample_i, ]
+test_data <- analysis_df[-sample_i, ]
+
+svm_model <- svm(dre ~ ., data = train_data, kernel = "linear", probability = TRUE)
+
+pred_class <- predict(svm_model, test_data)
+pred_prob <- predict(svm_model, test_data, probability = TRUE)
+prob_values <- attr(pred_prob, "probabilities")[, "1"]
+
+confusionMatrix(pred_class, test_data$dre, positive = "1")
+print(paste("F1 Score: ", F1_Score(y_pred = pred_class, y_true = test_data$dre, positive = "1")))
+
+roc_obj <- roc(test_data$dre, prob_values)
+auc_value <- auc(roc_obj)
+print(paste("AUC: ", auc_value))
+plot(roc_obj, col = "blue", main = "ROC Curve - SVM")
+
+# w <- t(svm_model$coefs) %*% svm_model$SV
+# print("Weights:")
+# print(w)
+```
+
+### SVM Using Radial Basis Function
+
+This transforms data into higher dimensions to find better separation. However, that means you cannot easily interpret its weights. Just showing as an example.
+
+```{r}
+svm_model <- svm(dre ~ ., data = train_data, kernel = "radial", probability = TRUE)
+
+pred_class <- predict(svm_model, test_data)
+pred_prob <- predict(svm_model, test_data, probability = TRUE)
+prob_values <- attr(pred_prob, "probabilities")[, "1"]
+
+confusionMatrix(pred_class, test_data$dre, positive = "1")
+print(paste("F1 Score: ", F1_Score(y_pred = pred_class, y_true = test_data$dre, positive = "1")))
+
+roc_obj <- roc(test_data$dre, prob_values)
+auc_value <- auc(roc_obj)
+print(paste("AUC: ", auc_value))
+plot(roc_obj, col = "blue", main = "ROC Curve - SVM")
+```
+
+## Overall (80/20 Test/Train)
+
+### Linear SVM
+
+```{r}
+analysis_df <- stable_analysis_df %>%
+    dplyr::select(-site_type)
+
+sample_i <- sample(nrow(analysis_df), size = 0.8 * nrow(analysis_df))
+train_data <- analysis_df[sample_i, ]
+test_data <- analysis_df[-sample_i, ]
+
+svm_model <- svm(dre ~ ., data = train_data, kernel = "linear", probability = TRUE)
+
+pred_class <- predict(svm_model, test_data)
+pred_prob <- predict(svm_model, test_data, probability = TRUE)
+prob_values <- attr(pred_prob, "probabilities")[, "1"]
+
+confusionMatrix(pred_class, test_data$dre, positive = "1")
+print(paste("F1 Score: ", F1_Score(y_pred = pred_class, y_true = test_data$dre, positive = "1")))
+
+roc_obj <- roc(test_data$dre, prob_values)
+auc_value <- auc(roc_obj)
+print(paste("AUC: ", auc_value))
+plot(roc_obj, col = "blue", main = "ROC Curve - SVM")
+
+w <- t(svm_model$coefs) %*% svm_model$SV
+print("Weights:")
+print(w)
+```
+
+### Radial SVM
+
+```{r}
+analysis_df <- stable_analysis_df
+
+sample_i <- sample(nrow(analysis_df), size = 0.8 * nrow(analysis_df))
+train_data <- analysis_df[sample_i, ]
+test_data <- analysis_df[-sample_i, ]
+
+svm_model <- svm(dre ~ ., data = train_data, kernel = "radial", probability = TRUE)
+
+pred_class <- predict(svm_model, test_data)
+pred_prob <- predict(svm_model, test_data, probability = TRUE)
+prob_values <- attr(pred_prob, "probabilities")[, "1"]
+
+confusionMatrix(pred_class, test_data$dre, positive = "1")
+print(paste("F1 Score: ", F1_Score(y_pred = pred_class, y_true = test_data$dre, positive = "1")))
+
+roc_obj <- roc(test_data$dre, prob_values)
+auc_value <- auc(roc_obj)
+print(paste("AUC: ", auc_value))
+plot(roc_obj, col = "blue", main = "ROC Curve - SVM")
+```
+
+# Random Forest of ECoE
+
+Still need to parse this, but the performance look comparable (AUC ~0.75).
+
+```{r}
+analysis_df <- stable_analysis_df %>%
+    filter(site_type == "ECoE") %>%
+    dplyr::select(-site_type)
+
+sample_i <- sample(nrow(analysis_df), size = 0.8 * nrow(analysis_df))
+train_data <- analysis_df[sample_i, ]
+test_data <- analysis_df[-sample_i, ]
+
+random_forest_model <- randomForest(dre ~ ., data = train_data, ntree = 100, mtry = 2, importance = TRUE)
+
+pred_class <- predict(random_forest_model, test_data)
+pred_prob <- predict(random_forest_model, test_data, type = "prob")
+prob_values <- pred_prob[, "1"]
+
+confusionMatrix(pred_class, test_data$dre, positive = "1")
+print(paste("F1 Score: ", F1_Score(y_pred = pred_class, y_true = test_data$dre, positive = "1")))
+
+roc_obj <- roc(test_data$dre, prob_values)
+auc_value <- auc(roc_obj)
+print(paste("AUC: ", auc_value))
+plot(roc_obj, col = "blue", main = "ROC Curve - Random Forest")
+
+print(random_forest_model)
+importance(random_forest_model)
+varImpPlot(random_forest_model)
+```
+
+# Quantitative Discriminant Analysis ECoE
+
+Still TODO.
+
+```{r}
+# analysis_df <- stable_analysis_df %>%
+#     filter(site_type == "ECoE") %>%
+#     dplyr::select(-site_type)
+# 
+# sample_i <- sample(nrow(analysis_df), size = 0.6 * nrow(analysis_df))
+# train_data <- analysis_df[sample_i, ]
+# test_data <- analysis_df[-sample_i, ]
+# 
+# qda_model <- qda(dre ~ ., data = train_data, ntree = 100, mtry = 2, importance = TRUE)
+# 
+# pred_class <- predict(qda_model, test_data)
+# pred_prob <- predict(qda_model, test_data, type = "prob")
+# prob_values <- pred_prob[, "1"]
+# 
+# confusionMatrix(pred_class, test_data$dre, positive = "1")
+# print(paste("F1 Score: ", F1_Score(y_pred = pred_class, y_true = test_data$dre, positive = "1")))
+# 
+# roc_obj <- roc(test_data$dre, prob_values)
+# auc_value <- auc(roc_obj)
+# print(paste("AUC: ", auc_value))
+# plot(roc_obj, col = "blue", main = "ROC Curve - QDA")
+# 
+# print(qda_model)
+# importance(qda_model)
+# varImpPlot(qda_model)
+```
+
+# Conclusion
+
+## Focusing on Sensitivity
+
+I think as an overall goal, it may be better for us to try to optimize sensitivity over specificity (to a reasonable degree). We are using an enriched cohort of DRE where the minimum requirements are to have at least two ASMs. If these algorithms are to be applied among all epilepsy patients, the specificity there would be much improved since everyone with only one ASM is automatically non-DRE. Sensitivity would not change since patients with only one ASM cannot be DRE.
+
+## Simple Algorithms
+
+The approach likely to lead to the best results is to use a decision tree. This is simple to show and publish, but it can handle a few more cases that less flexible algorithms like (X + Y + Z -> DRE, otherwise non-DRE). However, the ML methods to do this have not given me good results at all. I think they are choking on the large number of features, of which many are related. This might just require some manual trial-and-error.
+
+## Choosing Features
+
+The SVM weights are a good start, but I have not been able to totally pin down which features are going to be the most useful yet. I saw that there was a technique called Recursive Feature Elimination that I want to try next.
+
+## Random Seeding
+
+The results seem to be very sensitive to the random seed used to split training and test data. This likely indicates we need better feature selection and/or tuning of hyperparameters to avoid such issues.

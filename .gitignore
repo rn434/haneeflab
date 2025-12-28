@@ -1,0 +1,14 @@
+.git
+venv/
+__pycache__
+.DS_Store
+*.png
+*.pdf
+*.html
+*.docx
+*.pptx
+*.xlsx
+*.zip
+
+.RHistory
+.RData

@@ -1,0 +1,463 @@
+---
+title: "Replicating Haneef 2022"
+author: "Rohan Nagabhirava"
+date: "`r Sys.Date()`"
+css: styles.css
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+# Analysis Setup
+
+This section includes options for knitting of the Rmd document, loading of the necessary libraries for the analysis, definitions of functions to streamline analysis down the line, and the connection to the database.
+
+```{r, message=FALSE, results='hide'}
+packages <- c(
+  "data.table", "ggplot2", "ggfortify", "ggpubr", "ggrepel",
+  "ggsci", "glue", "gt", "lubridate", "ranger", "rlang", "RODBC", "tidyr",
+  "purrr", "gtsummary", "gtable", "scales", "MatchIt", "survminer", "survival",
+  "broom", "dplyr", "conflicted", "knitr", "rmarkdown", "stringr"
+)
+
+installed <- packages %in% rownames(installed.packages())
+if(any(!installed)) {
+  install.packages(packages[!installed], type = "binary")
+}
+
+invisible(lapply(packages, library, character.only = TRUE))
+conflicts_prefer(dplyr::select, dplyr::filter, dplyr::first)
+```
+
+```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+options(encoding = "UTF-8")
+```
+
+```{r}
+conn <- tryCatch({
+    odbcDriverConnect(
+        "driver={SQL Server};server=vhacdwrb03.vha.med.va.gov;database=SCS_EEGUtil;trusted_connection=true"
+    )
+}, warning = function(w) {
+    message("Not connected to VA network, loading fake-data.csv...")
+    return(NULL)
+}, error = function(e) {
+    message("Not connected to VA network, loading fake-data.csv...")
+    return(NULL)
+})
+```
+
+# Load Data
+
+```{r}
+if (is.null(conn)) {
+    raw_data <- read.csv("../dummy_data/combined.csv")
+} else {
+    raw_all_epilepsy_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnEpilepsy;")
+    raw_rohan_epilepsy_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnEpilepsy2016;")
+    raw_asm_exposure_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnASMExposuresAll16;")
+    raw_intractable_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnIntractableAll16;")
+    raw_follow_up_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnFollowUp;")
+    raw_demographics_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnDemographics;")
+    raw_acute_event_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnAcuteEvent;")
+    raw_eeg_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnEEG;")
+    raw_mri_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnMRI;")
+}
+```
+
+## Initial Data Processing
+
+```{r}
+data_list <- c(
+    "raw_all_epilepsy_data",
+    "raw_rohan_epilepsy_data",
+    "raw_asm_exposure_data",
+    "raw_intractable_data",
+    "raw_follow_up_data",
+    "raw_demographics_data",
+    "raw_acute_event_data",
+    "raw_eeg_data",
+    "raw_mri_data"
+)
+
+for (data_name in data_list) {
+    data <- get(data_name)
+    data <- data %>% mutate(PatientICN = as.character(PatientICN))
+    assign(data_name, data, envir = .GlobalEnv)
+}
+
+# study_start <- as_date("2013-10-01")
+# study_mid <- as_date("2017-01-01")
+study_end <- as_date("2025-01-01")
+
+rohan_epilepsy_data <- raw_rohan_epilepsy_data %>%
+    select(PatientICN)
+
+all_epilepsy_data <- raw_all_epilepsy_data %>%
+    mutate(across(c("DxDate"), ~ as_date(parse_date_time(., orders = c("ymd")))))
+
+epilepsy_data <- rohan_epilepsy_data %>%
+    inner_join(all_epilepsy_data, by = "PatientICN")
+  
+demographics_data <- raw_demographics_data %>%
+    inner_join(raw_follow_up_data, by = "PatientICN") %>%
+    mutate(across(c("BirthDate", "DeathDate", "FollowUpDate"), ~ as_date(parse_date_time(., orders = c("ymd"))))) %>%
+    mutate(FollowUpDate = if_else(FollowUpDate > study_end, as.Date(study_end), FollowUpDate)) %>%
+    mutate(DeathDate = if_else(DeathDate > study_end, as.Date(NA), DeathDate)) %>%
+    mutate(Death = !is.na(DeathDate)) %>%
+    mutate(EndDate = coalesce(DeathDate, FollowUpDate)) %>%
+    mutate(Race = case_when(
+        Race == "WHITE NOT OF HISP ORIG" ~ "WHITE",
+        TRUE ~ Race))
+    
+asm_long_data <- raw_asm_exposure_data %>%
+    select(-GABAPENTIN, -PREGABALIN) %>%
+    pivot_longer(cols = -PatientICN,
+        names_to = "Drug",
+        values_to = "ASMDate") %>%
+    mutate(ASMDate = as.Date(ASMDate)) %>%
+    filter(!is.na(ASMDate))
+    
+intractable_data <- raw_intractable_data %>%
+    mutate(DxDate = as.Date(DxDate)) %>%
+    group_by(PatientICN) %>%
+    summarize(IntractableDate = min(DxDate, na.rm = TRUE), .groups = "drop")
+
+asm_data <- asm_long_data %>%
+  group_by(PatientICN) %>%
+  summarize(SecondASMDate = ifelse(
+    length(ASMDate) >= 2, sort(ASMDate)[2], as.Date(NA)), .groups = "drop") %>%
+  filter(!is.na(SecondASMDate))
+
+eeg_data <- raw_eeg_data %>%
+  mutate(EEGDate = as.Date(EEGDate)) %>%
+  filter(!is.na(EEGDate)) %>%
+  group_by(PatientICN) %>%
+  summarize(EEGDate = min(EEGDate, na.rm = TRUE), .groups = "drop")
+
+mri_data <- raw_mri_data %>%
+  mutate(MRIDate = as.Date(MRIDate)) %>%
+  filter(!is.na(MRIDate)) %>%
+  group_by(PatientICN) %>%
+  summarize(MRIDate = min(MRIDate, na.rm = TRUE), .groups = "drop")
+
+eeg_mri_data <- eeg_data %>%
+  full_join(mri_data, by = "PatientICN") %>%
+  mutate(EEGMRIDate = pmin(EEGDate, MRIDate, na.rm = TRUE)) %>%
+  filter(!is.na(EEGMRIDate))
+
+dre_data <- intractable_data %>%
+  inner_join(asm_data, by = "PatientICN") %>%
+  inner_join(eeg_mri_data, by = "PatientICN")
+
+dre_data <- dre_data %>%
+  mutate(DREDate = pmax(
+      IntractableDate,
+      SecondASMDate,
+      EEGMRIDate,
+      na.rm = TRUE))
+
+acute_event_data <- raw_acute_event_data
+
+data <- epilepsy_data %>%
+    inner_join(demographics_data, by = "PatientICN") %>%
+    left_join(dre_data, by = "PatientICN") %>%
+    filter(!is.na(DxDate)) %>%
+    mutate(DRE = !is.na(DREDate)) %>%
+    filter((EndDate - DxDate) >= days(365)) %>%
+    mutate(DxDate = DxDate + days(365)) %>%
+    mutate(Age = trunc(as.numeric(interval(BirthDate, DxDate) / years(1))))
+
+    
+# cdw_data <- epilepsy_data %>%
+#     inner_join(demographics_data, by = "PatientICN") %>%
+#     # anti_join(raw_acute_event_data, by = "PatientICN") %>%
+#     mutate(
+#         AgeGroup = case_when(
+#             Age >= 15 & Age <= 24 ~ "15-24",
+#             Age >= 25 & Age <= 34 ~ "25-34",
+#             Age >= 35 & Age <= 44 ~ "35-44",
+#             Age >= 45 & Age <= 54 ~ "45-54",
+#             Age >= 55 & Age <= 64 ~ "55-64",
+#             Age >= 65 & Age <= 74 ~ "65-74",
+#             Age >= 75 & Age <= 84 ~ "75-84",
+#             Age >= 85             ~ "85+",
+#             TRUE ~ NA_character_
+#         )
+#     )
+#     
+# cdc_wonder_data <- tribble(
+#     ~Sex,      ~AgeGroup,  ~WonderMortalityRate,
+#     "M",    "15-24",    101,
+#     "M",    "25-34",    171,
+#     "M",    "35-44",    241,
+#     "M",    "45-54",    495,
+#     "M",    "55-64",   1110,
+#     "M",    "65-74",   2186,
+#     "M",    "75-84",   5241,
+#     "M",    "85+",    14561,
+#     "F",  "15-24",     39,
+#     "F",  "25-34",     76,
+#     "F",  "35-44",    139,
+#     "F",  "45-54",    309,
+#     "F",  "55-64",    668,
+#     "F",  "65-74",   1432,
+#     "F",  "75-84",   3857,
+#     "F",  "85+",    12855
+# )
+# 
+# vha_matched_data <- tribble(
+#     ~Sex,      ~AgeGroup,  ~VHAMortalityRate,
+#     "M",    "15-24",    406,
+#     "M",    "25-34",    939,
+#     "M",    "35-44",    1342,
+#     "M",    "45-54",    2998,
+#     "M",    "55-64",   9886,
+#     "M",    "65-74",   15213,
+#     "M",    "75-84",   32147,
+#     "M",    "85+",    63365,
+#     "F",  "15-24",     139,
+#     "F",  "25-34",     395,
+#     "F",  "35-44",    726,
+#     "F",  "45-54",    1703,
+#     "F",  "55-64",    4660,
+#     "F",  "65-74",   11071,
+#     "F",  "75-84",   25675,
+#     "F",  "85+",    64173
+# )
+# 
+#
+# data <- cdw_data %>%
+#     inner_join(cdc_wonder_data, by = c("Sex", "AgeGroup")) %>%
+#     inner_join(vha_matched_data, by = c("Sex", "AgeGroup")) %>%
+#     inner_join(rohan_epilepsy_data, by = "PatientICN") %>%
+#     mutate(WonderExpectedDeaths = PersonYears * (WonderMortalityRate / 100000)) %>%
+#     mutate(VHAExpectedDeaths = VHAMortalityRate / 100000) %>%
+#     mutate(DRE = (DistinctASMCount >= 2))
+```
+
+## Age and Sex as Covariates
+
+```{r}
+setDT(data)
+
+data[, `:=`(
+  TimeToDRE = as.numeric(DREDate - DxDate),
+  TimeToEnd = as.numeric(EndDate - DxDate)
+)]
+
+pre <- data[, .(
+  PatientICN,
+  Start = 0,
+  Stop = fifelse(DRE, TimeToDRE, TimeToEnd),
+  Event = fifelse(DRE, 0L, as.integer(Death)),
+  DRE = 0L
+)]
+
+post <- data[DRE == TRUE, .(
+  PatientICN,
+  Start = TimeToDRE,
+  Stop = TimeToEnd,
+  Event = as.integer(Death),
+  DRE = 1L
+)]
+
+intervals_dt <- rbindlist(list(pre, post))[Stop > Start][order(PatientICN, Start)]
+
+intervals_df <- intervals_dt %>%
+  left_join(data %>% select(PatientICN, Age, Sex, DxDate), by = "PatientICN")
+
+print("Time-varying covariate analysis: ")
+cox_model <- coxph(Surv(Start, Stop, Event) ~ DRE + Age + Sex, data = intervals_df, cluster = PatientICN)
+summary(cox_model)
+```
+
+## Matched Data
+
+```{r}
+table(data$DRE)
+covariate_balance <- matchit(DRE ~ Age + Sex, data = data, method = NULL, distance = "glm")
+summary(covariate_balance)
+match <- matchit(DRE ~ Age + Sex, data = data, method = "nearest", distance = "glm", ratio = 2)
+matched_data <- match.data(match)
+
+setDT(matched_data)
+
+matched_data[, `:=`(
+  TimeToDRE = as.numeric(DREDate - DxDate),
+  TimeToEnd = as.numeric(EndDate - DxDate)
+)]
+
+pre <- matched_data[, .(
+  PatientICN,
+  Start = 0,
+  Stop = fifelse(DRE, TimeToDRE, TimeToEnd),
+  Event = fifelse(DRE, 0L, as.integer(Death)),
+  DRE = 0L
+)]
+
+post <- matched_data[DRE == TRUE, .(
+  PatientICN,
+  Start = TimeToDRE,
+  Stop = TimeToEnd,
+  Event = as.integer(Death),
+  DRE = 1L
+)]
+
+intervals_dt <- rbindlist(list(pre, post))[Stop > Start][order(PatientICN, Start)]
+
+intervals_df <- intervals_dt %>%
+  left_join(matched_data %>% select(PatientICN, Age, Sex, DxDate), by = "PatientICN")
+
+print("Time-varying covariate analysis: ")
+cox_model <- coxph(Surv(Start, Stop, Event) ~ DRE, data = intervals_df, cluster = PatientICN)
+summary(cox_model)
+```
+
+
+## Comparing DRE to non-DRE by Direct Standardization
+
+```{r}
+rates <- data %>%
+    group_by(AgeGroup, Sex, DRE) %>%
+    summarise(
+        TotalDeaths = sum(Death),
+        TotalPersonYears = sum(PersonYears),
+        Rate = TotalDeaths / TotalPersonYears * 1000
+    )
+    
+standard_population <- data %>%
+    group_by(AgeGroup, Sex) %>%
+    summarise(StandardPersonYears = sum(PersonYears), .groups = "drop") %>%
+    mutate(Weight = StandardPersonYears / sum(StandardPersonYears))
+
+direct_standardization_rates <- rates %>%
+    left_join(standard_population, by = c("AgeGroup", "Sex")) %>%
+    group_by(DRE) %>%
+    summarise(
+        DirectStandardizedMortalityRate = sum(Rate * Weight, na.rm = TRUE),
+        .groups = "drop"
+    )
+
+direct_standardization_rates
+```
+
+## DRE Cohort
+
+```{r}
+data <- data %>% filter(DRE == 1)
+```
+
+### Calculating SMR Relative to WONDER
+
+```{r}
+smr_summary <- data %>%
+    group_by(Sex, AgeGroup) %>%
+    summarise(
+        N = n(),
+        Observed = sum(Death, na.rm = TRUE),
+        Expected = sum(WonderExpectedDeaths, na.rm = TRUE),
+        PersonYears = sum(PersonYears, na.rm = TRUE),
+        SMR = Observed / Expected,
+        # Poisson
+        SMR_LCL = SMR * exp(-1.96 / sqrt(Observed)),
+        SMR_UCL = SMR * exp( 1.96 / sqrt(Observed))
+    ) %>%
+    ungroup()
+
+smr_by_sex <- data %>%
+  group_by(Sex) %>%
+    summarise(
+      AgeGroup = "Total",
+        N = n(),
+        Observed = sum(Death, na.rm = TRUE),
+        Expected = sum(WonderExpectedDeaths, na.rm = TRUE),
+        PersonYears = sum(PersonYears, na.rm = TRUE),
+        SMR = Observed / Expected,
+        # Poisson
+        SMR_LCL = SMR * exp(-1.96 / sqrt(Observed)),
+        SMR_UCL = SMR * exp( 1.96 / sqrt(Observed))
+    ) %>%
+  ungroup()
+
+smr_overall <- data %>%
+    summarise(
+      Sex = "Overall",
+      AgeGroup = "Total",
+        N = n(),
+        Observed = sum(Death, na.rm = TRUE),
+        Expected = sum(WonderExpectedDeaths, na.rm = TRUE),
+        PersonYears = sum(PersonYears, na.rm = TRUE),
+        SMR = Observed / Expected,
+        # Poisson
+        SMR_LCL = SMR * exp(-1.96 / sqrt(Observed)),
+        SMR_UCL = SMR * exp( 1.96 / sqrt(Observed))
+    )
+
+smr_final <- bind_rows(smr_summary, smr_by_sex, smr_overall) %>%
+  arrange(Sex, AgeGroup)
+
+filepath <- "wonder-smr.docx"
+if (file.exists(filepath)) {
+  file.remove(filepath)
+}
+smr_final %>% gt() %>% gtsave(filepath)
+smr_final
+```
+
+### Calculating SMR Relative to VHA
+
+```{r}
+smr_summary <- data %>%
+    group_by(Sex, AgeGroup) %>%
+    summarise(
+        N = n(),
+        Observed = sum(Death, na.rm = TRUE),
+        Expected = sum(VHAExpectedDeaths, na.rm = TRUE),
+        SMR = Observed / Expected,
+        # Poisson
+        SMR_LCL = SMR * exp(-1.96 / sqrt(Observed)),
+        SMR_UCL = SMR * exp( 1.96 / sqrt(Observed))
+    ) %>%
+    ungroup()
+
+smr_by_sex <- data %>%
+  group_by(Sex) %>%
+    summarise(
+      AgeGroup = "Total",
+        N = n(),
+        Observed = sum(Death, na.rm = TRUE),
+        Expected = sum(VHAExpectedDeaths, na.rm = TRUE),
+        SMR = Observed / Expected,
+        # Poisson
+        SMR_LCL = SMR * exp(-1.96 / sqrt(Observed)),
+        SMR_UCL = SMR * exp( 1.96 / sqrt(Observed))
+    ) %>%
+  ungroup()
+
+smr_overall <- data %>%
+    summarise(
+      Sex = "Overall",
+      AgeGroup = "Total",
+        N = n(),
+        Observed = sum(Death, na.rm = TRUE),
+        Expected = sum(VHAExpectedDeaths, na.rm = TRUE),
+        SMR = Observed / Expected,
+        # Poisson
+        SMR_LCL = SMR * exp(-1.96 / sqrt(Observed)),
+        SMR_UCL = SMR * exp( 1.96 / sqrt(Observed))
+    )
+
+smr_final <- bind_rows(smr_summary, smr_by_sex, smr_overall) %>%
+  arrange(Sex, AgeGroup)
+
+filepath <- "vha-smr.docx"
+if (file.exists(filepath)) {
+  file.remove(filepath)
+}
+smr_final %>% gt() %>% gtsave(filepath)
+smr_final
+```

@@ -1,0 +1,2293 @@
+﻿ICD_Start,ICD_End,Cause,Level
+A00,A00.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+A01.0,A14,"Communicable, maternal, neonatal, and nutritional diseases",1
+A15,A28.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+A32,A39.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+A48.1,A48.2,"Communicable, maternal, neonatal, and nutritional diseases",1
+A48.4,A48.5,"Communicable, maternal, neonatal, and nutritional diseases",1
+A50,A58,"Communicable, maternal, neonatal, and nutritional diseases",1
+A60,A60.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+A63,A63.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+A65,A65.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+A68,A70,"Communicable, maternal, neonatal, and nutritional diseases",1
+A74,A74,"Communicable, maternal, neonatal, and nutritional diseases",1
+A74.8,A75.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+A77,A96.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+A98,A98.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+B00,B06.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+B10,B10.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+B15,B16.2,"Communicable, maternal, neonatal, and nutritional diseases",1
+B17.0,B17.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+B17.2,B17.2,"Communicable, maternal, neonatal, and nutritional diseases",1
+B19.1,B19.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+B20,B27.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+B29.4,B29.4,"Communicable, maternal, neonatal, and nutritional diseases",1
+B33,B33.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+B33.3,B33.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+B47,B48.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+B50,B54.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+B55.0,B55.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+B56,B57.5,"Communicable, maternal, neonatal, and nutritional diseases",1
+B60,B60.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+B63,B63,"Communicable, maternal, neonatal, and nutritional diseases",1
+B65,B67.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+B69,B72.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+B74.3,B75,"Communicable, maternal, neonatal, and nutritional diseases",1
+B77,B77.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+B83,B83.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+B90,B91,"Communicable, maternal, neonatal, and nutritional diseases",1
+B94.1,B94.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+B95,B95.5,"Communicable, maternal, neonatal, and nutritional diseases",1
+B97.4,B97.6,"Communicable, maternal, neonatal, and nutritional diseases",1
+C58,C58.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+D50.1,D50.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+D51,D52.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+D52.8,D53.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+D70.3,D70.3,"Communicable, maternal, neonatal, and nutritional diseases",1
+D89.3,D89.3,"Communicable, maternal, neonatal, and nutritional diseases",1
+E00,E02,"Communicable, maternal, neonatal, and nutritional diseases",1
+E40,E46.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+E51,E61.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+E63,E64.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+E64.2,E64.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+F02.1,F02.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+F02.4,F02.4,"Communicable, maternal, neonatal, and nutritional diseases",1
+F07.1,F07.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+G00.0,G00.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+G03,G03.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+G04,G05.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+G14,G14.6,"Communicable, maternal, neonatal, and nutritional diseases",1
+G21.3,G21.3,"Communicable, maternal, neonatal, and nutritional diseases",1
+H70,H70.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+I00,I00,"Communicable, maternal, neonatal, and nutritional diseases",1
+I02,I02,"Communicable, maternal, neonatal, and nutritional diseases",1
+I02.9,I02.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+I98.0,I98.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+J00,J02.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+J03,J03.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+J04,J04.2,"Communicable, maternal, neonatal, and nutritional diseases",1
+J05,J05.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+J06.0,J06.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+J09,J15.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+J16,J16.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+J20,J21.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+J36,J36.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+J91.0,J91.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+K52.1,K52.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+K67.0,K67.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+K75.3,K75.3,"Communicable, maternal, neonatal, and nutritional diseases",1
+K76.3,K76.3,"Communicable, maternal, neonatal, and nutritional diseases",1
+K77.0,K77.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+K93.0,K93.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+M03.1,M03.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+M12.1,M12.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+M49.0,M49.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+M73.0,M73.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+M89.6,M89.6,"Communicable, maternal, neonatal, and nutritional diseases",1
+N74.1,N74.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+N96,N96,"Communicable, maternal, neonatal, and nutritional diseases",1
+N98,N98.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+O00,O07.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+O09,O16.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+O20,O26.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+O28,O36.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+O40,O48.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+O60,O77.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+O80,O92.7,"Communicable, maternal, neonatal, and nutritional diseases",1
+O96,O98.6,"Communicable, maternal, neonatal, and nutritional diseases",1
+O98.8,P04.2,"Communicable, maternal, neonatal, and nutritional diseases",1
+P04.5,P05.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+P07,P15.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+P19,P22.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+P23.0,P23.4,"Communicable, maternal, neonatal, and nutritional diseases",1
+P24,P29.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+P35,P37.2,"Communicable, maternal, neonatal, and nutritional diseases",1
+P37.5,P39.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+P50,P61.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+P70,P70.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+P70.3,P72.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+P74,P78.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+P80,P81.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+P83,P84,"Communicable, maternal, neonatal, and nutritional diseases",1
+P90,P94.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+P96,P96,"Communicable, maternal, neonatal, and nutritional diseases",1
+P96.3,P96.4,"Communicable, maternal, neonatal, and nutritional diseases",1
+P96.8,P96.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+R19.7,R19.7,"Communicable, maternal, neonatal, and nutritional diseases",1
+U04,U04.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+U06,U06.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+U82,U89,"Communicable, maternal, neonatal, and nutritional diseases",1
+Z16,Z16.3,"Communicable, maternal, neonatal, and nutritional diseases",1
+A50,A58,HIV/AIDS and sexually transmitted infections,2
+A60,A60.9,HIV/AIDS and sexually transmitted infections,2
+A63,A63.8,HIV/AIDS and sexually transmitted infections,2
+B20,B24.9,HIV/AIDS and sexually transmitted infections,2
+B63,B63,HIV/AIDS and sexually transmitted infections,2
+F02.4,F02.4,HIV/AIDS and sexually transmitted infections,2
+I98.0,I98.0,HIV/AIDS and sexually transmitted infections,2
+K67.0,K67.2,HIV/AIDS and sexually transmitted infections,2
+M03.1,M03.1,HIV/AIDS and sexually transmitted infections,2
+M73.0,M73.1,HIV/AIDS and sexually transmitted infections,2
+B20,B24.9,HIV/AIDS,3
+F02.4,F02.4,HIV/AIDS,3
+B20.0,B20.0,HIV/AIDS–drug-susceptible tuberculosis,4
+,,HIV/AIDS–multidrug-resistant tuberculosis without extensive drug resistance,
+,,HIV/AIDS–extensively drug-resistant tuberculosis,4
+B20,B20,HIV/AIDS resulting in other diseases,4
+B20.1,B24.9,HIV/AIDS resulting in other diseases,4
+F02.4,F02.4,HIV/AIDS resulting in other diseases,4
+A50,A58,Sexually transmitted infections excluding HIV,3
+A60,A60.9,Sexually transmitted infections excluding HIV,3
+A63,A63.8,Sexually transmitted infections excluding HIV,3
+B63,B63,Sexually transmitted infections excluding HIV,3
+I98.0,I98.0,Sexually transmitted infections excluding HIV,3
+K67.0,K67.2,Sexually transmitted infections excluding HIV,3
+M03.1,M03.1,Sexually transmitted infections excluding HIV,3
+M73.0,M73.1,Sexually transmitted infections excluding HIV,3
+A50,A53.9,Syphilis,4
+I98.0,I98.0,Syphilis,4
+K67.2,K67.2,Syphilis,4
+M03.1,M03.1,Syphilis,4
+M73.1,M73.1,Syphilis,4
+A55,A56.8,Chlamydial infection,4
+K67.0,K67.0,Chlamydial infection,4
+A54,A54.9,Gonococcal infection,4
+K67.1,K67.1,Gonococcal infection,4
+M73.0,M73.0,Gonococcal infection,4
+A57,A58,Other sexually transmitted infections,4
+A63,A63.8,Other sexually transmitted infections,4
+B63,B63,Other sexually transmitted infections,4
+A10,A14,Respiratory infections and tuberculosis,2
+A15,A19.9,Respiratory infections and tuberculosis,2
+A48.1,A48.1,Respiratory infections and tuberculosis,2
+A70,A70,Respiratory infections and tuberculosis,2
+B90,B90.9,Respiratory infections and tuberculosis,2
+B97.4,B97.6,Respiratory infections and tuberculosis,2
+H70,H70.9,Respiratory infections and tuberculosis,2
+J00,J02.8,Respiratory infections and tuberculosis,2
+J03,J03.8,Respiratory infections and tuberculosis,2
+J04,J04.2,Respiratory infections and tuberculosis,2
+J05,J05.1,Respiratory infections and tuberculosis,2
+J06.0,J06.8,Respiratory infections and tuberculosis,2
+J09,J15.8,Respiratory infections and tuberculosis,2
+J16,J16.9,Respiratory infections and tuberculosis,2
+J20,J21.9,Respiratory infections and tuberculosis,2
+J36,J36.0,Respiratory infections and tuberculosis,2
+J91.0,J91.0,Respiratory infections and tuberculosis,2
+K67.3,K67.3,Respiratory infections and tuberculosis,2
+K93.0,K93.0,Respiratory infections and tuberculosis,2
+M49.0,M49.0,Respiratory infections and tuberculosis,2
+N74.1,N74.1,Respiratory infections and tuberculosis,2
+P23.0,P23.4,Respiratory infections and tuberculosis,2
+P37.0,P37.0,Respiratory infections and tuberculosis,2
+U04,U04.9,Respiratory infections and tuberculosis,2
+U84.3,U84.3,Respiratory infections and tuberculosis,2
+A10,A14,Tuberculosis,3
+A15,A19.9,Tuberculosis,3
+B90,B90.9,Tuberculosis,3
+K67.3,K67.3,Tuberculosis,3
+K93.0,K93.0,Tuberculosis,3
+M49.0,M49.0,Tuberculosis,3
+N74.1,N74.1,Tuberculosis,3
+P37.0,P37.0,Tuberculosis,3
+U84.3,U84.3,Tuberculosis,3
+A10,A14,Drug-susceptible tuberculosis,4
+A15,A19.9,Drug-susceptible tuberculosis,4
+B90,B90.9,Drug-susceptible tuberculosis,4
+K67.3,K67.3,Drug-susceptible tuberculosis,4
+K93.0,K93.0,Drug-susceptible tuberculosis,4
+M49.0,M49.0,Drug-susceptible tuberculosis,4
+N74.1,N74.1,Drug-susceptible tuberculosis,4
+P37.0,P37.0,Drug-susceptible tuberculosis,4
+U84.3,U84.3,Multidrug-resistant tuberculosis without extensive drug resistance,
+,,Extensively drug-resistant tuberculosis,4
+A48.1,A48.1,Lower respiratory infections,3
+A70,A70,Lower respiratory infections,3
+B97.4,B97.6,Lower respiratory infections,3
+J09,J15.8,Lower respiratory infections,3
+J16,J16.9,Lower respiratory infections,3
+J20,J21.9,Lower respiratory infections,3
+J91.0,J91.0,Lower respiratory infections,3
+P23.0,P23.4,Lower respiratory infections,3
+U04,U04.9,Lower respiratory infections,3
+J00,J02.8,Upper respiratory infections,3
+J03,J03.8,Upper respiratory infections,3
+J04,J04.2,Upper respiratory infections,3
+J05,J05.1,Upper respiratory infections,3
+J06.0,J06.8,Upper respiratory infections,3
+J36,J36.0,Upper respiratory infections,3
+H70,H70.9,Otitis media,3
+A00,A00.9,Enteric infections,2
+A01.0,A09.9,Enteric infections,2
+A80,A80.9,Enteric infections,2
+K52.1,K52.1,Enteric infections,2
+R19.7,R19.7,Enteric infections,2
+A00,A00.9,Diarrheal diseases,
+A02,A02.0,Diarrheal diseases,
+A02.8,A07,Diarrheal diseases,
+A07.2,A07.4,Diarrheal diseases,
+A08,A09.9,Diarrheal diseases,
+K52.1,K52.1,Diarrheal diseases,
+R19.7,R19.7,Diarrheal diseases,
+A01.0,A01.4,Typhoid and paratyphoid,3
+A01.0,A01.0,Typhoid fever,4
+A01.1,A01.4,Paratyphoid fever,4
+A02.1,A02.2,Invasive non-typhoidal Salmonella (iNTS),3
+A07.0,A07.1,Other intestinal infectious diseases,3
+A07.8,A07.9,Other intestinal infectious diseases,3
+A80,A80.9,Other intestinal infectious diseases,3
+A68,A68.9,Neglected tropical diseases and malaria,2
+A69.2,A69.9,Neglected tropical diseases and malaria,2
+A75,A75.9,Neglected tropical diseases and malaria,2
+A77,A79.9,Neglected tropical diseases and malaria,2
+A82,A82.9,Neglected tropical diseases and malaria,2
+A90,A96.9,Neglected tropical diseases and malaria,2
+A98,A98.8,Neglected tropical diseases and malaria,2
+B33.0,B33.1,Neglected tropical diseases and malaria,2
+B50,B54.0,Neglected tropical diseases and malaria,2
+B55.0,B55.0,Neglected tropical diseases and malaria,2
+B56,B57.5,Neglected tropical diseases and malaria,2
+B60,B60.8,Neglected tropical diseases and malaria,2
+B65,B67.9,Neglected tropical diseases and malaria,2
+B69,B72.0,Neglected tropical diseases and malaria,2
+B74.3,B75,Neglected tropical diseases and malaria,2
+B77,B77.9,Neglected tropical diseases and malaria,2
+B83,B83.8,Neglected tropical diseases and malaria,2
+K93.1,K93.1,Neglected tropical diseases and malaria,2
+P37.1,P37.1,Neglected tropical diseases and malaria,2
+U06,U06.9,Neglected tropical diseases and malaria,2
+B50,B54.0,Malaria,3
+A30,A30.9,Leprosy,3
+B57,B57.5,Chagas disease,3
+K93.1,K93.1,Chagas disease,3
+B55.0,B55.0,Leishmaniasis,3
+B55.0,B55.0,Visceral leishmaniasis,4
+B56,B56.9,African trypanosomiasis,3
+B65,B65.9,Schistosomiasis,3
+B69,B69.9,Cysticercosis,3
+B67,B67.4,Cystic echinococcosis,3
+B67.8,B67.9,Cystic echinococcosis,3
+A90,A91.9,Dengue,3
+A95,A95.9,Yellow fever,3
+A82,A82.9,Rabies,3
+B77,B77.9,Intestinal nematode infections,3
+B77,B77.9,Ascariasis,4
+A98.4,A98.4,Ebola virus disease,3
+U06,U06.9,Zika virus disease,3
+A68,A68.9,Other neglected tropical diseases,3
+A69.2,A69.9,Other neglected tropical diseases,3
+A75,A75.9,Other neglected tropical diseases,3
+A77,A79.9,Other neglected tropical diseases,3
+A92,A94.0,Other neglected tropical diseases,3
+A96,A96.9,Other neglected tropical diseases,3
+A98,A98.3,Other neglected tropical diseases,3
+A98.5,A98.8,Other neglected tropical diseases,3
+B33.0,B33.1,Other neglected tropical diseases,3
+B60,B60.8,Other neglected tropical diseases,3
+B67.5,B67.7,Other neglected tropical diseases,3
+B70,B71.9,Other neglected tropical diseases,3
+B74.3,B75,Other neglected tropical diseases,3
+B83,B83.8,Other neglected tropical diseases,3
+P37.1,P37.1,Other neglected tropical diseases,3
+A20,A28.9,Other infectious diseases,2
+A32,A39.9,Other infectious diseases,2
+A48.2,A48.2,Other infectious diseases,2
+A48.4,A48.5,Other infectious diseases,2
+A65,A65.0,Other infectious diseases,2
+A69,A69.1,Other infectious diseases,2
+A74,A74,Other infectious diseases,2
+A74.8,A74.9,Other infectious diseases,2
+A81,A81.9,Other infectious diseases,2
+A83,A89.9,Other infectious diseases,2
+B00,B06.9,Other infectious diseases,2
+B10,B10.8,Other infectious diseases,2
+B15,B16.2,Other infectious diseases,2
+B17.0,B17.0,Other infectious diseases,2
+B17.2,B17.2,Other infectious diseases,2
+B19.1,B19.1,Other infectious diseases,2
+B25,B27.9,Other infectious diseases,2
+B29.4,B29.4,Other infectious diseases,2
+B33,B33,Other infectious diseases,2
+B33.3,B33.8,Other infectious diseases,2
+B47,B48.8,Other infectious diseases,2
+B91,B91,Other infectious diseases,2
+B94.1,B94.1,Other infectious diseases,2
+B95,B95.5,Other infectious diseases,2
+D70.3,D70.3,Other infectious diseases,2
+D89.3,D89.3,Other infectious diseases,2
+F02.1,F02.1,Other infectious diseases,2
+F07.1,F07.1,Other infectious diseases,2
+G00.0,G00.8,Other infectious diseases,2
+G03,G03.8,Other infectious diseases,2
+G04,G05.8,Other infectious diseases,2
+G14,G14.6,Other infectious diseases,2
+G21.3,G21.3,Other infectious diseases,2
+I00,I00,Other infectious diseases,2
+I02,I02,Other infectious diseases,2
+I02.9,I02.9,Other infectious diseases,2
+I98.1,I98.1,Other infectious diseases,2
+K67.8,K67.8,Other infectious diseases,2
+K75.3,K75.3,Other infectious diseases,2
+K76.3,K76.3,Other infectious diseases,2
+K77.0,K77.0,Other infectious diseases,2
+M49.1,M49.1,Other infectious diseases,2
+M89.6,M89.6,Other infectious diseases,2
+P35,P35.9,Other infectious diseases,2
+P37,P37,Other infectious diseases,2
+P37.2,P37.2,Other infectious diseases,2
+P37.5,P37.9,Other infectious diseases,2
+U82,U84,Other infectious diseases,2
+U85,U89,Other infectious diseases,2
+Z16,Z16.3,Other infectious diseases,2
+A39,A39.9,Meningitis,3
+A87,A87.9,Meningitis,3
+G00.0,G00.8,Meningitis,3
+G03,G03.8,Meningitis,3
+A83,A86.4,Encephalitis,3
+B94.1,B94.1,Encephalitis,3
+F07.1,F07.1,Encephalitis,3
+G04,G05.8,Encephalitis,3
+G21.3,G21.3,Encephalitis,3
+A36,A36.9,Diphtheria,3
+A37,A37.9,Whooping cough,3
+A33,A35.0,Tetanus,3
+B05,B05.9,Measles,3
+B01,B02.9,Varicella and herpes zoster,3
+P35.8,P35.8,Varicella and herpes zoster,3
+B15,B16.2,Acute hepatitis,3
+B17.0,B17.0,Acute hepatitis,3
+B17.2,B17.2,Acute hepatitis,3
+B19.1,B19.1,Acute hepatitis,3
+P35.3,P35.3,Acute hepatitis,3
+B15,B15.9,Acute hepatitis A,4
+B16,B16.2,Acute hepatitis B,4
+B17.0,B17.0,Acute hepatitis B,4
+B19.1,B19.1,Acute hepatitis B,4
+P35.3,P35.3,Acute hepatitis B,4
+,,Acute hepatitis C,4
+B17.2,B17.2,Acute hepatitis E,4
+A20,A28.9,Other unspecified infectious diseases,3
+A32,A32.9,Other unspecified infectious diseases,3
+A38,A38.9,Other unspecified infectious diseases,3
+A48.2,A48.2,Other unspecified infectious diseases,3
+A48.4,A48.5,Other unspecified infectious diseases,3
+A65,A65.0,Other unspecified infectious diseases,3
+A69,A69.1,Other unspecified infectious diseases,3
+A74,A74,Other unspecified infectious diseases,3
+A74.8,A74.9,Other unspecified infectious diseases,3
+A81,A81.9,Other unspecified infectious diseases,3
+A88,A89.9,Other unspecified infectious diseases,3
+B00,B00.9,Other unspecified infectious diseases,3
+B03,B04,Other unspecified infectious diseases,3
+B06,B06.9,Other unspecified infectious diseases,3
+B10,B10.8,Other unspecified infectious diseases,3
+B25,B27.9,Other unspecified infectious diseases,3
+B29.4,B29.4,Other unspecified infectious diseases,3
+B33,B33,Other unspecified infectious diseases,3
+B33.3,B33.8,Other unspecified infectious diseases,3
+B47,B48.8,Other unspecified infectious diseases,3
+B91,B91,Other unspecified infectious diseases,3
+B95,B95.5,Other unspecified infectious diseases,3
+D70.3,D70.3,Other unspecified infectious diseases,3
+D89.3,D89.3,Other unspecified infectious diseases,3
+F02.1,F02.1,Other unspecified infectious diseases,3
+G14,G14.6,Other unspecified infectious diseases,3
+I00,I00,Other unspecified infectious diseases,3
+I02,I02,Other unspecified infectious diseases,3
+I02.9,I02.9,Other unspecified infectious diseases,3
+I98.1,I98.1,Other unspecified infectious diseases,3
+K67.8,K67.8,Other unspecified infectious diseases,3
+K75.3,K75.3,Other unspecified infectious diseases,3
+K76.3,K76.3,Other unspecified infectious diseases,3
+K77.0,K77.0,Other unspecified infectious diseases,3
+M49.1,M49.1,Other unspecified infectious diseases,3
+M89.6,M89.6,Other unspecified infectious diseases,3
+P35,P35.2,Other unspecified infectious diseases,3
+P35.9,P35.9,Other unspecified infectious diseases,3
+P37,P37,Other unspecified infectious diseases,3
+P37.2,P37.2,Other unspecified infectious diseases,3
+P37.5,P37.9,Other unspecified infectious diseases,3
+U82,U84,Other unspecified infectious diseases,3
+U85,U89,Other unspecified infectious diseases,3
+Z16,Z16.3,Other unspecified infectious diseases,3
+C58,C58.0,Maternal and neonatal disorders,2
+N96,N96,Maternal and neonatal disorders,2
+N98,N98.9,Maternal and neonatal disorders,2
+O00,O07.9,Maternal and neonatal disorders,2
+O09,O16.9,Maternal and neonatal disorders,2
+O20,O26.9,Maternal and neonatal disorders,2
+O28,O36.9,Maternal and neonatal disorders,2
+O40,O48.1,Maternal and neonatal disorders,2
+O60,O77.9,Maternal and neonatal disorders,2
+O80,O92.7,Maternal and neonatal disorders,2
+O96,O98.6,Maternal and neonatal disorders,2
+O98.8,P04.2,Maternal and neonatal disorders,2
+P04.5,P05.9,Maternal and neonatal disorders,2
+P07,P15.9,Maternal and neonatal disorders,2
+P19,P22.9,Maternal and neonatal disorders,2
+P24,P29.9,Maternal and neonatal disorders,2
+P36,P36.9,Maternal and neonatal disorders,2
+P38,P39.9,Maternal and neonatal disorders,2
+P50,P61.9,Maternal and neonatal disorders,2
+P70,P70.1,Maternal and neonatal disorders,2
+P70.3,P72.9,Maternal and neonatal disorders,2
+P74,P78.9,Maternal and neonatal disorders,2
+P80,P81.9,Maternal and neonatal disorders,2
+P83,P84,Maternal and neonatal disorders,2
+P90,P94.9,Maternal and neonatal disorders,2
+P96,P96,Maternal and neonatal disorders,2
+P96.3,P96.4,Maternal and neonatal disorders,2
+P96.8,P96.8,Maternal and neonatal disorders,2
+C58,C58.0,Maternal disorders,3
+N96,N96,Maternal disorders,3
+N98,N98.9,Maternal disorders,3
+O00,O07.9,Maternal disorders,3
+O09,O16.9,Maternal disorders,3
+O20,O26.9,Maternal disorders,3
+O28,O36.9,Maternal disorders,3
+O40,O48.1,Maternal disorders,3
+O60,O77.9,Maternal disorders,3
+O80,O92.7,Maternal disorders,3
+O96,O98.6,Maternal disorders,3
+O98.8,O99.9,Maternal disorders,3
+O20,O20.9,Maternal haemorrhage,4
+O43.2,O43.2,Maternal haemorrhage,4
+O44,O46.9,Maternal haemorrhage,4
+O62,O62.9,Maternal haemorrhage,4
+O67,O67.9,Maternal haemorrhage,4
+O70,O70,Maternal haemorrhage,4
+O72,O72.3,Maternal haemorrhage,4
+O23,O23.9,Maternal sepsis and other maternal infections,4
+O85,O86.8,Maternal sepsis and other maternal infections,4
+O91,O91.2,Maternal sepsis and other maternal infections,4
+O10,O16.9,Maternal hypertensive disorders,4
+O32,O33.9,Maternal obstructed labor and uterine rupture,4
+O64,O66.9,Maternal obstructed labor and uterine rupture,4
+O71,O71.9,Maternal obstructed labor and uterine rupture,4
+N96,N96,Maternal abortion and miscarriage,4
+O01,O07.9,Maternal abortion and miscarriage,4
+O00,O00.9,Ectopic pregnancy,4
+O24,O25.3,Indirect maternal deaths,4
+O98,O98.6,Indirect maternal deaths,4
+O98.8,O99.9,Indirect maternal deaths,4
+O96,O97.9,Late maternal deaths,4
+,,Maternal deaths aggravated by HIV/AIDS,4
+C58,C58.0,Other maternal disorders,4
+N98,N98.9,Other maternal disorders,4
+O09,O09.9,Other maternal disorders,4
+O21,O22.9,Other maternal disorders,4
+O26,O26.9,Other maternal disorders,4
+O28,O31.8,Other maternal disorders,4
+O34,O36.9,Other maternal disorders,4
+O40,O43.1,Other maternal disorders,4
+O43.8,O43.9,Other maternal disorders,4
+O47,O48.1,Other maternal disorders,4
+O60,O61.9,Other maternal disorders,4
+O63,O63.9,Other maternal disorders,4
+O68,O69.9,Other maternal disorders,4
+O70.0,O70.9,Other maternal disorders,4
+O73,O77.9,Other maternal disorders,4
+O80,O84.9,Other maternal disorders,4
+O87,O90.9,Other maternal disorders,4
+O92,O92.7,Other maternal disorders,4
+P00,P04.2,Neonatal disorders,3
+P04.5,P05.9,Neonatal disorders,3
+P07,P15.9,Neonatal disorders,3
+P19,P22.9,Neonatal disorders,3
+P24,P29.9,Neonatal disorders,3
+P36,P36.9,Neonatal disorders,3
+P38,P39.9,Neonatal disorders,3
+P50,P61.9,Neonatal disorders,3
+P70,P70.1,Neonatal disorders,3
+P70.3,P72.9,Neonatal disorders,3
+P74,P78.9,Neonatal disorders,3
+P80,P81.9,Neonatal disorders,3
+P83,P84,Neonatal disorders,3
+P90,P94.9,Neonatal disorders,3
+P96,P96,Neonatal disorders,3
+P96.3,P96.4,Neonatal disorders,3
+P96.8,P96.8,Neonatal disorders,3
+P01.0,P01.1,Neonatal preterm birth,4
+P07,P07.3,Neonatal preterm birth,4
+P22,P22.9,Neonatal preterm birth,4
+P25,P28.9,Neonatal preterm birth,4
+P61.2,P61.2,Neonatal preterm birth,4
+P77,P77.9,Neonatal preterm birth,4
+P01.7,P01.7,Neonatal encephalopathy due to birth asphyxia and trauma,4
+P02,P03.9,Neonatal encephalopathy due to birth asphyxia and trauma,4
+P10,P15.9,Neonatal encephalopathy due to birth asphyxia and trauma,4
+P20,P21.9,Neonatal encephalopathy due to birth asphyxia and trauma,4
+P24,P24.9,Neonatal encephalopathy due to birth asphyxia and trauma,4
+P90,P91.9,Neonatal encephalopathy due to birth asphyxia and trauma,4
+P36,P36.9,Neonatal sepsis and other neonatal infections,4
+P38,P39.9,Neonatal sepsis and other neonatal infections,4
+P55,P59.9,Hemolytic disease and other neonatal jaundice,
+P00,P01,Other neonatal disorders,4
+P01.2,P01.6,Other neonatal disorders,4
+P01.8,P01.9,Other neonatal disorders,4
+P04,P04.2,Other neonatal disorders,4
+P04.5,P05.9,Other neonatal disorders,4
+P08,P09,Other neonatal disorders,4
+P19,P19.9,Other neonatal disorders,4
+P29,P29.9,Other neonatal disorders,4
+P50,P54.9,Other neonatal disorders,4
+P60,P61.1,Other neonatal disorders,4
+P61.3,P61.9,Other neonatal disorders,4
+P70,P70.1,Other neonatal disorders,4
+P70.3,P72.9,Other neonatal disorders,4
+P74,P76.9,Other neonatal disorders,4
+P78,P78.9,Other neonatal disorders,4
+P80,P81.9,Other neonatal disorders,4
+P83,P84,Other neonatal disorders,4
+P92,P94.9,Other neonatal disorders,4
+P96,P96,Other neonatal disorders,4
+P96.3,P96.4,Other neonatal disorders,4
+P96.8,P96.8,Other neonatal disorders,4
+D50.1,D50.8,Nutritional deficiencies,2
+D51,D52.0,Nutritional deficiencies,2
+D52.8,D53.9,Nutritional deficiencies,2
+E00,E02,Nutritional deficiencies,2
+E40,E46.9,Nutritional deficiencies,2
+E51,E61.9,Nutritional deficiencies,2
+E63,E64.0,Nutritional deficiencies,2
+E64.2,E64.9,Nutritional deficiencies,2
+M12.1,M12.1,Nutritional deficiencies,2
+E40,E46.9,Protein-energy malnutrition,3
+E64.0,E64.0,Protein-energy malnutrition,3
+D51,D52.0,Other nutritional deficiencies,3
+D52.8,D53.9,Other nutritional deficiencies,3
+E00,E02,Other nutritional deficiencies,3
+E51,E61.9,Other nutritional deficiencies,3
+E63,E64,Other nutritional deficiencies,3
+E64.2,E64.9,Other nutritional deficiencies,3
+M12.1,M12.1,Other nutritional deficiencies,3
+A46,A46.0,Non-communicable diseases,1
+A66,A67.9,Non-communicable diseases,1
+B18,B18.9,Non-communicable diseases,1
+B33.2,B33.2,Non-communicable diseases,1
+B86,B86,Non-communicable diseases,1
+C00,C13.9,Non-communicable diseases,1
+C15,C22.8,Non-communicable diseases,1
+C23,C25.9,Non-communicable diseases,1
+C30,C34.9,Non-communicable diseases,1
+C37,C38.8,Non-communicable diseases,1
+C40,C41.9,Non-communicable diseases,1
+C43,C45.9,Non-communicable diseases,1
+C47,C54.9,Non-communicable diseases,1
+C56,C57.8,Non-communicable diseases,1
+C60,C63.8,Non-communicable diseases,1
+C64,C67.9,Non-communicable diseases,1
+C68.0,C68.8,Non-communicable diseases,1
+C69.0,C69.8,Non-communicable diseases,1
+C70,C73.9,Non-communicable diseases,1
+C75,C75.8,Non-communicable diseases,1
+C81,C86.6,Non-communicable diseases,1
+C88,C91.0,Non-communicable diseases,1
+C91.2,C91.3,Non-communicable diseases,1
+C91.6,C91.6,Non-communicable diseases,1
+C92,C92.6,Non-communicable diseases,1
+C93,C93.1,Non-communicable diseases,1
+C93.3,C93.3,Non-communicable diseases,1
+C93.8,C93.8,Non-communicable diseases,1
+C94,C96.9,Non-communicable diseases,1
+D00.1,D00.2,Non-communicable diseases,1
+D01.0,D01.3,Non-communicable diseases,1
+D02.0,D02.3,Non-communicable diseases,1
+D03,D06.9,Non-communicable diseases,1
+D07.0,D07.2,Non-communicable diseases,1
+D07.4,D07.5,Non-communicable diseases,1
+D09.0,D09.0,Non-communicable diseases,1
+D09.2,D09.3,Non-communicable diseases,1
+D09.8,D09.8,Non-communicable diseases,1
+D10.0,D10.7,Non-communicable diseases,1
+D11,D12.9,Non-communicable diseases,1
+D13.0,D13.7,Non-communicable diseases,1
+D14.0,D14.3,Non-communicable diseases,1
+D15,D16.9,Non-communicable diseases,1
+D22,D27.9,Non-communicable diseases,1
+D28.0,D28.7,Non-communicable diseases,1
+D29.0,D29.8,Non-communicable diseases,1
+D30.0,D30.8,Non-communicable diseases,1
+D31,D36,Non-communicable diseases,1
+D36.1,D36.7,Non-communicable diseases,1
+D37.1,D37.5,Non-communicable diseases,1
+D38.0,D38.5,Non-communicable diseases,1
+D39.1,D39.2,Non-communicable diseases,1
+D39.8,D39.8,Non-communicable diseases,1
+D40.0,D40.8,Non-communicable diseases,1
+D41.0,D41.8,Non-communicable diseases,1
+D42,D43.9,Non-communicable diseases,1
+D44.0,D44.8,Non-communicable diseases,1
+D45,D47.9,Non-communicable diseases,1
+D48.0,D48.6,Non-communicable diseases,1
+D49.2,D49.4,Non-communicable diseases,1
+D49.6,D49.6,Non-communicable diseases,1
+D52.1,D52.1,Non-communicable diseases,1
+D55,D58.9,Non-communicable diseases,1
+D59.0,D59.3,Non-communicable diseases,1
+D59.5,D59.6,Non-communicable diseases,1
+D60,D61.9,Non-communicable diseases,1
+D63.1,D63.1,Non-communicable diseases,1
+D64.0,D64.0,Non-communicable diseases,1
+D66,D67,Non-communicable diseases,1
+D68.0,D69.8,Non-communicable diseases,1
+D70,D70.2,Non-communicable diseases,1
+D70.4,D75.8,Non-communicable diseases,1
+D76,D78.8,Non-communicable diseases,1
+D86,D86.9,Non-communicable diseases,1
+D89,D89.2,Non-communicable diseases,1
+E03,E07.1,Non-communicable diseases,1
+E09,E11.9,Non-communicable diseases,1
+E15.0,E15.0,Non-communicable diseases,1
+E16.0,E16.9,Non-communicable diseases,1
+E20,E34,Non-communicable diseases,1
+E34.1,E34.8,Non-communicable diseases,1
+E36,E36.8,Non-communicable diseases,1
+E65,E68,Non-communicable diseases,1
+E70,E85.2,Non-communicable diseases,1
+E88,E89.9,Non-communicable diseases,1
+F00,F02.0,Non-communicable diseases,1
+F02.2,F02.3,Non-communicable diseases,1
+F02.8,F03.9,Non-communicable diseases,1
+F10,F16.9,Non-communicable diseases,1
+F18,F18.9,Non-communicable diseases,1
+F24,F24,Non-communicable diseases,1
+F50.0,F50.5,Non-communicable diseases,1
+G10,G13.8,Non-communicable diseases,1
+G20,G20.9,Non-communicable diseases,1
+G21.0,G21.1,Non-communicable diseases,1
+G23,G26.0,Non-communicable diseases,1
+G30,G31.9,Non-communicable diseases,1
+G35,G37.9,Non-communicable diseases,1
+G40,G41.9,Non-communicable diseases,1
+G45,G46.8,Non-communicable diseases,1
+G47.3,G47.3,Non-communicable diseases,1
+G61,G61.9,Non-communicable diseases,1
+G62.1,G62.1,Non-communicable diseases,1
+G70,G73.7,Non-communicable diseases,1
+G90,G90.9,Non-communicable diseases,1
+G93.7,G93.7,Non-communicable diseases,1
+G95,G95.9,Non-communicable diseases,1
+G97,G97.9,Non-communicable diseases,1
+H05.0,H05.1,Non-communicable diseases,1
+I01,I01.9,Non-communicable diseases,1
+I02.0,I02.0,Non-communicable diseases,1
+I05,I09.9,Non-communicable diseases,1
+I11,I13.9,Non-communicable diseases,1
+I20,I25.9,Non-communicable diseases,1
+I27.0,I27.2,Non-communicable diseases,1
+I28,I28.9,Non-communicable diseases,1
+I30,I31.1,Non-communicable diseases,1
+I31.8,I37.8,Non-communicable diseases,1
+I38,I41.9,Non-communicable diseases,1
+I42.1,I42.8,Non-communicable diseases,1
+I43,I43.9,Non-communicable diseases,1
+I47,I48.9,Non-communicable diseases,1
+I51.0,I51.4,Non-communicable diseases,1
+I60,I63.9,Non-communicable diseases,1
+I65,I66.9,Non-communicable diseases,1
+I67.0,I67.3,Non-communicable diseases,1
+I67.5,I67.7,Non-communicable diseases,1
+I68.0,I68.2,Non-communicable diseases,1
+I69.0,I69.3,Non-communicable diseases,1
+I70.2,I70.8,Non-communicable diseases,1
+I71,I73.9,Non-communicable diseases,1
+I77,I89.9,Non-communicable diseases,1
+I95.2,I95.3,Non-communicable diseases,1
+I97,I98,Non-communicable diseases,1
+I98.2,I98.2,Non-communicable diseases,1
+I98.9,I98.9,Non-communicable diseases,1
+J30,J35.9,Non-communicable diseases,1
+J37,J39.9,Non-communicable diseases,1
+J41,J46.9,Non-communicable diseases,1
+J60,J63.8,Non-communicable diseases,1
+J65,J68.9,Non-communicable diseases,1
+J70,J70.9,Non-communicable diseases,1
+J82,J82,Non-communicable diseases,1
+J84,J84.9,Non-communicable diseases,1
+J91,J91,Non-communicable diseases,1
+J91.8,J92.9,Non-communicable diseases,1
+J95,J95.9,Non-communicable diseases,1
+K20,K20.9,Non-communicable diseases,1
+K22,K22.6,Non-communicable diseases,1
+K22.8,K29.9,Non-communicable diseases,1
+K31,K31.8,Non-communicable diseases,1
+K35,K38.9,Non-communicable diseases,1
+K40,K46.9,Non-communicable diseases,1
+K50,K52.0,Non-communicable diseases,1
+K52.2,K52.9,Non-communicable diseases,1
+K55,K62.9,Non-communicable diseases,1
+K63.5,K63.5,Non-communicable diseases,1
+K64,K64.9,Non-communicable diseases,1
+K66.8,K66.8,Non-communicable diseases,1
+K67,K67,Non-communicable diseases,1
+K68,K68,Non-communicable diseases,1
+K70,K70.3,Non-communicable diseases,1
+K71.7,K71.7,Non-communicable diseases,1
+K73,K75,Non-communicable diseases,1
+K75.1,K75.2,Non-communicable diseases,1
+K75.4,K76.2,Non-communicable diseases,1
+K76.4,K77,Non-communicable diseases,1
+K77.8,K77.8,Non-communicable diseases,1
+K80,K83.9,Non-communicable diseases,1
+K85,K86.9,Non-communicable diseases,1
+K90,K91.9,Non-communicable diseases,1
+K92.8,K92.8,Non-communicable diseases,1
+K93.8,K95.8,Non-communicable diseases,1
+L00,L05.9,Non-communicable diseases,1
+L08,L08.9,Non-communicable diseases,1
+L10,L14.0,Non-communicable diseases,1
+L51,L51.9,Non-communicable diseases,1
+L88,L89.9,Non-communicable diseases,1
+L93,L93.2,Non-communicable diseases,1
+L97,L98.4,Non-communicable diseases,1
+M00,M03.0,Non-communicable diseases,1
+M03.2,M03.6,Non-communicable diseases,1
+M05,M09.8,Non-communicable diseases,1
+M30,M36.8,Non-communicable diseases,1
+M40,M43.1,Non-communicable diseases,1
+M65,M65.0,Non-communicable diseases,1
+M71.0,M71.1,Non-communicable diseases,1
+M72.5,M72.6,Non-communicable diseases,1
+M80,M82.8,Non-communicable diseases,1
+M86.3,M86.4,Non-communicable diseases,1
+M87,M87.1,Non-communicable diseases,1
+M88,M89.0,Non-communicable diseases,1
+M89.5,M89.5,Non-communicable diseases,1
+M89.7,M89.9,Non-communicable diseases,1
+N00,N08.8,Non-communicable diseases,1
+N10,N12.9,Non-communicable diseases,1
+N13.6,N13.6,Non-communicable diseases,1
+N14,N16.8,Non-communicable diseases,1
+N18,N18.9,Non-communicable diseases,1
+N20,N23.0,Non-communicable diseases,1
+N25,N28.1,Non-communicable diseases,1
+N29,N30.3,Non-communicable diseases,1
+N30.8,N32.0,Non-communicable diseases,1
+N32.3,N32.4,Non-communicable diseases,1
+N34,N34.3,Non-communicable diseases,1
+N36,N36.9,Non-communicable diseases,1
+N39,N39.2,Non-communicable diseases,1
+N41,N41.9,Non-communicable diseases,1
+N44,N44.0,Non-communicable diseases,1
+N45,N45.9,Non-communicable diseases,1
+N49,N49.9,Non-communicable diseases,1
+N60,N60.9,Non-communicable diseases,1
+N65,N65.1,Non-communicable diseases,1
+N72,N72.0,Non-communicable diseases,1
+N75,N77.8,Non-communicable diseases,1
+N80,N81.9,Non-communicable diseases,1
+N83,N83.9,Non-communicable diseases,1
+N84.0,N84.1,Non-communicable diseases,1
+N87,N87.9,Non-communicable diseases,1
+N99,N99.9,Non-communicable diseases,1
+P04.3,P04.4,Non-communicable diseases,1
+P70.2,P70.2,Non-communicable diseases,1
+P96.0,P96.2,Non-communicable diseases,1
+P96.5,P96.5,Non-communicable diseases,1
+Q00,Q07.9,Non-communicable diseases,1
+Q10.4,Q18.9,Non-communicable diseases,1
+Q20,Q28.9,Non-communicable diseases,1
+Q30,Q36,Non-communicable diseases,1
+Q37,Q45.9,Non-communicable diseases,1
+Q50,Q87.8,Non-communicable diseases,1
+Q89,Q89.8,Non-communicable diseases,1
+Q90,Q93.9,Non-communicable diseases,1
+Q95,Q99.8,Non-communicable diseases,1
+R50.2,R50.2,Non-communicable diseases,1
+R78.0,R78.5,Non-communicable diseases,1
+R95,R95.9,Non-communicable diseases,1
+X45,X45.9,Non-communicable diseases,1
+X65,X65.9,Non-communicable diseases,1
+Y15,Y15.9,Non-communicable diseases,1
+C00,C13.9,Neoplasms,2
+C15,C22.8,Neoplasms,2
+C23,C25.9,Neoplasms,2
+C30,C34.9,Neoplasms,2
+C37,C38.8,Neoplasms,2
+C40,C41.9,Neoplasms,2
+C43,C45.9,Neoplasms,2
+C47,C54.9,Neoplasms,2
+C56,C57.8,Neoplasms,2
+C60,C63.8,Neoplasms,2
+C64,C67.9,Neoplasms,2
+C68.0,C68.8,Neoplasms,2
+C69.0,C69.8,Neoplasms,2
+C70,C73.9,Neoplasms,2
+C75,C75.8,Neoplasms,2
+C81,C86.6,Neoplasms,2
+C88,C91.0,Neoplasms,2
+C91.2,C91.3,Neoplasms,2
+C91.6,C91.6,Neoplasms,2
+C92,C92.6,Neoplasms,2
+C93,C93.1,Neoplasms,2
+C93.3,C93.3,Neoplasms,2
+C93.8,C93.8,Neoplasms,2
+C94,C96.9,Neoplasms,2
+D00.1,D00.2,Neoplasms,2
+D01.0,D01.3,Neoplasms,2
+D02.0,D02.3,Neoplasms,2
+D03,D06.9,Neoplasms,2
+D07.0,D07.2,Neoplasms,2
+D07.4,D07.5,Neoplasms,2
+D09.0,D09.0,Neoplasms,2
+D09.2,D09.3,Neoplasms,2
+D09.8,D09.8,Neoplasms,2
+D10.0,D10.7,Neoplasms,2
+D11,D12.9,Neoplasms,2
+D13.0,D13.7,Neoplasms,2
+D14.0,D14.3,Neoplasms,2
+D15,D16.9,Neoplasms,2
+D22,D24.9,Neoplasms,2
+D26.0,D27.9,Neoplasms,2
+D28.0,D28.1,Neoplasms,2
+D28.7,D28.7,Neoplasms,2
+D29.0,D29.8,Neoplasms,2
+D30.0,D30.8,Neoplasms,2
+D31,D36,Neoplasms,2
+D36.1,D36.7,Neoplasms,2
+D37.1,D37.5,Neoplasms,2
+D38.0,D38.5,Neoplasms,2
+D39.1,D39.2,Neoplasms,2
+D39.8,D39.8,Neoplasms,2
+D40.0,D40.8,Neoplasms,2
+D41.0,D41.8,Neoplasms,2
+D42,D43.9,Neoplasms,2
+D44.0,D44.8,Neoplasms,2
+D45,D47.9,Neoplasms,2
+D48.0,D48.6,Neoplasms,2
+D49.2,D49.4,Neoplasms,2
+D49.6,D49.6,Neoplasms,2
+K62.0,K62.1,Neoplasms,2
+K63.5,K63.5,Neoplasms,2
+N60,N60.9,Neoplasms,2
+N84.0,N84.1,Neoplasms,2
+N87,N87.9,Neoplasms,2
+C00,C08.9,Lip and oral cavity cancer,3
+D10.0,D10.5,Lip and oral cavity cancer,3
+D11,D11.9,Lip and oral cavity cancer,3
+C11,C11.9,Nasopharynx cancer,3
+D10.6,D10.6,Nasopharynx cancer,3
+C09,C10.9,Other pharynx cancer,3
+C12,C13.9,Other pharynx cancer,3
+D10.7,D10.7,Other pharynx cancer,3
+C15,C15.9,Oesophageal cancer,3
+D00.1,D00.1,Oesophageal cancer,3
+D13.0,D13.0,Oesophageal cancer,3
+C16,C16.9,Stomach cancer,3
+D00.2,D00.2,Stomach cancer,3
+D13.1,D13.1,Stomach cancer,3
+D37.1,D37.1,Stomach cancer,3
+C18,C21.9,Colon and rectum cancer,3
+D01.0,D01.3,Colon and rectum cancer,3
+D12,D12.9,Colon and rectum cancer,3
+D37.3,D37.5,Colon and rectum cancer,3
+C22,C22.8,Liver cancer,3
+D13.4,D13.4,Liver cancer,3
+,,Liver cancer due to hepatitis B,4
+,,Liver cancer due to hepatitis C,4
+,,Liver cancer due to alcohol use,4
+,,Liver cancer due to NASH,4
+C22.2,C22.2,Hepatoblastoma,
+,,Liver cancer due to other causes (internal),
+C23,C24.9,Gallbladder and biliary tract cancer,3
+D13.5,D13.5,Gallbladder and biliary tract cancer,3
+C25,C25.9,Pancreatic cancer,3
+D13.6,D13.7,Pancreatic cancer,3
+C32,C32.9,Larynx cancer,3
+D02.0,D02.0,Larynx cancer,3
+D14.1,D14.1,Larynx cancer,3
+D38.0,D38.0,Larynx cancer,3
+C33,C34.9,"Tracheal, bronchus, and lung cancer",3
+D02.1,D02.3,"Tracheal, bronchus, and lung cancer",3
+D14.2,D14.3,"Tracheal, bronchus, and lung cancer",3
+D38.1,D38.1,"Tracheal, bronchus, and lung cancer",3
+C43,C43.9,Malignant skin melanoma,3
+D03,D03.9,Malignant skin melanoma,3
+D22,D23.9,Malignant skin melanoma,3
+D48.5,D48.5,Malignant skin melanoma,3
+C44,C44.9,Non-melanoma skin cancer,3
+D04,D04.9,Non-melanoma skin cancer,3
+D49.2,D49.2,Non-melanoma skin cancer,3
+C44,C44.9,Non-melanoma skin cancer (squamous-cell carcinoma),4
+D04,D04.9,Non-melanoma skin cancer (squamous-cell carcinoma),4
+D49.2,D49.2,Non-melanoma skin cancer (squamous-cell carcinoma),4
+C49,C49.9,Soft tissue and other extraosseous sarcomas,
+C40,C41.9,Malignant neoplasm of bone and articular cartilage,
+C50,C50.9,Breast cancer,3
+D05,D05.9,Breast cancer,3
+D24,D24.9,Breast cancer,3
+D48.6,D48.6,Breast cancer,3
+D49.3,D49.3,Breast cancer,3
+C53,C53.9,Cervical cancer,3
+D06,D06.9,Cervical cancer,3
+D26.0,D26.0,Cervical cancer,3
+C54,C54.9,Uterine cancer,3
+D07.0,D07.2,Uterine cancer,3
+D26.1,D26.9,Uterine cancer,3
+C56,C56.9,Ovarian cancer,3
+D27,D27.9,Ovarian cancer,3
+D39.1,D39.1,Ovarian cancer,3
+C61,C61.9,Prostate cancer,3
+D07.5,D07.5,Prostate cancer,3
+D29.1,D29.1,Prostate cancer,3
+D40.0,D40.0,Prostate cancer,3
+C62,C62.9,Testicular cancer,3
+D29.2,D29.8,Testicular cancer,3
+D40.1,D40.8,Testicular cancer,3
+C64,C65.9,Kidney cancer,3
+D30.0,D30.1,Kidney cancer,3
+D41.0,D41.1,Kidney cancer,3
+C67,C67.9,Bladder cancer,3
+D09.0,D09.0,Bladder cancer,3
+D30.3,D30.3,Bladder cancer,3
+D41.4,D41.8,Bladder cancer,3
+D49.4,D49.4,Bladder cancer,3
+C70,C72.9,Brain and central nervous system cancer,3
+C69.0,C69.8,Eye cancer,
+C69.2,C69.2,Retinoblastoma,
+C69.0,C69.1,Other eye cancers,
+C69.3,C69.8,Other eye cancers,
+C47,C47.9,Neuroblastoma and other peripheral nervous cell tumors,
+C73,C73.9,Thyroid cancer,3
+D09.3,D09.3,Thyroid cancer,3
+D09.8,D09.8,Thyroid cancer,3
+D34,D34.9,Thyroid cancer,3
+D44.0,D44.0,Thyroid cancer,3
+C45,C45.9,Mesothelioma,3
+C81,C81.9,Hodgkin lymphoma,3
+C82,C86.6,Non-Hodgkin lymphoma,3
+C96,C96.9,Non-Hodgkin lymphoma,3
+C83.7,C83.8,Burkitt lymphoma,
+C82,C83.6,Other non-Hodgkin lymphoma,
+C83.9,C86.6,Other non-Hodgkin lymphoma,
+C96,C96.9,Other non-Hodgkin lymphoma,
+C88,C90.9,Multiple myeloma,3
+C91,C91.0,Leukaemia,3
+C91.2,C91.3,Leukaemia,3
+C91.6,C91.6,Leukaemia,3
+C92,C92.6,Leukaemia,3
+C93,C93.1,Leukaemia,3
+C93.3,C93.3,Leukaemia,3
+C93.8,C93.8,Leukaemia,3
+C94,C95.9,Leukaemia,3
+C91.0,C91.0,Acute lymphoid leukaemia,
+C91.2,C91.3,Acute lymphoid leukaemia,
+C91.6,C91.6,Acute lymphoid leukaemia,
+,,Chronic lymphoid leukaemia,4
+C92.0,C92.0,Acute myeloid leukaemia,4
+C92.3,C92.6,Acute myeloid leukaemia,4
+C93.0,C93.0,Acute myeloid leukaemia,4
+C94.0,C94.0,Acute myeloid leukaemia,4
+C94.2,C94.2,Acute myeloid leukaemia,4
+C94.4,C94.5,Acute myeloid leukaemia,4
+C92.1,C92.2,Chronic myeloid leukaemia,4
+C93.1,C93.1,Other leukaemia,4
+C93.3,C93.3,Other leukaemia,4
+C93.8,C93.8,Other leukaemia,4
+C94.1,C94.1,Other leukaemia,4
+C94.3,C94.3,Other leukaemia,4
+C94.6,C95.9,Other leukaemia,4
+C17,C17.9,Other malignant neoplasms (internal),
+C30,C31.9,Other malignant neoplasms (internal),
+C37,C38.8,Other malignant neoplasms (internal),
+C48,C48.9,Other malignant neoplasms (internal),
+C4A,C4A,Other malignant neoplasms (internal),
+C51,C52.9,Other malignant neoplasms (internal),
+C57,C57.8,Other malignant neoplasms (internal),
+C60,C60.9,Other malignant neoplasms (internal),
+C63,C63.8,Other malignant neoplasms (internal),
+C66,C66.9,Other malignant neoplasms (internal),
+C68.0,C68.8,Other malignant neoplasms (internal),
+C75,C75.8,Other malignant neoplasms (internal),
+D07.4,D07.4,Other malignant neoplasms (internal),
+D09.2,D09.2,Other malignant neoplasms (internal),
+D13.2,D13.3,Other malignant neoplasms (internal),
+D14.0,D14.0,Other malignant neoplasms (internal),
+D15,D16.9,Other malignant neoplasms (internal),
+D28.0,D28.1,Other malignant neoplasms (internal),
+D28.7,D28.7,Other malignant neoplasms (internal),
+D29.0,D29.0,Other malignant neoplasms (internal),
+D30.2,D30.2,Other malignant neoplasms (internal),
+D30.4,D30.8,Other malignant neoplasms (internal),
+D31,D31.9,Other malignant neoplasms (internal),
+D35,D35.2,Other malignant neoplasms (internal),
+D35.5,D36,Other malignant neoplasms (internal),
+D36.1,D36.7,Other malignant neoplasms (internal),
+D37.2,D37.2,Other malignant neoplasms (internal),
+D38.2,D38.5,Other malignant neoplasms (internal),
+D39.2,D39.2,Other malignant neoplasms (internal),
+D39.8,D39.8,Other malignant neoplasms (internal),
+D41.2,D41.3,Other malignant neoplasms (internal),
+D44.1,D44.8,Other malignant neoplasms (internal),
+D48.0,D48.4,Other malignant neoplasms (internal),
+D32,D33.9,Other neoplasms,3
+D35.3,D35.4,Other neoplasms,3
+D42,D43.9,Other neoplasms,3
+D45,D47.9,Other neoplasms,3
+D49.6,D49.6,Other neoplasms,3
+K62.0,K62.1,Other neoplasms,3
+K63.5,K63.5,Other neoplasms,3
+N60,N60.9,Other neoplasms,3
+N84.0,N84.1,Other neoplasms,3
+N87,N87.9,Other neoplasms,3
+D45,D47.9,"Myelodysplastic, myeloproliferative, and other haematopoietic neoplasms",
+B33.2,B33.2,Cardiovascular diseases,2
+G45,G46.8,Cardiovascular diseases,2
+I01,I01.9,Cardiovascular diseases,2
+I02.0,I02.0,Cardiovascular diseases,2
+I05,I09.9,Cardiovascular diseases,2
+I11,I11.9,Cardiovascular diseases,2
+I20,I25.9,Cardiovascular diseases,2
+I27.0,I27.0,Cardiovascular diseases,2
+I27.2,I27.2,Cardiovascular diseases,2
+I28,I28.9,Cardiovascular diseases,2
+I30,I31.1,Cardiovascular diseases,2
+I31.8,I37.8,Cardiovascular diseases,2
+I38,I41.9,Cardiovascular diseases,2
+I42.1,I42.8,Cardiovascular diseases,2
+I43,I43.9,Cardiovascular diseases,2
+I47,I48.9,Cardiovascular diseases,2
+I51.0,I51.4,Cardiovascular diseases,2
+I60,I63.9,Cardiovascular diseases,2
+I65,I66.9,Cardiovascular diseases,2
+I67.0,I67.3,Cardiovascular diseases,2
+I67.5,I67.6,Cardiovascular diseases,2
+I68.0,I68.2,Cardiovascular diseases,2
+I69.0,I69.3,Cardiovascular diseases,2
+I70.2,I70.8,Cardiovascular diseases,2
+I71,I73.9,Cardiovascular diseases,2
+I77,I83.9,Cardiovascular diseases,2
+I86,I89.0,Cardiovascular diseases,2
+I89.9,I89.9,Cardiovascular diseases,2
+I98,I98,Cardiovascular diseases,2
+K75.1,K75.1,Cardiovascular diseases,2
+I01,I01.9,Rheumatic heart disease,3
+I02.0,I02.0,Rheumatic heart disease,3
+I05,I09.9,Rheumatic heart disease,3
+I20,I25.9,Ischaemic heart disease,3
+G45,G46.8,Stroke,3
+I60,I63.9,Stroke,3
+I65,I66.9,Stroke,3
+I67.0,I67.3,Stroke,3
+I67.5,I67.6,Stroke,3
+I68.1,I68.2,Stroke,3
+I69.0,I69.3,Stroke,3
+G45,G46.8,Ischaemic stroke,4
+I63,I63.9,Ischaemic stroke,4
+I65,I66.9,Ischaemic stroke,4
+I67.2,I67.3,Ischaemic stroke,4
+I67.5,I67.6,Ischaemic stroke,4
+I69.3,I69.3,Ischaemic stroke,4
+I61,I62,Intracerebral haemorrhage,4
+I62.1,I62.9,Intracerebral haemorrhage,4
+I68.1,I68.2,Intracerebral haemorrhage,4
+I69.1,I69.2,Intracerebral haemorrhage,4
+I60,I60.9,Subarachnoid hemorrhage,
+I62.0,I62.0,Subarachnoid hemorrhage,
+I67.0,I67.1,Subarachnoid hemorrhage,
+I69.0,I69.0,Subarachnoid hemorrhage,
+I11,I11.9,Hypertensive heart disease,3
+I34,I37.8,Non-rheumatic valvular heart disease,3
+I35,I35.9,Non-rheumatic calcific aortic valvular heart disease,4
+I34,I34.9,Non-rheumatic degenerative mitral valvular heart disease,4
+I36,I37.8,Other non-rheumatic valvular heart diseases,4
+B33.2,B33.2,Cardiomyopathy and myocarditis,3
+I40,I41.9,Cardiomyopathy and myocarditis,3
+I42.1,I42.8,Cardiomyopathy and myocarditis,3
+I43,I43.9,Cardiomyopathy and myocarditis,3
+I51.4,I51.4,Cardiomyopathy and myocarditis,3
+B33.2,B33.2,Myocarditis,4
+I40,I41.9,Myocarditis,4
+I51.4,I51.4,Myocarditis,4
+I42.6,I42.6,Alcoholic cardiomyopathy,4
+I42.1,I42.5,Other cardiomyopathy,4
+I42.7,I42.8,Other cardiomyopathy,4
+I43,I43.9,Other cardiomyopathy,4
+I27.0,I27.0,Pulmonary arterial hypertension,
+I27.2,I27.2,Pulmonary arterial hypertension,
+I48,I48.9,Atrial fibrillation and flutter,3
+I71,I71.9,Aortic aneurysm,3
+I70.2,I70.8,Peripheral artery disease,3
+I73,I73.9,Peripheral artery disease,3
+I33,I33.9,Endocarditis,3
+I38,I39.9,Endocarditis,3
+I28,I28.9,Other cardiovascular and circulatory diseases (internal),
+I30,I31.1,Other cardiovascular and circulatory diseases (internal),
+I31.8,I32.8,Other cardiovascular and circulatory diseases (internal),
+I47,I47.9,Other cardiovascular and circulatory diseases (internal),
+I51.0,I51.3,Other cardiovascular and circulatory diseases (internal),
+I68.0,I68.0,Other cardiovascular and circulatory diseases (internal),
+I72,I72.9,Other cardiovascular and circulatory diseases (internal),
+I77,I83.9,Other cardiovascular and circulatory diseases (internal),
+I86,I89.0,Other cardiovascular and circulatory diseases (internal),
+I89.9,I89.9,Other cardiovascular and circulatory diseases (internal),
+I98,I98,Other cardiovascular and circulatory diseases (internal),
+K75.1,K75.1,Other cardiovascular and circulatory diseases (internal),
+D86,D86.2,Chronic respiratory diseases,2
+D86.9,D86.9,Chronic respiratory diseases,2
+G47.3,G47.3,Chronic respiratory diseases,2
+J30,J35.9,Chronic respiratory diseases,2
+J37,J39.9,Chronic respiratory diseases,2
+J41,J46.9,Chronic respiratory diseases,2
+J60,J63.8,Chronic respiratory diseases,2
+J65,J68.9,Chronic respiratory diseases,2
+J70,J70,Chronic respiratory diseases,2
+J70.8,J70.9,Chronic respiratory diseases,2
+J82,J82,Chronic respiratory diseases,2
+J84,J84.9,Chronic respiratory diseases,2
+J91,J91,Chronic respiratory diseases,2
+J91.8,J92.9,Chronic respiratory diseases,2
+J41,J44.9,Chronic obstructive pulmonary disease,3
+J60,J63.8,Pneumoconiosis,3
+J65,J65.0,Pneumoconiosis,3
+J92.0,J92.0,Pneumoconiosis,3
+J62,J62.9,Silicosis,4
+J61,J61.0,Asbestosis,4
+J92.0,J92.0,Asbestosis,4
+J60,J60.0,Coal workers pneumoconiosis,4
+J63,J63.8,Other pneumoconiosis,4
+J65,J65.0,Other pneumoconiosis,4
+J45,J46.9,Asthma,3
+D86,D86.2,Interstitial lung disease and pulmonary sarcoidosis,3
+D86.9,D86.9,Interstitial lung disease and pulmonary sarcoidosis,3
+J84,J84.9,Interstitial lung disease and pulmonary sarcoidosis,3
+G47.3,G47.3,Other chronic respiratory diseases,3
+J30,J35.9,Other chronic respiratory diseases,3
+J37,J39.9,Other chronic respiratory diseases,3
+J66,J68.9,Other chronic respiratory diseases,3
+J70,J70,Other chronic respiratory diseases,3
+J70.8,J70.9,Other chronic respiratory diseases,3
+J82,J82,Other chronic respiratory diseases,3
+J91,J91,Other chronic respiratory diseases,3
+J91.8,J92,Other chronic respiratory diseases,3
+J92.9,J92.9,Other chronic respiratory diseases,3
+B18,B18.9,Digestive diseases,2
+I84,I85.9,Digestive diseases,2
+I98.2,I98.2,Digestive diseases,2
+K20,K20.9,Digestive diseases,2
+K22,K22.6,Digestive diseases,2
+K22.8,K29.9,Digestive diseases,2
+K31,K31.8,Digestive diseases,2
+K35,K38.9,Digestive diseases,2
+K40,K42.9,Digestive diseases,2
+K44,K46.9,Digestive diseases,2
+K50,K52,Digestive diseases,2
+K52.2,K52.9,Digestive diseases,2
+K55,K62,Digestive diseases,2
+K62.2,K62.6,Digestive diseases,2
+K62.8,K62.9,Digestive diseases,2
+K64,K64.9,Digestive diseases,2
+K66.8,K66.8,Digestive diseases,2
+K67,K67,Digestive diseases,2
+K68,K68,Digestive diseases,2
+K70,K70.3,Digestive diseases,2
+K71.7,K71.7,Digestive diseases,2
+K73,K75,Digestive diseases,2
+K75.2,K75.2,Digestive diseases,2
+K75.4,K76.2,Digestive diseases,2
+K76.4,K77,Digestive diseases,2
+K77.8,K77.8,Digestive diseases,2
+K80,K83.9,Digestive diseases,2
+K85,K86.9,Digestive diseases,2
+K90,K90.9,Digestive diseases,2
+K92.8,K92.8,Digestive diseases,2
+K93.8,K93.8,Digestive diseases,2
+M09.1,M09.1,Digestive diseases,2
+B18,B18.9,Cirrhosis and other chronic liver diseases,3
+I85,I85.9,Cirrhosis and other chronic liver diseases,3
+I98.2,I98.2,Cirrhosis and other chronic liver diseases,3
+K70,K70.3,Cirrhosis and other chronic liver diseases,3
+K71.7,K71.7,Cirrhosis and other chronic liver diseases,3
+K73,K75,Cirrhosis and other chronic liver diseases,3
+K75.2,K75.2,Cirrhosis and other chronic liver diseases,3
+K75.4,K76.2,Cirrhosis and other chronic liver diseases,3
+K76.4,K76.9,Cirrhosis and other chronic liver diseases,3
+K77.8,K77.8,Cirrhosis and other chronic liver diseases,3
+,,Cirrhosis and other chronic liver diseases due to hepatitis B,4
+,,Cirrhosis and other chronic liver diseases due to hepatitis C,4
+,,Cirrhosis and other chronic liver diseases due to alcohol use,4
+,,Cirrhosis and other chronic liver diseases due to NAFLD,4
+,,Cirrhosis and other chronic liver diseases due to other causes,4
+K25,K29.9,Upper digestive system diseases,3
+K25,K28.9,Peptic ulcer disease,4
+K29,K29.9,Gastritis and duodenitis,4
+K35,K37.9,Appendicitis,3
+K38.3,K38.9,Appendicitis,3
+K56,K56.9,Paralytic ileus and intestinal obstruction,3
+K40,K42.9,"Inguinal, femoral, and abdominal hernia",3
+K44,K46.9,"Inguinal, femoral, and abdominal hernia",3
+K50,K52,Inflammatory bowel disease,3
+K52.8,K52.9,Inflammatory bowel disease,3
+M09.1,M09.1,Inflammatory bowel disease,3
+K55,K55.9,Vascular intestinal disorders,3
+K80,K83.9,Gallbladder and biliary diseases,3
+K85,K86.9,Pancreatitis,3
+I84,I84.9,Other digestive diseases,3
+K20,K20.9,Other digestive diseases,3
+K22,K22.6,Other digestive diseases,3
+K22.8,K24,Other digestive diseases,3
+K31,K31.8,Other digestive diseases,3
+K38,K38.2,Other digestive diseases,3
+K52.2,K52.3,Other digestive diseases,3
+K57,K62,Other digestive diseases,3
+K62.2,K62.6,Other digestive diseases,3
+K62.8,K62.9,Other digestive diseases,3
+K64,K64.9,Other digestive diseases,3
+K66.8,K66.8,Other digestive diseases,3
+K67,K67,Other digestive diseases,3
+K68,K68,Other digestive diseases,3
+K77,K77,Other digestive diseases,3
+K90,K90.9,Other digestive diseases,3
+K92.8,K92.8,Other digestive diseases,3
+K93.8,K93.8,Other digestive diseases,3
+F00,F02.0,Neurological disorders,2
+F02.2,F02.3,Neurological disorders,2
+F02.8,F03.9,Neurological disorders,2
+G10,G13.8,Neurological disorders,2
+G20,G20.9,Neurological disorders,2
+G23,G24,Neurological disorders,2
+G24.1,G25.0,Neurological disorders,2
+G25.2,G25.3,Neurological disorders,2
+G25.5,G25.5,Neurological disorders,2
+G25.8,G26.0,Neurological disorders,2
+G30,G31.1,Neurological disorders,2
+G31.8,G31.9,Neurological disorders,2
+G35,G37.9,Neurological disorders,2
+G40,G41.9,Neurological disorders,2
+G61,G61.9,Neurological disorders,2
+G70,G71.1,Neurological disorders,2
+G71.3,G72,Neurological disorders,2
+G72.2,G73.7,Neurological disorders,2
+G90,G90.9,Neurological disorders,2
+G95,G95.9,Neurological disorders,2
+M33,M33.9,Neurological disorders,2
+F00,F02.0,Alzheimer's disease and other dementias,3
+F02.8,F03.9,Alzheimer's disease and other dementias,3
+G30,G31.1,Alzheimer's disease and other dementias,3
+G31.8,G31.9,Alzheimer's disease and other dementias,3
+F02.3,F02.3,Parkinson's disease,3
+G20,G20.9,Parkinson's disease,3
+G40,G41.9,Idiopathic epilepsy,3
+G35,G35.9,Multiple sclerosis,3
+G12.2,G12.9,Motor neuron disease,3
+F02.2,F02.2,Other neurological disorders,3
+G10,G12.1,Other neurological disorders,3
+G13,G13.8,Other neurological disorders,3
+G23,G24,Other neurological disorders,3
+G24.1,G25.0,Other neurological disorders,3
+G25.2,G25.3,Other neurological disorders,3
+G25.5,G25.5,Other neurological disorders,3
+G25.8,G26.0,Other neurological disorders,3
+G36,G37.9,Other neurological disorders,3
+G61,G61.9,Other neurological disorders,3
+G70,G71.1,Other neurological disorders,3
+G71.3,G72,Other neurological disorders,3
+G72.2,G73.7,Other neurological disorders,3
+G90,G90.9,Other neurological disorders,3
+G95,G95.9,Other neurological disorders,3
+M33,M33.9,Other neurological disorders,3
+F24,F24,Mental disorders,2
+F50.0,F50.5,Mental disorders,2
+F50.0,F50.5,Eating disorders,3
+F50.0,F50.1,Anorexia nervosa,4
+F50.2,F50.5,Bulimia nervosa,4
+E24.4,E24.4,Substance use disorders,2
+F10,F16.9,Substance use disorders,2
+F18,F18.9,Substance use disorders,2
+G31.2,G31.2,Substance use disorders,2
+G62.1,G62.1,Substance use disorders,2
+G72.1,G72.1,Substance use disorders,2
+P04.3,P04.4,Substance use disorders,2
+P96.1,P96.1,Substance use disorders,2
+Q86.0,Q86.0,Substance use disorders,2
+R78.0,R78.5,Substance use disorders,2
+X45,X45.9,Substance use disorders,2
+X65,X65.9,Substance use disorders,2
+Y15,Y15.9,Substance use disorders,2
+E24.4,E24.4,Alcohol use disorders,3
+F10,F10.9,Alcohol use disorders,3
+G31.2,G31.2,Alcohol use disorders,3
+G62.1,G62.1,Alcohol use disorders,3
+G72.1,G72.1,Alcohol use disorders,3
+P04.3,P04.3,Alcohol use disorders,3
+Q86.0,Q86.0,Alcohol use disorders,3
+R78.0,R78.0,Alcohol use disorders,3
+X45,X45.9,Alcohol use disorders,3
+X65,X65.9,Alcohol use disorders,3
+Y15,Y15.9,Alcohol use disorders,3
+F11,F16.9,Drug use disorders,3
+F18,F18.9,Drug use disorders,3
+P04.4,P04.4,Drug use disorders,3
+P96.1,P96.1,Drug use disorders,3
+R78.1,R78.5,Drug use disorders,3
+F11,F11.9,Opioid use disorders,4
+P96.1,P96.1,Opioid use disorders,4
+R78.1,R78.1,Opioid use disorders,4
+F14,F14.9,Cocaine use disorders,4
+R78.2,R78.2,Cocaine use disorders,4
+F15,F15.9,Amphetamine use disorders,4
+F13,F13.9,Other drug use disorders,4
+F16,F16.9,Other drug use disorders,4
+F18,F18.9,Other drug use disorders,4
+P04.4,P04.4,Other drug use disorders,4
+R78.3,R78.5,Other drug use disorders,4
+D63.1,D63.1,Diabetes and kidney diseases,2
+E10,E11.9,Diabetes and kidney diseases,2
+I12,I13.9,Diabetes and kidney diseases,2
+N00,N08.8,Diabetes and kidney diseases,2
+N15.0,N15.0,Diabetes and kidney diseases,2
+N18,N18.9,Diabetes and kidney diseases,2
+P70.2,P70.2,Diabetes and kidney diseases,2
+Q61,Q62.8,Diabetes and kidney diseases,2
+E10,E10.1,Diabetes mellitus,3
+E10.3,E11.1,Diabetes mellitus,3
+E11.3,E11.9,Diabetes mellitus,3
+P70.2,P70.2,Diabetes mellitus,3
+E10,E10.1,Diabetes mellitus type 1,4
+E10.3,E10.9,Diabetes mellitus type 1,4
+P70.2,P70.2,Diabetes mellitus type 1,4
+E11,E11.1,Diabetes mellitus type 2,4
+E11.3,E11.9,Diabetes mellitus type 2,4
+D63.1,D63.1,Chronic kidney disease,3
+E10.2,E10.2,Chronic kidney disease,3
+E11.2,E11.2,Chronic kidney disease,3
+I12,I13.9,Chronic kidney disease,3
+N02,N08.8,Chronic kidney disease,3
+N15.0,N15.0,Chronic kidney disease,3
+N18,N18.9,Chronic kidney disease,3
+Q61,Q62.8,Chronic kidney disease,3
+E10.2,E10.2,Chronic kidney disease due to diabetes mellitus type 1,4
+E11.2,E11.2,Chronic kidney disease due to diabetes mellitus type 2,4
+I12,I13.9,Chronic kidney disease due to hypertension,4
+N03,N06.9,Chronic kidney disease due to glomerulonephritis,4
+N02,N02.9,Chronic kidney disease due to other and unspecified causes,4
+N07,N08.8,Chronic kidney disease due to other and unspecified causes,4
+N15.0,N15.0,Chronic kidney disease due to other and unspecified causes,4
+Q61,Q62.8,Chronic kidney disease due to other and unspecified causes,4
+N00,N01.9,Acute glomerulonephritis,3
+A46,A46.0,Skin and subcutaneous diseases,2
+A66,A67.9,Skin and subcutaneous diseases,2
+B86,B86,Skin and subcutaneous diseases,2
+D86.3,D86.3,Skin and subcutaneous diseases,2
+I89.1,I89.8,Skin and subcutaneous diseases,2
+L00,L05.9,Skin and subcutaneous diseases,2
+L08,L08.9,Skin and subcutaneous diseases,2
+L10,L14.0,Skin and subcutaneous diseases,2
+L51,L51.9,Skin and subcutaneous diseases,2
+L88,L89.9,Skin and subcutaneous diseases,2
+L97,L98.4,Skin and subcutaneous diseases,2
+M72.5,M72.6,Skin and subcutaneous diseases,2
+A46,A46.0,Bacterial skin diseases,3
+A66,A67.9,Bacterial skin diseases,3
+I89.1,I89.8,Bacterial skin diseases,3
+L00,L05.9,Bacterial skin diseases,3
+L08,L08.9,Bacterial skin diseases,3
+L88,L88,Bacterial skin diseases,3
+L97,L98.4,Bacterial skin diseases,3
+M72.5,M72.6,Bacterial skin diseases,3
+L03,L03.9,Cellulitis,4
+M72.5,M72.6,Cellulitis,4
+A46,A46.0,Pyoderma,4
+A66,A67.9,Pyoderma,4
+I89.1,I89.8,Pyoderma,4
+L00,L02.9,Pyoderma,4
+L04,L05.9,Pyoderma,4
+L08,L08.9,Pyoderma,4
+L88,L88,Pyoderma,4
+L97,L98.4,Pyoderma,4
+L89,L89.9,Decubitus ulcer,3
+D86.3,D86.3,Other skin and subcutaneous diseases,3
+L10,L14.0,Other skin and subcutaneous diseases,3
+L51,L51.9,Other skin and subcutaneous diseases,3
+I27.1,I27.1,Musculoskeletal disorders,2
+I67.7,I67.7,Musculoskeletal disorders,2
+L93,L93.2,Musculoskeletal disorders,2
+M00,M03.0,Musculoskeletal disorders,2
+M03.2,M03.6,Musculoskeletal disorders,2
+M05,M09.0,Musculoskeletal disorders,2
+M09.2,M09.8,Musculoskeletal disorders,2
+M30,M32.9,Musculoskeletal disorders,2
+M34,M36.8,Musculoskeletal disorders,2
+M40,M43.1,Musculoskeletal disorders,2
+M65,M65.0,Musculoskeletal disorders,2
+M71.0,M71.1,Musculoskeletal disorders,2
+M80,M82.8,Musculoskeletal disorders,2
+M86.3,M86.4,Musculoskeletal disorders,2
+M87,M87.0,Musculoskeletal disorders,2
+M88,M89.0,Musculoskeletal disorders,2
+M89.5,M89.5,Musculoskeletal disorders,2
+M89.7,M89.9,Musculoskeletal disorders,2
+M05,M06.9,Rheumatoid arthritis,3
+M08.0,M08.8,Rheumatoid arthritis,3
+I27.1,I27.1,Other musculoskeletal disorders,3
+I67.7,I67.7,Other musculoskeletal disorders,3
+L93,L93.2,Other musculoskeletal disorders,3
+M00,M03.0,Other musculoskeletal disorders,3
+M03.2,M03.6,Other musculoskeletal disorders,3
+M07,M08,Other musculoskeletal disorders,3
+M08.9,M09.0,Other musculoskeletal disorders,3
+M09.2,M09.8,Other musculoskeletal disorders,3
+M30,M32.9,Other musculoskeletal disorders,3
+M34,M36.8,Other musculoskeletal disorders,3
+M40,M43.1,Other musculoskeletal disorders,3
+M65,M65.0,Other musculoskeletal disorders,3
+M71.0,M71.1,Other musculoskeletal disorders,3
+M80,M82.8,Other musculoskeletal disorders,3
+M86.3,M86.4,Other musculoskeletal disorders,3
+M87,M87.0,Other musculoskeletal disorders,3
+M88,M89.0,Other musculoskeletal disorders,3
+M89.5,M89.5,Other musculoskeletal disorders,3
+M89.7,M89.9,Other musculoskeletal disorders,3
+D25,D26,Other non-communicable diseases,2
+D28.2,D28.2,Other non-communicable diseases,2
+D52.1,D52.1,Other non-communicable diseases,2
+D55,D58.9,Other non-communicable diseases,2
+D59.0,D59.3,Other non-communicable diseases,2
+D59.5,D59.6,Other non-communicable diseases,2
+D60,D61.9,Other non-communicable diseases,2
+D64.0,D64.0,Other non-communicable diseases,2
+D66,D67,Other non-communicable diseases,2
+D68.0,D69.8,Other non-communicable diseases,2
+D70,D70.2,Other non-communicable diseases,2
+D70.4,D75.8,Other non-communicable diseases,2
+D76,D78.8,Other non-communicable diseases,2
+D86.8,D86.8,Other non-communicable diseases,2
+D89,D89.2,Other non-communicable diseases,2
+E03,E07.1,Other non-communicable diseases,2
+E09,E09.9,Other non-communicable diseases,2
+E15.0,E15.0,Other non-communicable diseases,2
+E16.0,E16.9,Other non-communicable diseases,2
+E20,E24.3,Other non-communicable diseases,2
+E24.8,E34,Other non-communicable diseases,2
+E34.1,E34.8,Other non-communicable diseases,2
+E36,E36.8,Other non-communicable diseases,2
+E65,E68,Other non-communicable diseases,2
+E70,E85.2,Other non-communicable diseases,2
+E88,E89.9,Other non-communicable diseases,2
+G21.0,G21.1,Other non-communicable diseases,2
+G24.0,G24.0,Other non-communicable diseases,2
+G25.1,G25.1,Other non-communicable diseases,2
+G25.4,G25.4,Other non-communicable diseases,2
+G25.6,G25.7,Other non-communicable diseases,2
+G71.2,G71.2,Other non-communicable diseases,2
+G72.0,G72.0,Other non-communicable diseases,2
+G93.7,G93.7,Other non-communicable diseases,2
+G97,G97.9,Other non-communicable diseases,2
+I95.2,I95.3,Other non-communicable diseases,2
+I97,I97.9,Other non-communicable diseases,2
+I98.9,I98.9,Other non-communicable diseases,2
+J70.0,J70.5,Other non-communicable diseases,2
+J95,J95.9,Other non-communicable diseases,2
+K43,K43.9,Other non-communicable diseases,2
+K52.0,K52.0,Other non-communicable diseases,2
+K62.7,K62.7,Other non-communicable diseases,2
+K91,K91.9,Other non-communicable diseases,2
+K94,K95.8,Other non-communicable diseases,2
+M87.1,M87.1,Other non-communicable diseases,2
+N10,N12.9,Other non-communicable diseases,2
+N13.6,N13.6,Other non-communicable diseases,2
+N14,N15,Other non-communicable diseases,2
+N15.1,N16.8,Other non-communicable diseases,2
+N20,N23.0,Other non-communicable diseases,2
+N25,N28.1,Other non-communicable diseases,2
+N29,N30.3,Other non-communicable diseases,2
+N30.8,N32.0,Other non-communicable diseases,2
+N32.3,N32.4,Other non-communicable diseases,2
+N34,N34.3,Other non-communicable diseases,2
+N36,N36.9,Other non-communicable diseases,2
+N39,N39.2,Other non-communicable diseases,2
+N41,N41.9,Other non-communicable diseases,2
+N44,N44.0,Other non-communicable diseases,2
+N45,N45.9,Other non-communicable diseases,2
+N49,N49.9,Other non-communicable diseases,2
+N65,N65.1,Other non-communicable diseases,2
+N72,N72.0,Other non-communicable diseases,2
+N75,N77.8,Other non-communicable diseases,2
+N80,N81.9,Other non-communicable diseases,2
+N83,N83.9,Other non-communicable diseases,2
+N99,N99.9,Other non-communicable diseases,2
+P96.0,P96.0,Other non-communicable diseases,2
+P96.2,P96.2,Other non-communicable diseases,2
+P96.5,P96.5,Other non-communicable diseases,2
+Q00,Q07.9,Other non-communicable diseases,2
+Q10.4,Q18.9,Other non-communicable diseases,2
+Q20,Q28.9,Other non-communicable diseases,2
+Q30,Q36,Other non-communicable diseases,2
+Q37,Q45.9,Other non-communicable diseases,2
+Q50,Q60.6,Other non-communicable diseases,2
+Q63,Q86,Other non-communicable diseases,2
+Q86.1,Q87.8,Other non-communicable diseases,2
+Q89,Q89.8,Other non-communicable diseases,2
+Q90,Q93.9,Other non-communicable diseases,2
+Q95,Q99.8,Other non-communicable diseases,2
+R50.2,R50.2,Other non-communicable diseases,2
+R95,R95.9,Other non-communicable diseases,2
+G71.2,G71.2,Congenital birth defects,3
+P96.0,P96.0,Congenital birth defects,3
+Q00,Q07.9,Congenital birth defects,3
+Q10.4,Q18.9,Congenital birth defects,3
+Q20,Q28.9,Congenital birth defects,3
+Q30,Q36,Congenital birth defects,3
+Q37,Q45.9,Congenital birth defects,3
+Q50,Q60.6,Congenital birth defects,3
+Q63,Q86,Congenital birth defects,3
+Q86.1,Q87.8,Congenital birth defects,3
+Q89,Q89.8,Congenital birth defects,3
+Q90,Q93.9,Congenital birth defects,3
+Q95,Q99.8,Congenital birth defects,3
+Q00,Q01.9,Neural tube defects,4
+Q05,Q05.9,Neural tube defects,4
+Q20,Q28.9,Congenital heart anomalies,4
+Q35,Q36,Orofacial clefts,4
+Q37,Q37.9,Orofacial clefts,4
+Q90,Q90.9,Down syndrome,4
+Q87,Q87.8,Other chromosomal abnormalities,4
+Q91,Q93.9,Other chromosomal abnormalities,4
+Q95,Q95.9,Other chromosomal abnormalities,4
+Q97,Q97.9,Other chromosomal abnormalities,4
+Q99,Q99.8,Other chromosomal abnormalities,4
+Q65,Q79,Congenital musculoskeletal and limb anomalies,4
+Q79.6,Q79.9,Congenital musculoskeletal and limb anomalies,4
+P96.0,P96.0,Urogenital congenital anomalies,4
+Q50,Q60.6,Urogenital congenital anomalies,4
+Q63,Q64.9,Urogenital congenital anomalies,4
+Q38,Q45.9,Digestive congenital anomalies,4
+Q79.0,Q79.5,Digestive congenital anomalies,4
+G71.2,G71.2,Other congenital birth defects,4
+Q02,Q04.9,Other congenital birth defects,4
+Q06,Q07.9,Other congenital birth defects,4
+Q10.4,Q18.9,Other congenital birth defects,4
+Q30,Q34.9,Other congenital birth defects,4
+Q80,Q86,Other congenital birth defects,4
+Q86.1,Q86.8,Other congenital birth defects,4
+Q89,Q89.8,Other congenital birth defects,4
+N10,N12.9,Urinary diseases and male infertility,3
+N13.6,N13.6,Urinary diseases and male infertility,3
+N15,N15,Urinary diseases and male infertility,3
+N15.1,N16.8,Urinary diseases and male infertility,3
+N20,N23.0,Urinary diseases and male infertility,3
+N25,N28.1,Urinary diseases and male infertility,3
+N29,N30.3,Urinary diseases and male infertility,3
+N30.8,N32.0,Urinary diseases and male infertility,3
+N32.3,N32.4,Urinary diseases and male infertility,3
+N34,N34.3,Urinary diseases and male infertility,3
+N36,N36.9,Urinary diseases and male infertility,3
+N39,N39.2,Urinary diseases and male infertility,3
+N41,N41.9,Urinary diseases and male infertility,3
+N44,N44.0,Urinary diseases and male infertility,3
+N45,N45.9,Urinary diseases and male infertility,3
+N49,N49.9,Urinary diseases and male infertility,3
+N10,N12.9,Urinary tract infection and interstitial nephritis,4
+N13.6,N13.6,Urinary tract infection and interstitial nephritis,4
+N15,N15,Urinary tract infection and interstitial nephritis,4
+N15.1,N16.8,Urinary tract infection and interstitial nephritis,4
+N30,N30.3,Urinary tract infection and interstitial nephritis,4
+N30.8,N30.9,Urinary tract infection and interstitial nephritis,4
+N34,N34.3,Urinary tract infection and interstitial nephritis,4
+N39.0,N39.2,Urinary tract infection and interstitial nephritis,4
+N20,N23.0,Urolithiasis,4
+N25,N28.1,Other urinary diseases,4
+N29,N29.8,Other urinary diseases,4
+N31,N32.0,Other urinary diseases,4
+N32.3,N32.4,Other urinary diseases,4
+N36,N36.9,Other urinary diseases,4
+N39,N39,Other urinary diseases,4
+N41,N41.9,Other urinary diseases,4
+N44,N44.0,Other urinary diseases,4
+N45,N45.9,Other urinary diseases,4
+N49,N49.9,Other urinary diseases,4
+D25,D26,Gynaecological diseases,3
+D28.2,D28.2,Gynaecological diseases,3
+E28.2,E28.2,Gynaecological diseases,3
+N72,N72.0,Gynaecological diseases,3
+N75,N77.8,Gynaecological diseases,3
+N80,N81.9,Gynaecological diseases,3
+N83,N83.9,Gynaecological diseases,3
+D25,D26,Uterine fibroids,4
+D28.2,D28.2,Uterine fibroids,4
+N80,N80.9,Endometriosis,4
+N81,N81.9,Genital prolapse,4
+N72,N72.0,Other gynaecological diseases,4
+N75,N77.8,Other gynaecological diseases,4
+N83,N83.9,Other gynaecological diseases,4
+D55,D58.9,Haemoglobinopathies and haemolytic anaemias,3
+D59.1,D59.1,Haemoglobinopathies and haemolytic anaemias,3
+D59.3,D59.3,Haemoglobinopathies and haemolytic anaemias,3
+D59.5,D59.5,Haemoglobinopathies and haemolytic anaemias,3
+D60,D61.9,Haemoglobinopathies and haemolytic anaemias,3
+D64.0,D64.0,Haemoglobinopathies and haemolytic anaemias,3
+D56,D56.9,Thalassaemias,4
+D57,D57.8,Sickle cell disorders,4
+D55,D55.2,G6PD deficiency,4
+D55.3,D55.9,Other haemoglobinopathies and haemolytic anaemias,4
+D58,D58.9,Other haemoglobinopathies and haemolytic anaemias,4
+D59.1,D59.1,Other haemoglobinopathies and haemolytic anaemias,4
+D59.3,D59.3,Other haemoglobinopathies and haemolytic anaemias,4
+D59.5,D59.5,Other haemoglobinopathies and haemolytic anaemias,4
+D60,D61.9,Other haemoglobinopathies and haemolytic anaemias,4
+D64.0,D64.0,Other haemoglobinopathies and haemolytic anaemias,4
+D52.1,D52.1,"Endocrine, metabolic, blood, and immune disorders",3
+D59.0,D59.0,"Endocrine, metabolic, blood, and immune disorders",3
+D59.2,D59.2,"Endocrine, metabolic, blood, and immune disorders",3
+D59.6,D59.6,"Endocrine, metabolic, blood, and immune disorders",3
+D66,D67,"Endocrine, metabolic, blood, and immune disorders",3
+D68.0,D69.8,"Endocrine, metabolic, blood, and immune disorders",3
+D70,D70.2,"Endocrine, metabolic, blood, and immune disorders",3
+D70.4,D75.8,"Endocrine, metabolic, blood, and immune disorders",3
+D76,D78.8,"Endocrine, metabolic, blood, and immune disorders",3
+D86.8,D86.8,"Endocrine, metabolic, blood, and immune disorders",3
+D89,D89.2,"Endocrine, metabolic, blood, and immune disorders",3
+E03,E07.1,"Endocrine, metabolic, blood, and immune disorders",3
+E09,E09.9,"Endocrine, metabolic, blood, and immune disorders",3
+E15.0,E15.0,"Endocrine, metabolic, blood, and immune disorders",3
+E16.0,E16.9,"Endocrine, metabolic, blood, and immune disorders",3
+E20,E24.3,"Endocrine, metabolic, blood, and immune disorders",3
+E24.8,E28.1,"Endocrine, metabolic, blood, and immune disorders",3
+E28.3,E34,"Endocrine, metabolic, blood, and immune disorders",3
+E34.1,E34.8,"Endocrine, metabolic, blood, and immune disorders",3
+E36,E36.8,"Endocrine, metabolic, blood, and immune disorders",3
+E65,E68,"Endocrine, metabolic, blood, and immune disorders",3
+E70,E85.2,"Endocrine, metabolic, blood, and immune disorders",3
+E88,E89.9,"Endocrine, metabolic, blood, and immune disorders",3
+G21.0,G21.1,"Endocrine, metabolic, blood, and immune disorders",3
+G24.0,G24.0,"Endocrine, metabolic, blood, and immune disorders",3
+G25.1,G25.1,"Endocrine, metabolic, blood, and immune disorders",3
+G25.4,G25.4,"Endocrine, metabolic, blood, and immune disorders",3
+G25.6,G25.7,"Endocrine, metabolic, blood, and immune disorders",3
+G72.0,G72.0,"Endocrine, metabolic, blood, and immune disorders",3
+G93.7,G93.7,"Endocrine, metabolic, blood, and immune disorders",3
+G97,G97.9,"Endocrine, metabolic, blood, and immune disorders",3
+I95.2,I95.3,"Endocrine, metabolic, blood, and immune disorders",3
+I97,I97.9,"Endocrine, metabolic, blood, and immune disorders",3
+I98.9,I98.9,"Endocrine, metabolic, blood, and immune disorders",3
+J70.0,J70.5,"Endocrine, metabolic, blood, and immune disorders",3
+J95,J95.9,"Endocrine, metabolic, blood, and immune disorders",3
+K43,K43.9,"Endocrine, metabolic, blood, and immune disorders",3
+K52.0,K52.0,"Endocrine, metabolic, blood, and immune disorders",3
+K62.7,K62.7,"Endocrine, metabolic, blood, and immune disorders",3
+K91,K91.9,"Endocrine, metabolic, blood, and immune disorders",3
+K94,K95.8,"Endocrine, metabolic, blood, and immune disorders",3
+M87.1,M87.1,"Endocrine, metabolic, blood, and immune disorders",3
+N14,N14.4,"Endocrine, metabolic, blood, and immune disorders",3
+N65,N65.1,"Endocrine, metabolic, blood, and immune disorders",3
+N99,N99.9,"Endocrine, metabolic, blood, and immune disorders",3
+P96.2,P96.2,"Endocrine, metabolic, blood, and immune disorders",3
+P96.5,P96.5,"Endocrine, metabolic, blood, and immune disorders",3
+R50.2,R50.2,"Endocrine, metabolic, blood, and immune disorders",3
+R95,R95.9,Sudden infant death syndrome,3
+L55,L55.9,Injuries,1
+L56.3,L56.3,Injuries,1
+L56.8,L56.9,Injuries,1
+L58,L58.9,Injuries,1
+N30.4,N30.4,Injuries,1
+U00,U03,Injuries,1
+V00,V86.9,Injuries,1
+V87.2,V87.3,Injuries,1
+V88.2,V88.3,Injuries,1
+V90,V98.8,Injuries,1
+W00,W46.2,Injuries,1
+W49,W62.9,Injuries,1
+W64,W70.9,Injuries,1
+W73,W75.9,Injuries,1
+W77,W81.9,Injuries,1
+W83,W94.9,Injuries,1
+W97.9,W97.9,Injuries,1
+W99,X06.9,Injuries,1
+X08,X39.9,Injuries,1
+X47,X48.9,Injuries,1
+X50,X54.9,Injuries,1
+X57,X58.9,Injuries,1
+X60,X64.9,Injuries,1
+X66,X83.9,Injuries,1
+X85,Y08.9,Injuries,1
+Y35,Y84.9,Injuries,1
+Y87.0,Y87.1,Injuries,1
+Y88,Y88.3,Injuries,1
+Y89.0,Y89.1,Injuries,1
+V00,V86.9,Transport injuries,2
+V87.2,V87.3,Transport injuries,2
+V88.2,V88.3,Transport injuries,2
+V90,V98.8,Transport injuries,2
+V01,V04.9,Road injuries,3
+V06,V80.9,Road injuries,3
+V82,V82.9,Road injuries,3
+V87.2,V87.3,Road injuries,3
+V01,V04.9,Pedestrian road injuries,4
+V06,V09.9,Pedestrian road injuries,4
+V10,V19.9,Cyclist road injuries,4
+V20,V29.9,Motorcyclist road injuries,4
+V30,V79.9,Motor vehicle road injuries,4
+V87.2,V87.3,Motor vehicle road injuries,4
+V80,V80.9,Other road injuries,4
+V82,V82.9,Other road injuries,4
+V00,V00.8,Other transport injuries,3
+V05,V05.9,Other transport injuries,3
+V81,V81.9,Other transport injuries,3
+V83,V86.9,Other transport injuries,3
+V88.2,V88.3,Other transport injuries,3
+V90,V98.8,Other transport injuries,3
+L55,L55.9,Unintentional injuries,2
+L56.3,L56.3,Unintentional injuries,2
+L56.8,L56.9,Unintentional injuries,2
+L58,L58.9,Unintentional injuries,2
+N30.4,N30.4,Unintentional injuries,2
+W00,W46.2,Unintentional injuries,2
+W49,W62.9,Unintentional injuries,2
+W64,W70.9,Unintentional injuries,2
+W73,W75.9,Unintentional injuries,2
+W77,W81.9,Unintentional injuries,2
+W83,W94.9,Unintentional injuries,2
+W97.9,W97.9,Unintentional injuries,2
+W99,X06.9,Unintentional injuries,2
+X08,X39.9,Unintentional injuries,2
+X47,X48.9,Unintentional injuries,2
+X50,X54.9,Unintentional injuries,2
+X57,X58.9,Unintentional injuries,2
+Y40,Y84.9,Unintentional injuries,2
+Y88,Y88.3,Unintentional injuries,2
+W00,W19.9,Falls,3
+W65,W70.9,Drowning,3
+W73,W74.9,Drowning,3
+X00,X06.9,"Fire, heat, and hot substances",3
+X08,X19.9,"Fire, heat, and hot substances",3
+X47,X48.9,Poisonings,3
+X47,X47.9,Poisoning by carbon monoxide,4
+X48,X48.9,Poisoning by other means,4
+W20,W38.9,Exposure to mechanical forces,3
+W40,W43.9,Exposure to mechanical forces,3
+W45.0,W45.2,Exposure to mechanical forces,3
+W46,W46.2,Exposure to mechanical forces,3
+W49,W52,Exposure to mechanical forces,3
+W32,W34.9,Unintentional firearm injuries,4
+W20,W31.9,Other exposure to mechanical forces,4
+W35,W38.9,Other exposure to mechanical forces,4
+W40,W43.9,Other exposure to mechanical forces,4
+W45.0,W45.2,Other exposure to mechanical forces,4
+W46,W46.2,Other exposure to mechanical forces,4
+W49,W52,Other exposure to mechanical forces,4
+N30.4,N30.4,Adverse effects of medical treatment,3
+Y40,Y84.9,Adverse effects of medical treatment,3
+Y88,Y88.3,Adverse effects of medical treatment,3
+W52.0,W62.9,Animal contact,3
+W64,W64.9,Animal contact,3
+X20,X29.9,Animal contact,3
+X20,X29.9,Venomous animal contact,4
+W52.0,W62.9,Non-venomous animal contact,4
+W64,W64.9,Non-venomous animal contact,4
+W44,W45,Foreign body,3
+W45.3,W45.9,Foreign body,3
+W75,W75.9,Foreign body,3
+W78,W80.9,Foreign body,3
+W83,W84.9,Foreign body,3
+W75,W75.9,Pulmonary aspiration and foreign body in airway,4
+W78,W80.9,Pulmonary aspiration and foreign body in airway,4
+W83,W84.9,Pulmonary aspiration and foreign body in airway,4
+W44,W45,Foreign body in other body part,4
+W45.3,W45.9,Foreign body in other body part,4
+L55,L55.9,Environmental heat and cold exposure,3
+L56.3,L56.3,Environmental heat and cold exposure,3
+L56.8,L56.9,Environmental heat and cold exposure,3
+L58,L58.9,Environmental heat and cold exposure,3
+W88,W94.9,Environmental heat and cold exposure,3
+W97.9,W97.9,Environmental heat and cold exposure,3
+W99,W99.9,Environmental heat and cold exposure,3
+X30,X32.9,Environmental heat and cold exposure,3
+X39,X39.9,Environmental heat and cold exposure,3
+X33,X38.9,Exposure to forces of nature,3
+P95,P95.9,Still Born,
+W39,W39.9,Other unintentional injuries,3
+W77,W77.9,Other unintentional injuries,3
+W81,W81.9,Other unintentional injuries,3
+W85,W87.9,Other unintentional injuries,3
+X50,X54.9,Other unintentional injuries,3
+X57,X58.9,Other unintentional injuries,3
+U00,U03,Self-harm and interpersonal violence,2
+X60,X64.9,Self-harm and interpersonal violence,2
+X66,X83.9,Self-harm and interpersonal violence,2
+X85,Y08.9,Self-harm and interpersonal violence,2
+Y35,Y38.9,Self-harm and interpersonal violence,2
+Y87.0,Y87.1,Self-harm and interpersonal violence,2
+Y89.0,Y89.1,Self-harm and interpersonal violence,2
+X60,X64.9,Self-harm,3
+X66,X83.9,Self-harm,3
+Y87.0,Y87.0,Self-harm,3
+X72,X74.9,Self-harm by firearm,4
+X60,X64.9,Self-harm by other specified means,4
+X66,X71.9,Self-harm by other specified means,4
+X75,X83.9,Self-harm by other specified means,4
+Y87.0,Y87.0,Self-harm by other specified means,4
+X85,Y08.9,Interpersonal violence,3
+Y87.1,Y87.1,Interpersonal violence,3
+X93,X95.9,Physical violence by firearm,4
+X99,X99.9,Physical violence by sharp object,4
+X85,X92.9,Physical violence by other means,4
+X96,X98.9,Physical violence by other means,4
+Y00,Y04.9,Physical violence by other means,4
+Y06,Y08.9,Physical violence by other means,4
+Y87.1,Y87.1,Physical violence by other means,4
+U00,U03,Conflict and terrorism,3
+Y36,Y38.9,Conflict and terrorism,3
+Y89.1,Y89.1,Conflict and terrorism,3
+Y35,Y35.9,Police conflict and executions,3
+Y89.0,Y89.0,Police conflict and executions,3
+A40,A41.9,Garbage Code (GBD Level 1),
+A48.0,A48.0,Garbage Code (GBD Level 1),
+A48.3,A48.3,Garbage Code (GBD Level 1),
+A49.0,A49.1,Garbage Code (GBD Level 1),
+A59,A59.9,Garbage Code (GBD Level 1),
+A71,A71.9,Garbage Code (GBD Level 1),
+A74.0,A74.0,Garbage Code (GBD Level 1),
+B07,B07.9,Garbage Code (GBD Level 1),
+B30,B30.9,Garbage Code (GBD Level 1),
+B35,B36.9,Garbage Code (GBD Level 1),
+B85,B85.4,Garbage Code (GBD Level 1),
+B87,B88.9,Garbage Code (GBD Level 1),
+B94.0,B94.0,Garbage Code (GBD Level 1),
+D50,D50.0,Garbage Code (GBD Level 1),
+D50.9,D50.9,Garbage Code (GBD Level 1),
+D62,D63.0,Garbage Code (GBD Level 1),
+D63.8,D64,Garbage Code (GBD Level 1),
+D64.1,D65.9,Garbage Code (GBD Level 1),
+D68,D68,Garbage Code (GBD Level 1),
+D69.9,D69.9,Garbage Code (GBD Level 1),
+E15,E15,Garbage Code (GBD Level 1),
+E16,E16,Garbage Code (GBD Level 1),
+E50,E50.9,Garbage Code (GBD Level 1),
+E64.1,E64.1,Garbage Code (GBD Level 1),
+E85.3,E87.6,Garbage Code (GBD Level 1),
+E87.8,E87.9,Garbage Code (GBD Level 1),
+F06.2,F06.4,Garbage Code (GBD Level 1),
+F07.2,F07.2,Garbage Code (GBD Level 1),
+F09,F09.9,Garbage Code (GBD Level 1),
+F19,F23.9,Garbage Code (GBD Level 1),
+F25,F49,Garbage Code (GBD Level 1),
+F51,F99.0,Garbage Code (GBD Level 1),
+G06,G08.0,Garbage Code (GBD Level 1),
+G32,G32.8,Garbage Code (GBD Level 1),
+G43,G44.2,Garbage Code (GBD Level 1),
+G44.4,G44.8,Garbage Code (GBD Level 1),
+G47,G47.2,Garbage Code (GBD Level 1),
+G47.4,G47.9,Garbage Code (GBD Level 1),
+G50,G60.9,Garbage Code (GBD Level 1),
+G62,G62.0,Garbage Code (GBD Level 1),
+G62.2,G65.2,Garbage Code (GBD Level 1),
+G80,G83.9,Garbage Code (GBD Level 1),
+G89,G89.4,Garbage Code (GBD Level 1),
+G91,G91.2,Garbage Code (GBD Level 1),
+G91.4,G93,Garbage Code (GBD Level 1),
+G93.1,G93.2,Garbage Code (GBD Level 1),
+G93.4,G93.6,Garbage Code (GBD Level 1),
+G94.0,G94.8,Garbage Code (GBD Level 1),
+G99,H05,Garbage Code (GBD Level 1),
+H05.2,H69.9,Garbage Code (GBD Level 1),
+H71,H99,Garbage Code (GBD Level 1),
+I26,I26.9,Garbage Code (GBD Level 1),
+I31.2,I31.4,Garbage Code (GBD Level 1),
+I46,I46.9,Garbage Code (GBD Level 1),
+I50.0,I50.4,Garbage Code (GBD Level 1),
+I76,I76,Garbage Code (GBD Level 1),
+I95,I95.1,Garbage Code (GBD Level 1),
+I95.8,I95.9,Garbage Code (GBD Level 1),
+J69,J69.9,Garbage Code (GBD Level 1),
+J80,J80.9,Garbage Code (GBD Level 1),
+J81.0,J81.0,Garbage Code (GBD Level 1),
+J85,J85.3,Garbage Code (GBD Level 1),
+J86,J86.9,Garbage Code (GBD Level 1),
+J93,J93.1,Garbage Code (GBD Level 1),
+J93.8,J93.9,Garbage Code (GBD Level 1),
+J94.2,J94.2,Garbage Code (GBD Level 1),
+J96,J96.9,Garbage Code (GBD Level 1),
+J98.1,J98.3,Garbage Code (GBD Level 1),
+K00,K19,Garbage Code (GBD Level 1),
+K30,K30,Garbage Code (GBD Level 1),
+K65,K66.1,Garbage Code (GBD Level 1),
+K66.9,K66.9,Garbage Code (GBD Level 1),
+K68.1,K68.9,Garbage Code (GBD Level 1),
+K71,K71.6,Garbage Code (GBD Level 1),
+K71.8,K72.9,Garbage Code (GBD Level 1),
+K75.0,K75.0,Garbage Code (GBD Level 1),
+L20,L30.9,Garbage Code (GBD Level 1),
+L40,L50.9,Garbage Code (GBD Level 1),
+L52,L54.8,Garbage Code (GBD Level 1),
+L56,L56.2,Garbage Code (GBD Level 1),
+L56.4,L56.5,Garbage Code (GBD Level 1),
+L57,L57.9,Garbage Code (GBD Level 1),
+L59,L68.9,Garbage Code (GBD Level 1),
+L70,L76.8,Garbage Code (GBD Level 1),
+L80,L87.9,Garbage Code (GBD Level 1),
+L90,L92.9,Garbage Code (GBD Level 1),
+L94,L96,Garbage Code (GBD Level 1),
+L98.5,L99.8,Garbage Code (GBD Level 1),
+M04,M04,Garbage Code (GBD Level 1),
+M10,M12.0,Garbage Code (GBD Level 1),
+M12.2,M29,Garbage Code (GBD Level 1),
+M37,M39,Garbage Code (GBD Level 1),
+M43.2,M49,Garbage Code (GBD Level 1),
+M49.2,M64,Garbage Code (GBD Level 1),
+M65.1,M71,Garbage Code (GBD Level 1),
+M71.2,M72.4,Garbage Code (GBD Level 1),
+M72.8,M73,Garbage Code (GBD Level 1),
+M73.8,M79.9,Garbage Code (GBD Level 1),
+M83,M86.2,Garbage Code (GBD Level 1),
+M86.5,M86.9,Garbage Code (GBD Level 1),
+M87.2,M87.9,Garbage Code (GBD Level 1),
+M89.1,M89.4,Garbage Code (GBD Level 1),
+M90,M99.9,Garbage Code (GBD Level 1),
+N17,N17.9,Garbage Code (GBD Level 1),
+N19,N19.9,Garbage Code (GBD Level 1),
+N32.1,N32.2,Garbage Code (GBD Level 1),
+N32.8,N33.8,Garbage Code (GBD Level 1),
+N35,N35.9,Garbage Code (GBD Level 1),
+N37,N37.8,Garbage Code (GBD Level 1),
+N39.3,N39.8,Garbage Code (GBD Level 1),
+N42,N43.4,Garbage Code (GBD Level 1),
+N44.1,N44.8,Garbage Code (GBD Level 1),
+N46,N48.9,Garbage Code (GBD Level 1),
+N50,N53.9,Garbage Code (GBD Level 1),
+N61,N64.9,Garbage Code (GBD Level 1),
+N82,N82.9,Garbage Code (GBD Level 1),
+N91,N91.5,Garbage Code (GBD Level 1),
+N95,N95,Garbage Code (GBD Level 1),
+N95.1,N95.9,Garbage Code (GBD Level 1),
+N97,N97.9,Garbage Code (GBD Level 1),
+R02,R02.9,Garbage Code (GBD Level 1),
+R03.1,R03.1,Garbage Code (GBD Level 1),
+R07.0,R07.0,Garbage Code (GBD Level 1),
+R08,R09,Garbage Code (GBD Level 1),
+R09.3,R09.3,Garbage Code (GBD Level 1),
+R11,R12.0,Garbage Code (GBD Level 1),
+R14,R19.6,Garbage Code (GBD Level 1),
+R19.8,R23,Garbage Code (GBD Level 1),
+R23.1,R30.9,Garbage Code (GBD Level 1),
+R32,R50.1,Garbage Code (GBD Level 1),
+R50.8,R57.9,Garbage Code (GBD Level 1),
+R58.0,R72.9,Garbage Code (GBD Level 1),
+R74,R78,Garbage Code (GBD Level 1),
+R78.6,R94.8,Garbage Code (GBD Level 1),
+R96,R99.9,Garbage Code (GBD Level 1),
+U05,U05,Garbage Code (GBD Level 1),
+U07,U81,Garbage Code (GBD Level 1),
+U89.9,U99,Garbage Code (GBD Level 1),
+X40,X44.9,Garbage Code (GBD Level 1),
+X46,X46.9,Garbage Code (GBD Level 1),
+X49,X49.9,Garbage Code (GBD Level 1),
+Y10,Y14.9,Garbage Code (GBD Level 1),
+Y16,Y19.9,Garbage Code (GBD Level 1),
+Z00,Z15.8,Garbage Code (GBD Level 1),
+Z17,unsp.,Garbage Code (GBD Level 1),
+A14.9,A14.9,Garbage Code (GBD Level 2),
+A29,A30.9,Garbage Code (GBD Level 2),
+A45,A45.9,Garbage Code (GBD Level 2),
+A47,A48,Garbage Code (GBD Level 2),
+A48.8,A49,Garbage Code (GBD Level 2),
+A49.3,A49.9,Garbage Code (GBD Level 2),
+A61,A62,Garbage Code (GBD Level 2),
+A72,A73,Garbage Code (GBD Level 2),
+A76,A76,Garbage Code (GBD Level 2),
+A97,A97,Garbage Code (GBD Level 2),
+B08,B09,Garbage Code (GBD Level 2),
+B11,B14,Garbage Code (GBD Level 2),
+B28,B29,Garbage Code (GBD Level 2),
+B31,B32.4,Garbage Code (GBD Level 2),
+B34,B34.9,Garbage Code (GBD Level 2),
+B61,B62,Garbage Code (GBD Level 2),
+B68,B68.9,Garbage Code (GBD Level 2),
+B73,B74.2,Garbage Code (GBD Level 2),
+B76,B76.9,Garbage Code (GBD Level 2),
+B78,B81.8,Garbage Code (GBD Level 2),
+B84,B84,Garbage Code (GBD Level 2),
+B92,B94,Garbage Code (GBD Level 2),
+B94.8,B94.9,Garbage Code (GBD Level 2),
+B95.6,B97.3,Garbage Code (GBD Level 2),
+B97.7,B99.9,Garbage Code (GBD Level 2),
+D59,D59,Garbage Code (GBD Level 2),
+D59.4,D59.4,Garbage Code (GBD Level 2),
+D59.8,D59.9,Garbage Code (GBD Level 2),
+F17,F17.9,Garbage Code (GBD Level 2),
+G44.3,G44.3,Garbage Code (GBD Level 2),
+G91.3,G91.3,Garbage Code (GBD Level 2),
+G93.0,G93.0,Garbage Code (GBD Level 2),
+G93.3,G93.3,Garbage Code (GBD Level 2),
+I10,I10.9,Garbage Code (GBD Level 2),
+I15,I15.9,Garbage Code (GBD Level 2),
+I27,I27,Garbage Code (GBD Level 2),
+I27.8,I27.9,Garbage Code (GBD Level 2),
+I50,I50,Garbage Code (GBD Level 2),
+I50.8,I50.9,Garbage Code (GBD Level 2),
+I67.4,I67.4,Garbage Code (GBD Level 2),
+I70,I70.1,Garbage Code (GBD Level 2),
+I70.9,I70.9,Garbage Code (GBD Level 2),
+I74,I75.8,Garbage Code (GBD Level 2),
+J81,J81,Garbage Code (GBD Level 2),
+J81.1,J81.1,Garbage Code (GBD Level 2),
+J90,J90.0,Garbage Code (GBD Level 2),
+J94,J94.1,Garbage Code (GBD Level 2),
+J94.8,J94.9,Garbage Code (GBD Level 2),
+K92.0,K92.2,Garbage Code (GBD Level 2),
+N70,N71.9,Garbage Code (GBD Level 2),
+N73,N74.0,Garbage Code (GBD Level 2),
+N74.2,N74.8,Garbage Code (GBD Level 2),
+R03,R03.0,Garbage Code (GBD Level 2),
+R04,R06.9,Garbage Code (GBD Level 2),
+R09.0,R09.2,Garbage Code (GBD Level 2),
+R09.8,R10.9,Garbage Code (GBD Level 2),
+R13,R13.9,Garbage Code (GBD Level 2),
+R23.0,R23.0,Garbage Code (GBD Level 2),
+R58,R58,Garbage Code (GBD Level 2),
+S00,T98.3,Garbage Code (GBD Level 2),
+W47,W48,Garbage Code (GBD Level 2),
+W63,W63,Garbage Code (GBD Level 2),
+W71,W72,Garbage Code (GBD Level 2),
+W76,W76.9,Garbage Code (GBD Level 2),
+W82,W82,Garbage Code (GBD Level 2),
+W95,W97,Garbage Code (GBD Level 2),
+W98,W98,Garbage Code (GBD Level 2),
+X07,X07,Garbage Code (GBD Level 2),
+X55,X56,Garbage Code (GBD Level 2),
+X59,X59.9,Garbage Code (GBD Level 2),
+Y20,Y34.9,Garbage Code (GBD Level 2),
+Y86,Y87,Garbage Code (GBD Level 2),
+Y87.2,Y87.2,Garbage Code (GBD Level 2),
+Y89,Y89,Garbage Code (GBD Level 2),
+Y89.9,Y99.9,Garbage Code (GBD Level 2),
+A01,A01,Garbage Code (GBD Level 3),
+A31,A31.9,Garbage Code (GBD Level 3),
+A42,A44.9,Garbage Code (GBD Level 3),
+A49.2,A49.2,Garbage Code (GBD Level 3),
+A64,A64.0,Garbage Code (GBD Level 3),
+A99,A99.0,Garbage Code (GBD Level 3),
+B17,B17,Garbage Code (GBD Level 3),
+B17.1,B17.1,Garbage Code (GBD Level 3),
+B17.8,B17.9,Garbage Code (GBD Level 3),
+B19,B19.0,Garbage Code (GBD Level 3),
+B19.2,B19.9,Garbage Code (GBD Level 3),
+B37,B46.9,Garbage Code (GBD Level 3),
+B49,B49.9,Garbage Code (GBD Level 3),
+B55,B55,Garbage Code (GBD Level 3),
+B55.1,B55.9,Garbage Code (GBD Level 3),
+B58,B59.9,Garbage Code (GBD Level 3),
+B89,B89,Garbage Code (GBD Level 3),
+B94.2,B94.2,Garbage Code (GBD Level 3),
+C14,C14.9,Garbage Code (GBD Level 3),
+C22.9,C22.9,Garbage Code (GBD Level 3),
+C26,C29,Garbage Code (GBD Level 3),
+C35,C36,Garbage Code (GBD Level 3),
+C39,C39.9,Garbage Code (GBD Level 3),
+C42,C42,Garbage Code (GBD Level 3),
+C46,C46.9,Garbage Code (GBD Level 3),
+C55,C55.9,Garbage Code (GBD Level 3),
+C57.9,C57.9,Garbage Code (GBD Level 3),
+C59,C59,Garbage Code (GBD Level 3),
+C63.9,C63.9,Garbage Code (GBD Level 3),
+C68,C68,Garbage Code (GBD Level 3),
+C68.9,C68.9,Garbage Code (GBD Level 3),
+C74,C74.9,Garbage Code (GBD Level 3),
+C75.9,C80.9,Garbage Code (GBD Level 3),
+C87,C87,Garbage Code (GBD Level 3),
+C97,D00.0,Garbage Code (GBD Level 3),
+D01,D01,Garbage Code (GBD Level 3),
+D01.4,D02,Garbage Code (GBD Level 3),
+D02.4,D02.9,Garbage Code (GBD Level 3),
+D07,D07,Garbage Code (GBD Level 3),
+D07.3,D07.3,Garbage Code (GBD Level 3),
+D07.6,D09,Garbage Code (GBD Level 3),
+D09.1,D09.1,Garbage Code (GBD Level 3),
+D09.7,D09.7,Garbage Code (GBD Level 3),
+D09.9,D10,Garbage Code (GBD Level 3),
+D10.9,D10.9,Garbage Code (GBD Level 3),
+D13,D13,Garbage Code (GBD Level 3),
+D13.9,D14,Garbage Code (GBD Level 3),
+D14.4,D14.4,Garbage Code (GBD Level 3),
+D17,D21.9,Garbage Code (GBD Level 3),
+D28,D28,Garbage Code (GBD Level 3),
+D28.9,D29,Garbage Code (GBD Level 3),
+D29.9,D30,Garbage Code (GBD Level 3),
+D30.9,D30.9,Garbage Code (GBD Level 3),
+D36.0,D36.0,Garbage Code (GBD Level 3),
+D36.9,D37.0,Garbage Code (GBD Level 3),
+D37.6,D38,Garbage Code (GBD Level 3),
+D38.6,D39.0,Garbage Code (GBD Level 3),
+D39.7,D39.7,Garbage Code (GBD Level 3),
+D39.9,D40,Garbage Code (GBD Level 3),
+D40.9,D41,Garbage Code (GBD Level 3),
+D41.9,D41.9,Garbage Code (GBD Level 3),
+D44,D44,Garbage Code (GBD Level 3),
+D44.9,D44.9,Garbage Code (GBD Level 3),
+D48,D48,Garbage Code (GBD Level 3),
+D48.7,D49.1,Garbage Code (GBD Level 3),
+D49.5,D49.5,Garbage Code (GBD Level 3),
+D49.7,D49.9,Garbage Code (GBD Level 3),
+D54,D54,Garbage Code (GBD Level 3),
+D75.9,D75.9,Garbage Code (GBD Level 3),
+D79,D85,Garbage Code (GBD Level 3),
+D87,D88,Garbage Code (GBD Level 3),
+D89.8,D99,Garbage Code (GBD Level 3),
+E07.8,E08.9,Garbage Code (GBD Level 3),
+E17,E19,Garbage Code (GBD Level 3),
+E34.0,E34.0,Garbage Code (GBD Level 3),
+E34.9,E35.8,Garbage Code (GBD Level 3),
+E37,E39,Garbage Code (GBD Level 3),
+E47,E49.,Garbage Code (GBD Level 3),
+E62,E62,Garbage Code (GBD Level 3),
+E69,E69,Garbage Code (GBD Level 3),
+E87.7,E87.7,Garbage Code (GBD Level 3),
+E90,E998,Garbage Code (GBD Level 3),
+F04,F06.1,Garbage Code (GBD Level 3),
+F06.5,F07.0,Garbage Code (GBD Level 3),
+F07.8,F08,Garbage Code (GBD Level 3),
+F50,F50,Garbage Code (GBD Level 3),
+F50.8,F50.9,Garbage Code (GBD Level 3),
+G09,G09.9,Garbage Code (GBD Level 3),
+G15,G19,Garbage Code (GBD Level 3),
+G21,G21,Garbage Code (GBD Level 3),
+G21.2,G21.2,Garbage Code (GBD Level 3),
+G21.4,G22.0,Garbage Code (GBD Level 3),
+G27,G29,Garbage Code (GBD Level 3),
+G33,G34,Garbage Code (GBD Level 3),
+G38,G39.,Garbage Code (GBD Level 3),
+G42,G42,Garbage Code (GBD Level 3),
+G48,G49,Garbage Code (GBD Level 3),
+G66,G69,Garbage Code (GBD Level 3),
+G74,G79,Garbage Code (GBD Level 3),
+G84,G88,Garbage Code (GBD Level 3),
+G93.8,G94,Garbage Code (GBD Level 3),
+G96,G96.9,Garbage Code (GBD Level 3),
+G98,G98.9,Garbage Code (GBD Level 3),
+I00.0,I00.0,Garbage Code (GBD Level 3),
+I03,I04.,Garbage Code (GBD Level 3),
+I14,I14.,Garbage Code (GBD Level 3),
+I16,I19,Garbage Code (GBD Level 3),
+I29,I29.9,Garbage Code (GBD Level 3),
+I44,I45.9,Garbage Code (GBD Level 3),
+I49,I49.9,Garbage Code (GBD Level 3),
+I51,I51,Garbage Code (GBD Level 3),
+I51.6,I59,Garbage Code (GBD Level 3),
+I90,I94,Garbage Code (GBD Level 3),
+I96,I96.9,Garbage Code (GBD Level 3),
+I98.4,I98.8,Garbage Code (GBD Level 3),
+I99,ID5.9,Garbage Code (GBD Level 3),
+J02.9,J02.9,Garbage Code (GBD Level 3),
+J03.9,J03.9,Garbage Code (GBD Level 3),
+J04.3,J04.3,Garbage Code (GBD Level 3),
+J06,J06,Garbage Code (GBD Level 3),
+J06.9,J06.9,Garbage Code (GBD Level 3),
+J40,J40.9,Garbage Code (GBD Level 3),
+J47,J59,Garbage Code (GBD Level 3),
+J71,J79,Garbage Code (GBD Level 3),
+J81.9,J81.9,Garbage Code (GBD Level 3),
+J83,J83,Garbage Code (GBD Level 3),
+J85.9,J85.9,Garbage Code (GBD Level 3),
+J87,J89,Garbage Code (GBD Level 3),
+J90.9,J90.9,Garbage Code (GBD Level 3),
+J93.6,J93.6,Garbage Code (GBD Level 3),
+J97,J98.0,Garbage Code (GBD Level 3),
+J98.4,J99.8,Garbage Code (GBD Level 3),
+K21,K21.9,Garbage Code (GBD Level 3),
+K22.7,K22.7,Garbage Code (GBD Level 3),
+K31.9,K34,Garbage Code (GBD Level 3),
+K39,K39,Garbage Code (GBD Level 3),
+K47,K49,Garbage Code (GBD Level 3),
+K53,K54,Garbage Code (GBD Level 3),
+K63,K63.4,Garbage Code (GBD Level 3),
+K63.8,K63.9,Garbage Code (GBD Level 3),
+K69,K69,Garbage Code (GBD Level 3),
+K70.4,K70.9,Garbage Code (GBD Level 3),
+K78,K79,Garbage Code (GBD Level 3),
+K84,K84,Garbage Code (GBD Level 3),
+K87,K89,Garbage Code (GBD Level 3),
+K92,K92,Garbage Code (GBD Level 3),
+K92.9,K93,Garbage Code (GBD Level 3),
+K96,K99,Garbage Code (GBD Level 3),
+L06,L07,Garbage Code (GBD Level 3),
+L09,L09,Garbage Code (GBD Level 3),
+L15,L19,Garbage Code (GBD Level 3),
+L31,L39,Garbage Code (GBD Level 3),
+L69,L69,Garbage Code (GBD Level 3),
+L77,L79,Garbage Code (GBD Level 3),
+N09,N09,Garbage Code (GBD Level 3),
+N13,N13.5,Garbage Code (GBD Level 3),
+N13.7,N13.9,Garbage Code (GBD Level 3),
+N24,N24,Garbage Code (GBD Level 3),
+N28.8,N28.9,Garbage Code (GBD Level 3),
+N38,N38,Garbage Code (GBD Level 3),
+N39.9,N40.9,Garbage Code (GBD Level 3),
+N54,N59,Garbage Code (GBD Level 3),
+N66,N69,Garbage Code (GBD Level 3),
+N78,N79,Garbage Code (GBD Level 3),
+N84,N84,Garbage Code (GBD Level 3),
+N84.2,N86,Garbage Code (GBD Level 3),
+N88,N90.9,Garbage Code (GBD Level 3),
+N92,N94.9,Garbage Code (GBD Level 3),
+N95.0,N95.0,Garbage Code (GBD Level 3),
+O08,O08.9,Garbage Code (GBD Level 3),
+O17,O19,Garbage Code (GBD Level 3),
+O27,O27,Garbage Code (GBD Level 3),
+O37,O39,Garbage Code (GBD Level 3),
+O49,O59,Garbage Code (GBD Level 3),
+O78,O79,Garbage Code (GBD Level 3),
+O93,O95.9,Garbage Code (GBD Level 3),
+P06,P06,Garbage Code (GBD Level 3),
+P16,P18,Garbage Code (GBD Level 3),
+P30,P34.2,Garbage Code (GBD Level 3),
+P40,P49,Garbage Code (GBD Level 3),
+P62,P69,Garbage Code (GBD Level 3),
+P73,P73,Garbage Code (GBD Level 3),
+P79,P79,Garbage Code (GBD Level 3),
+P82,P82,Garbage Code (GBD Level 3),
+P85,P89,Garbage Code (GBD Level 3),
+P96.9,P99.9,Garbage Code (GBD Level 3),
+Q08,Q10.3,Garbage Code (GBD Level 3),
+Q19,Q19,Garbage Code (GBD Level 3),
+Q29,Q29.,Garbage Code (GBD Level 3),
+Q36.0,Q36.9,Garbage Code (GBD Level 3),
+Q46,Q49,Garbage Code (GBD Level 3),
+Q88,Q88,Garbage Code (GBD Level 3),
+Q89.9,Q89.9,Garbage Code (GBD Level 3),
+Q94,Q94,Garbage Code (GBD Level 3),
+Q99.9,R01.2,Garbage Code (GBD Level 3),
+R07,R07,Garbage Code (GBD Level 3),
+R07.1,R07.9,Garbage Code (GBD Level 3),
+R31,R31.9,Garbage Code (GBD Level 3),
+B16.9,B16.9,Garbage Code (GBD Level 4),
+B64,B64,Garbage Code (GBD Level 4),
+B82,B82.9,Garbage Code (GBD Level 4),
+B83.9,B83.9,Garbage Code (GBD Level 4),
+C69,C69,Garbage Code (GBD Level 4),
+C69.9,C69.9,Garbage Code (GBD Level 4),
+C91.1,C91.1,Garbage Code (GBD Level 4),
+C91.4,C91.5,Garbage Code (GBD Level 4),
+C91.7,C91.9,Garbage Code (GBD Level 4),
+C92.7,C92.9,Garbage Code (GBD Level 4),
+C93.2,C93.2,Garbage Code (GBD Level 4),
+C93.5,C93.7,Garbage Code (GBD Level 4),
+C93.9,C93.9,Garbage Code (GBD Level 4),
+E12,E14.9,Garbage Code (GBD Level 4),
+G00,G00,Garbage Code (GBD Level 4),
+G00.9,G02.8,Garbage Code (GBD Level 4),
+G03.9,G03.9,Garbage Code (GBD Level 4),
+I37.9,I37.9,Garbage Code (GBD Level 4),
+I42,I42.0,Garbage Code (GBD Level 4),
+I42.9,I42.9,Garbage Code (GBD Level 4),
+I51.5,I51.5,Garbage Code (GBD Level 4),
+I64,I64.9,Garbage Code (GBD Level 4),
+I67,I67,Garbage Code (GBD Level 4),
+I67.8,I68,Garbage Code (GBD Level 4),
+I68.8,I69,Garbage Code (GBD Level 4),
+I69.4,I69.9,Garbage Code (GBD Level 4),
+J07,J08,Garbage Code (GBD Level 4),
+J15.9,J15.9,Garbage Code (GBD Level 4),
+J17,J19.6,Garbage Code (GBD Level 4),
+J22,J29,Garbage Code (GBD Level 4),
+J64,J64.9,Garbage Code (GBD Level 4),
+P23,P23,Garbage Code (GBD Level 4),
+P23.5,P23.9,Garbage Code (GBD Level 4),
+P37.3,P37.4,Garbage Code (GBD Level 4),
+R73,R73.9,Garbage Code (GBD Level 4),
+V87,V87.1,Garbage Code (GBD Level 4),
+V87.4,V88.1,Garbage Code (GBD Level 4),
+V88.4,V89.9,Garbage Code (GBD Level 4),
+V99,V99.0,Garbage Code (GBD Level 4),
+X84,X84.9,Garbage Code (GBD Level 4),
+Y09,Y09.9,Garbage Code (GBD Level 4),
+Y85,Y85.9,Garbage Code (GBD Level 4),

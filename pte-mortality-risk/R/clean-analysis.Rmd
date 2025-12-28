@@ -1,0 +1,1890 @@
+---
+title: "PTE vs. NTE Mortality"
+author: "Rohan Nagabhirava"
+date: "`r Sys.Date()`"
+css: styles.css
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+# Analysis Setup
+
+This section includes options for knitting of the Rmd document, loading of the necessary libraries for the analysis, definitions of functions to streamline analysis down the line, and the connection to the database.
+
+```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+options(encoding = "UTF-8")
+```
+
+```{r}
+library("ComplexUpset")
+library("dplyr")
+library("ggplot2")
+library("ggfortify")
+library("ggpubr")
+library("ggsci")
+library("glue")
+library("gridExtra")
+library("gt")
+library("gtsummary")
+library("lubridate")
+library("patchwork")
+library("ranger")
+library("rlang")
+library("RODBC")
+library("survival")
+library("survminer")
+library("tidyr")
+```
+
+```{r}
+get_custom_theme <- function() {
+  custom_theme <- theme_minimal() + 
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 12),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 6),
+      legend.key = element_rect(fill = NA),
+      legend.background = element_rect(fill = "white", color = "black"),
+      legend.position = "right"
+    )
+  return(custom_theme)
+}
+
+my_ggsurvplot <- function(fit, data, title, legend_labs) {
+    plot <- ggsurvplot(
+      fit = fit,
+      data = data,
+      censor = FALSE,
+      conf.int = FALSE,
+      size = 0.5,
+
+      xlim = c(0, 10),
+      ylim = c(0, 1),
+      xlab = "Years",
+      ylab = "Survival",
+      break.x.by = 1,
+      break.y.by = 0.1,
+      surv.scale = "percent",
+
+      legend = "right",
+      legend.labs = legend_labs,
+      
+      title = title,
+      ggtheme = get_custom_theme()
+    )
+    return(plot)
+}
+
+plot_cox <- function(
+    cox_fits, 
+    legend_labs, 
+    age_discrete_column = "AgeOfOnsetDiscrete",
+    numeric_covariates = NULL, 
+    categorical_covariates = NULL
+) {
+    if (is.null(numeric_covariates)) {
+        numeric_covariates <- c()
+    }
+    if (is.null(categorical_covariates)) {
+        categorical_covariates <- c()
+    }
+    
+    age_labels_with_all <- names(cox_fits)
+    n <- length(age_labels_with_all)
+
+    plots <- vector(mode = "list", length = n)
+    names(plots) <- age_labels_with_all
+    
+    for (i in 1:n) {
+      age_label <- age_labels_with_all[[i]]
+      cox_fit <- cox_fits[[i]]
+      if (age_label == "All") {
+        age_subset <- data
+      } else {
+        age_subset <- data[data[[age_discrete_column]] == age_label, ]
+      }
+      new_data <- calculate_prediction_data(
+        data = age_subset, 
+        numeric_cols = numeric_covariates, 
+        categorical_cols = categorical_covariates
+      )
+      fit <- survfit(
+        formula = cox_fit,
+        newdata = new_data
+      )
+      plot <- my_ggsurvplot(
+          fit = fit, 
+          data = age_subset, 
+          title = glue("Age {age_label}"), 
+          legend_labs = legend_labs
+         )
+    plots[[i]] <- plot$plot
+    }
+    
+    return(plots)
+}
+
+```
+
+```{r}
+build_surv_formula_string <- function(futime, event, covariates) {
+    formula <- glue("Surv({futime}, {event}) ~ {paste(covariates, collapse = ' + ')}")
+    return(formula)
+}
+
+calculate_weights <- function(data, cols, group) {
+  index <- data[, c(cols, group)]
+  
+  tab1 <- table(data[cols]) / nrow(data)
+  tab2 <- table(index) / nrow(data)
+
+  n_groups <- dim(tab2)[length(cols) + 1]
+  rwt <- rep(tab1, times = n_groups) / tab2
+  
+  raw_weights <- rwt[as.matrix(index)]
+  
+  group_var <- data[[group]]
+  
+  group_sizes <- as.numeric(table(group_var))[match(group_var, names(table(group_var)))]
+  group_sums <- ave(raw_weights, group_var, FUN = sum)
+  normalized_weights <- raw_weights * group_sizes / group_sums
+
+  return(normalized_weights)
+}
+
+bold_gt_table <- function(gt_table, significant_matrix) {
+    bolded_gt_table <- gt_table
+    for (i in seq_len(nrow(significant_matrix))) {
+        bolded_gt_table <- bolded_gt_table %>%
+            tab_style(
+              style = cell_text(weight = "bold"),
+              locations = cells_body(
+                columns = colnames(significant_matrix)[significant_matrix[i, ]],
+                rows = i
+              )
+        )
+    }
+    return(bolded_gt_table)
+}
+    
+format_gt_table <- function(gt_table) {
+    formatted_gt_table <- gt_table %>%
+
+    tab_style(
+        style = list(
+            cell_text(size = px(18))
+    ),
+        locations = cells_column_labels()
+    ) %>%
+    tab_style(
+        style = cell_text(align = "center"),
+        locations = list(
+            cells_column_labels(), 
+            cells_body(), 
+            cells_stub(),
+            cells_stubhead()
+        )
+    ) %>%
+    return(formatted_gt_table)
+}
+```
+
+```{r}
+assign_asterisks <- function(p_value) {
+  case_when(
+    p_value < 0.001 ~ "***",
+    p_value < 0.01 ~ "**",
+    p_value < 0.05 ~ "*",
+    TRUE ~ ""
+  )
+}
+
+format_p_values <- function(p) {
+    case_when(
+        p < 0.001 ~ "<0.001***",
+        p < 0.01 ~ sprintf("%.3f**", p),
+        p < 0.05 ~ sprintf("%.3f*", p),
+        TRUE ~ sprintf("%.3f", p)
+      )
+}
+
+extract_cox_fit_stats <- function(cox_fit) {
+  summary_fit <- summary(cox_fit)
+  hr <- summary_fit$coefficients[, "exp(coef)"]
+  ci_lower <- summary_fit$conf.int[, "lower .95"]
+  ci_upper <- summary_fit$conf.int[, "upper .95"]
+  p_values <- summary_fit$coefficients[, "Pr(>|z|)"]
+  
+  stats <- data.frame(
+    Covariate = rownames(summary_fit$coefficients),
+    HR = format(round(hr, digits = 2), nsmall = 2),
+    CI = glue("({format(round(ci_lower, 2), nsmall = 2)}, {format(round(ci_upper, 2), nsmall = 2)})"),
+    raw_p = p_values,
+    p = format_p_values(p_values)
+  )
+  return(stats)
+}
+
+extract_cox_fit_list_stats <- function(cox_fits, group_name) {
+    results <- lapply(cox_fits, extract_cox_fit_stats) %>%
+        bind_rows(.id = group_name)
+    return(results)
+}
+```
+
+```{r}
+km_plots <- function(
+    data,
+    futime = "YearsOfFollowUp", 
+    event = "DeathObserved", 
+    legend_labs = c("NTE", "PTE"),
+    age_discrete_column = "AgeOfOnsetDiscrete",
+    age_labels = c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+"),
+    group = "PTE",
+    covariates = NULL
+) {
+    if (is.null(covariates)) {
+        covariates <- c()
+    }
+    
+    age_labels_with_all <- c("All", age_labels)
+    n <- length(age_labels_with_all)
+
+    plots <- vector(mode = "list", length = n)
+    names(plots) <- age_labels_with_all
+
+    for (i in 1:n) {
+      age_label <- age_labels_with_all[[i]]
+      if (age_label == "All") {
+        age_subset <- data
+      } else {
+        age_subset <- data[data[[age_discrete_column]] == age_label, ]
+      }
+      formula <- as.formula(
+          build_surv_formula_string(
+              futime = futime,
+              event = event,
+              covariates = c(group)
+          )
+      )
+      
+      if (as.logical(length(covariates))) {
+        age_subset$Weights <- calculate_weights(
+          data = age_subset,
+          cols = covariates,
+          group = group
+        ) 
+        fit <- surv_fit(
+          formula,
+          data = age_subset,
+          weights = age_subset$Weights
+        )
+      } else {
+        fit <- surv_fit(
+          formula,
+          data = age_subset
+        )
+      }
+      
+      id <- 1:nrow(age_subset)
+      cfit <- coxph(
+          formula,
+          data = age_subset,
+          cluster = id,
+          weights = age_subset$Weights
+      )
+      print(summary(cfit))
+      
+      plot <- my_ggsurvplot(
+          fit = fit, 
+          data = age_subset, 
+          title = glue("Age {age_label}"), 
+          legend_labs = legend_labs
+      )
+      plots[[i]] <- plot$plot
+    }
+    
+    return(plots)
+}
+
+cox_analysis <- function(
+    data,
+    futime = "FollowUpYears", 
+    event = "DeathEvent", 
+    age_discrete_column = "AgeOfOnsetDiscrete",
+    age_labels = c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+"),
+    numeric_covariates = NULL, 
+    categorical_covariates = NULL
+) {
+    if (is.null(numeric_covariates)) {
+        numeric_covariates <- c()
+    }
+    if (is.null(categorical_covariates)) {
+        categorical_covariates <- c()
+    }
+    
+    age_labels_with_all <- c("All", age_labels)
+    n <- length(age_labels_with_all)
+
+    cox_fits <- vector(mode = "list", length = n)
+    names(cox_fits) <- age_labels_with_all
+
+    for (i in 1:n) {
+      age_label <- age_labels_with_all[[i]]
+      if (age_label == "All") {
+        age_subset <- data
+      } else {
+        age_subset <- data[data[[age_discrete_column]] == age_label, ]
+      }
+      
+      
+      cox_fit <- coxph(
+        as.formula(build_surv_formula_string(
+            futime = futime,
+            event = event,
+            covariates = c(numeric_covariates, categorical_covariates)
+        )),
+        data = age_subset,
+        robust = TRUE,
+        # robust = FALSE,
+        model = TRUE
+      )
+      
+      cox_fits[[i]] <- cox_fit
+
+    }
+
+    return(cox_fits)
+}
+
+cox_plots <- function(
+    data,
+    futime = "FollowUpYears", 
+    event = "DeathEvent", 
+    age_discrete_column = "AgeOfOnsetDiscrete",
+    age_labels = c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+"),
+    numeric_covariates = NULL, 
+    categorical_covariates = NULL
+) {
+    if (is.null(numeric_covariates)) {
+        numeric_covariates <- c()
+    }
+    if (is.null(categorical_covariates)) {
+        categorical_covariates <- c()
+    }
+    
+    age_labels_with_all <- c("All", age_labels)
+    n <- length(age_labels_with_all)
+
+    plts <- vector(mode = "list", length = n)
+    names(plts) <- age_labels_with_all
+
+    for (i in 1:n) {
+      age_label <- age_labels_with_all[[i]]
+      if (age_label == "All") {
+        age_subset <- data
+      } else {
+        age_subset <- data[data[[age_discrete_column]] == age_label, ]
+      }
+      
+      form <- build_surv_formula_string(
+            futime = futime,
+            event = event,
+            covariates = c(numeric_covariates, categorical_covariates)
+        )
+      print(form)
+      
+      res.cox <- coxph(
+        as.formula(build_surv_formula_string(
+            futime = futime,
+            event = event,
+            covariates = c(numeric_covariates, categorical_covariates)
+        )),
+        data = age_subset,
+        robust = TRUE,
+        model = TRUE
+      )
+      plt <- my_ggsurvplot(
+          survfit(res.cox, data = age_subset), 
+          data = age_subset,
+          title = "Test",
+          legend_labs = c("None")
+        )
+      
+      
+      plts[[i]] <- plt
+
+    }
+
+    return(plts)
+}
+
+```
+
+```{r}
+conn <- tryCatch({
+    odbcDriverConnect(
+        "driver={SQL Server};server=vhacdwrb03.vha.med.va.gov;database=ORD_Haneef_202402056D;trusted_connection=true"
+    )
+}, warning = function(w) {
+    message("Not connected to VA network, loading fake-data.csv...")
+    return(NULL)
+}, error = function(e) {
+    message("Not connected to VA network, loading fake-data.csv...")
+    return(NULL)
+})
+```
+
+```{r}
+if (is.null(conn)) {
+    raw_data <- read.csv("../dummy_data/combined.csv")
+} else {
+    raw_data <- sqlQuery(
+        conn,
+        "SELECT * FROM ORD_Haneef_202402056D.Dflt.rnCohortInfoFinal2;"
+    )
+}
+
+if (is.null(conn)) {
+    karlander_categories <- read.csv("../dummy_data/combined.csv")
+} else {
+    karlander_categories <- sqlQuery(
+        conn,
+        "SELECT * FROM ORD_Haneef_202402056D.Dflt.rnTBIKarlanderCategories;"
+    )
+}
+
+if (is.null(conn)) {
+    generalized <- read.csv("../dummy_data/combined.csv")
+} else {
+    generalized <- sqlQuery(
+        conn,
+        "SELECT * FROM ORD_Haneef_202402056D.Dflt.rnGeneralized;"
+    )
+}
+
+if (is.null(conn)) {
+    focal <- read.csv("../dummy_data/combined.csv")
+} else {
+    focal <- sqlQuery(
+        conn,
+        "SELECT * FROM ORD_Haneef_202402056D.Dflt.rnFocal;"
+    )
+}
+
+if (is.null(conn)) {
+    epilepsy_prefix_categories <- read.csv("../dummy_data/combined.csv")
+} else {
+    epilepsy_prefix_categories <- sqlQuery(
+        conn,
+        "SELECT * FROM ORD_Haneef_202402056D.Dflt.rnEpilepsyPrefixCategories;"
+    )
+}
+
+# if (is.null(conn)) {
+#     pte_five <- read.csv("../dummy_data/combined.csv")
+# } else {
+#     pte_five <- sqlQuery(
+#         conn,
+#         # "select alltime.* from ORD_Haneef_202402056D.Dflt.rnPTEAll alltime left join ORD_Haneef_202402056D.Dflt.rnPTEFive five on alltime.PatientICN = five.PatientICN WHERE five.PatientICN IS NULL"
+#         # "select five.* from ORD_Haneef_202402056D.Dflt.rnPTEAll alltime left join ORD_Haneef_202402056D.Dflt.rnPTEFive five on alltime.PatientICN = five.PatientICN WHERE five.PatientICN IS NOT NULL"
+#         # "select alltime.* from ORD_Haneef_202402056D.Dflt.rnPTEAllFinal alltime"
+#         "select five.* from ORD_Haneef_202402056D.Dflt.rnPTEFive five"
+#     )
+# }
+# 
+# if (is.null(conn)) {
+#     all_pte <- read.csv("../dummy_data/combined.csv")
+# } else {
+#     all_pte <- sqlQuery(
+#         conn,
+#         # "select alltime.* from ORD_Haneef_202402056D.Dflt.rnPTEAll alltime left join ORD_Haneef_202402056D.Dflt.rnPTEFive five on alltime.PatientICN = five.PatientICN WHERE five.PatientICN IS NULL"
+#         # "select five.* from ORD_Haneef_202402056D.Dflt.rnPTEAll alltime left join ORD_Haneef_202402056D.Dflt.rnPTEFive five on alltime.PatientICN = five.PatientICN WHERE five.PatientICN IS NOT NULL"
+#         "select alltime.* from ORD_Haneef_202402056D.Dflt.rnPTEAllFinal alltime"
+#         # "select five.* from ORD_Haneef_202402056D.Dflt.rnPTEFive five"
+#     )
+# }
+# all_pte <- all_pte %>%
+#     select(PatientICN, TBIClassKarlanderAny) %>%
+#     filter(TBIClassKarlanderAny == 1) %>%
+#     rename(PTE = TBIClassKarlanderAny)
+```
+
+```{r}
+age_breaks <- c(18, 40, 60, 80, Inf)
+age_labels <- c("18-39", "40-59", "60-79", "80+") 
+
+age_fine_breaks <- c(18, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, Inf)
+age_fine_labels <- c("18-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80-84", "85-89", "90+")
+
+eci_breaks <- c(-Inf, -20, -10, 0, 10, 25, 40, 55, Inf)
+eci_labels <- c("<-21", "-20--11", "-10--1", "0-9", "10-24", "25-39", "40-54", "55+")
+
+data <- raw_data %>%
+    mutate(across(all_of(colnames(raw_data)[grepl("Date", colnames(raw_data))]), 
+                  ~ as_date(parse_date_time(., orders = c("ymd"))))) %>%
+    mutate(DeathEvent = ifelse(is.na(DeathDate), FALSE, TRUE)) %>%
+    mutate(FollowUpYears = ifelse(
+        DeathEvent,
+        interval(DxDate, DeathDate) %>% as.numeric("years"),
+        interval(DxDate, FollowUpDate) %>% as.numeric("years")
+    )) %>%
+    mutate(AgeOfOnset = interval(BirthDate, DxDate) %>% as.numeric("years")) %>%
+    mutate(AgeOfOnsetDiscrete = cut(
+        AgeOfOnset, 
+        breaks = age_breaks, 
+        labels = age_labels, 
+        right = FALSE)
+    ) %>%
+    mutate(AgeFineDiscrete = cut(
+        AgeOfOnset, 
+        breaks = age_fine_breaks, 
+        labels = age_fine_labels, 
+        right = FALSE)
+    ) %>%
+    mutate(ECIDiscrete = cut(
+        ECI, 
+        breaks = eci_breaks, 
+        labels = eci_labels, 
+        right = FALSE)
+    ) %>%
+    mutate(TBIClassKarlanderAny = ifelse(is.na(TBIClassKarlanderAny), 0, TBIClassKarlanderAny)) %>%
+    mutate(
+        TBIClassKarlanderMode = ifelse(is.na(TBIClassKarlanderMode) & TBIClassKarlanderAny == 1, "Unknown",
+                          ifelse(is.na(TBIClassKarlanderMode) & TBIClassKarlanderAny == 0, "None", TBIClassKarlanderMode)
+                       )
+    ) %>%
+    mutate(
+        TBIClassKarlanderWorst = ifelse(is.na(TBIClassKarlanderWorst) & TBIClassKarlanderAny == 1, "Unknown",
+                          ifelse(is.na(TBIClassKarlanderWorst) & TBIClassKarlanderAny == 0, "None", TBIClassKarlanderWorst)
+                       )
+    ) %>%
+    mutate(
+        TBIClassKarlanderMode = factor(
+            TBIClassKarlanderMode,
+            levels = c(
+                "None",
+                "Concussion",
+                "Fracture",
+                "Diffuse Cerebral",
+                "Focal Cerebral",
+                "Extracerebral",
+                "Unknown"
+            )
+        )
+    ) %>%
+    mutate(
+        TBIClassKarlanderWorst = factor(
+            TBIClassKarlanderWorst,
+            levels = c(
+                "None",
+                "Concussion",
+                "Fracture",
+                "Diffuse Cerebral",
+                "Focal Cerebral",
+                "Extracerebral",
+                "Unknown"
+            )
+        )
+    ) %>%
+    mutate(AllTBIClassKarlanderAny = ifelse(is.na(AllTBIClassKarlanderAny), 0, AllTBIClassKarlanderAny)) %>%
+    mutate(
+        AllTBIClassKarlanderMode = ifelse(is.na(AllTBIClassKarlanderMode) & AllTBIClassKarlanderAny == 1, "Unknown",
+                          ifelse(is.na(AllTBIClassKarlanderMode) & AllTBIClassKarlanderAny == 0, "None", AllTBIClassKarlanderMode)
+                       )
+    ) %>%
+    mutate(
+        AllTBIClassKarlanderWorst = ifelse(is.na(AllTBIClassKarlanderWorst) & AllTBIClassKarlanderAny == 1, "Unknown",
+                          ifelse(is.na(AllTBIClassKarlanderWorst) & AllTBIClassKarlanderAny == 0, "None", AllTBIClassKarlanderWorst)
+                       )
+    ) %>%
+    mutate(
+        AllTBIClassKarlanderMode = factor(
+            AllTBIClassKarlanderMode,
+            levels = c(
+                "None",
+                "Concussion",
+                "Fracture",
+                "Diffuse Cerebral",
+                "Focal Cerebral",
+                "Extracerebral",
+                "Unknown"
+            )
+        )
+    ) %>%
+    mutate(
+        AllTBIClassKarlanderWorst = factor(
+            AllTBIClassKarlanderWorst,
+            levels = c(
+                "None",
+                "Concussion",
+                "Fracture",
+                "Diffuse Cerebral",
+                "Focal Cerebral",
+                "Extracerebral",
+                "Unknown"
+            )
+        )
+    ) %>%
+    mutate(TBIClassArmedAny = ifelse(is.na(TBIClassArmedAny), 0, TBIClassArmedAny)) %>%
+    mutate(
+        TBIClassArmedMode = ifelse(is.na(TBIClassArmedMode) & TBIClassArmedAny == 1, "Unknown",
+                          ifelse(is.na(TBIClassArmedMode) & TBIClassArmedAny == 0, "None", TBIClassArmedMode)
+                       )
+    ) %>%
+    mutate(
+        TBIClassArmedWorst = ifelse(is.na(TBIClassArmedWorst) & TBIClassArmedAny == 1, "Unknown",
+                          ifelse(is.na(TBIClassArmedWorst) & TBIClassArmedAny == 0, "None", TBIClassArmedWorst)
+                       )
+    ) %>%
+    mutate(
+        TBIClassArmedMode = factor(
+            TBIClassArmedMode,
+            levels = c(
+                "None",
+                "Mild",
+                "Moderate",
+                "Severe",
+                "Penetrating",
+                "Unknown"
+            )
+        )
+    ) %>%
+    mutate(
+        TBIClassArmedWorst = factor(
+            TBIClassArmedWorst,
+            levels = c(
+                "None",
+                "Mild",
+                "Moderate",
+                "Severe",
+                "Penetrating",
+                "Unknown"
+            )
+        )
+    ) %>%
+    mutate(PTE = TBIClassKarlanderAny) %>%
+    full_join(karlander_categories, by = c("PatientICN"))
+    
+data <- data %>%
+    mutate(YearOfOnset = year(DxDate)) %>%
+    filter(YearOfOnset >= 2005 & YearOfOnset < 2023) %>%
+    filter(AgeOfOnset > 18) %>%
+    filter(FollowUpYears >= 0)
+
+nte_to_exclude_data <- data %>%
+    filter(AllTBIClassKarlanderAny == 0 | (TBIClassKarlanderAny == 0 & AllTBIClassKarlanderAny == 1))
+    
+data <- data %>%
+    filter(!(TBIClassKarlanderAny == 0 & AllTBIClassKarlanderAny == 1))
+    # filter(TBIClassKarlanderAny == 1 | !(if_all(starts_with("ICD"), ~ is.na(.))))
+```
+
+```{r}
+upset_data <- data %>%
+    filter(TBIClassKarlanderAny == 1) %>%
+    select(PatientICN, KarlanderConcussion, KarlanderFracture, KarlanderFocalCerebral, KarlanderDiffuseCerebral, KarlanderExtracerebral, KarlanderUnknown) %>%
+    rename(Concussion = KarlanderConcussion) %>%
+    rename(Fracture = KarlanderFracture) %>%
+    rename(`Focal Cerebral` = KarlanderFocalCerebral) %>%
+    rename(`Diffuse Cerebral` = KarlanderDiffuseCerebral) %>%
+    rename(Extracerebral = KarlanderExtracerebral) %>%
+    rename(Unknown = KarlanderUnknown)
+
+upset_all <- upset(
+    upset_data, 
+    intersect = rev(c("Concussion", "Fracture", "Diffuse Cerebral", "Focal Cerebral", "Extracerebral")),
+    themes = upset_default_themes(
+        text = element_text(size = 14)
+    ),
+    base_annotation = list(
+        "Intersection Size" = intersection_size(
+            text = list(
+                hjust = 0.15,
+                vjust = -0.8,
+                angle = 45,
+                size = 3
+            )
+        )
+    ),
+    # min_size = 50,
+    min_degree = 1,
+    wrap = TRUE,
+    name = "TBI Classification",
+    set_size = FALSE
+) + ggtitle("UpSet Plot of All TBI Classifications") +
+    theme(
+        text = element_text(family = "sans"),
+        plot.title = element_text(hjust = 0.5, size = 16, face = "bold")
+    )
+
+upset_no_truncate_all <- upset(
+    upset_data, 
+    intersect = rev(c("Concussion", "Fracture", "Diffuse Cerebral", "Focal Cerebral", "Extracerebral")),
+    themes = upset_default_themes(
+        text = element_text(size = 14)
+    ),
+    base_annotation = list(
+        "Intersection Size" = intersection_size(
+            text = list(
+                hjust = 0.15,
+                vjust = -0.8,
+                angle = 45,
+                size = 3
+            )
+        )
+    ),
+    # min_size = 50,
+    min_degree = 1,
+    wrap = TRUE,
+    name = "TBI Classification",
+    set_size = FALSE
+) + ggtitle("UpSet Plot of All TBI Classifications") +
+    theme(
+        text = element_text(family = "sans"),
+        plot.title = element_text(hjust = 0.5, size = 16, face = "bold")
+    )
+
+upset_structural <- upset(
+    upset_data, 
+    intersect = rev(c("Diffuse Cerebral", "Focal Cerebral", "Extracerebral")),
+    themes = upset_default_themes(
+        text = element_text(size = 14)
+    ),
+    base_annotation = list(
+        "Intersection Size" = intersection_size(
+            text = list(
+                size = 4
+            )
+        )
+    ),
+    # min_size = 50,
+    min_degree = 1,
+    wrap = TRUE,
+    name = "TBI Classification",
+    set_size = FALSE
+) + ggtitle("UpSet Plot of Structural TBI Classifications") +
+    theme(
+        text = element_text(family = "sans"),
+        plot.title = element_text(hjust = 0.5, size = 16, face = "bold")
+    )
+
+ggsave("upset-all.eps", upset_all, width = 7, height = 4)
+ggsave("upset-structural.eps", upset_structural, width = 7, height = 4)
+ggsave("upset-no-truncate-all.eps", upset_no_truncate_all, width = 9, height = 4)
+
+```
+```{r}
+summary_table <- data %>%
+  select("AgeOfOnset", "Gender", "Race", "Ethnicity", "ECI", "TBIClassKarlanderAny") %>%
+  tbl_summary(
+    by = "TBIClassKarlanderAny",
+    missing = "ifany",
+    statistic = list(
+        all_continuous() ~ "{mean} ({sd})",
+        all_categorical() ~ "{n} ({p}%)"
+    ),
+    label = list(
+      "AgeOfOnset" ~ "Age of Onset"
+    ),
+    digits = list(all_categorical() ~ c(0, 2))
+  ) %>%
+  add_stat_label() %>%
+  # modify_column_hide(columns = "stat_7") %>%
+  # modify_spanning_header(
+    # all_stat_cols() ~ "**TBI Classification**"
+  # ) %>%
+  as_gt() %>%
+  gt::tab_header(
+    title = "Cohort Demographics"
+  ) 
+  
+# gtsave(summary_table, "summary-pte.docx")
+# summary_table
+```
+
+
+```{r}
+summary_table <- data %>%
+  select("AgeOfOnset", "Gender", "Race", "Ethnicity", "ECI", "TBIClassKarlanderMode") %>%
+  tbl_summary(
+    by = "TBIClassKarlanderMode",
+    missing = "ifany",
+    statistic = list(
+        all_continuous() ~ "{mean} ({sd})",
+        all_categorical() ~ "{n} ({p}%)"
+    ),
+    label = list(
+      "AgeOfOnset" ~ "Age of Onset"
+    ),
+    digits = list(all_categorical() ~ c(0, 2))
+  ) %>%
+  add_stat_label() %>%
+  modify_column_hide(columns = "stat_7") %>%
+  modify_spanning_header(
+    all_stat_cols() ~ "**TBI Classification**"
+  ) %>%
+  as_gt() %>%
+  gt::tab_header(
+    title = "Cohort Demographics"
+  ) 
+  
+# gtsave(summary_table, "summary-karl.docx")
+# summary_table
+```
+
+```{r}
+numeric_covariates <- c("AgeOfOnset", "ECI")
+categorical_covariates <- c("Gender", "TBIClassKarlanderMode")
+
+cox_fit_pte <- cox_analysis(
+    data = data,
+    age_labels = age_labels,
+    numeric_covariates = numeric_covariates,
+    categorical_covariates = c("TBIClassKarlanderAny"),
+)
+raw_results_pte <- extract_cox_fit_list_stats(cox_fit_pte, "Age Group")
+results_pte <- raw_results_pte %>%
+    mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+  select(`Age Group`, Covariate, HR_CI) %>%
+    filter(grepl("TBIClassKarlanderAny", Covariate)) %>%
+    pivot_wider(
+        names_from = Covariate,
+        values_from = HR_CI
+    )
+significant_matrix_pte <- raw_results_pte %>%
+  mutate(significant = raw_p < 0.05) %>%
+  select(`Age Group`, Covariate, significant) %>%
+    filter(grepl("TBIClassKarlanderAny", Covariate)) %>%
+  pivot_wider(
+    names_from = Covariate,
+    values_from = significant
+  )
+
+cox_fits_remainder <- cox_analysis(
+    data = data,
+    age_labels = age_labels,
+    numeric_covariates = numeric_covariates,
+    categorical_covariates = categorical_covariates,
+)
+raw_results_remainder <- extract_cox_fit_list_stats(cox_fits_remainder, "Age Group")
+
+results_remainder <- raw_results_remainder %>%
+    mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+  select(`Age Group`, Covariate, HR_CI) %>%
+    filter(grepl("^TBI", Covariate)) %>%
+    mutate(Covariate = gsub("^TBIClassKarlanderMode", "", Covariate)) %>%
+    pivot_wider(
+        names_from = Covariate,
+        values_from = HR_CI
+    )
+
+significant_matrix_remainder <- raw_results_remainder %>%
+  mutate(significant = raw_p < 0.05) %>%
+  select(`Age Group`, Covariate, significant) %>%
+    filter(grepl("^TBI", Covariate)) %>%
+    mutate(Covariate = gsub("^TBIClassKarlanderMode", "", Covariate)) %>%
+  pivot_wider(
+    names_from = Covariate,
+    values_from = significant
+  )
+
+results <- results_remainder %>%
+    left_join(results_pte, by = "Age Group") %>%
+    rename(All = TBIClassKarlanderAny) %>%
+    select(`Age Group`, All, everything()) %>%
+    select(-Unknown)
+    
+significant_matrix <- significant_matrix_remainder %>%
+    left_join(significant_matrix_pte, by = "Age Group") %>%
+    rename(All = TBIClassKarlanderAny) %>%
+    select(`Age Group`, All, everything()) %>%
+    select(-Unknown) %>%
+  select(-`Age Group`) %>%
+  as.matrix()
+    
+
+gt_table <- results %>%
+  gt(rowname_col = "Age Group") %>%
+  tab_stubhead(label = "Age Group") %>%
+  tab_header(title = "PTE Hazard Ratios from Multivariate Cox by TBI Classification") %>%
+    fmt_markdown(columns = everything()) %>%
+    bold_gt_table(significant_matrix = significant_matrix) %>%
+    format_gt_table
+
+# gtsave(gt_table, glue("cox-main.docx"))
+gt_table
+
+```
+```{r}
+cox_fit <- coxph(
+    as.formula(build_surv_formula_string(
+        futime = "FollowUpYears",
+        event = "DeathEvent",
+        covariates = c(c("AgeOfOnset", "ECI"), c("Gender", "TBIClassKarlanderMode"))
+    )),
+    data = data,
+    robust = TRUE
+)
+test.ph <- cox.zph(cox_fit)
+assumptions <- ggcoxzph(test.ph)
+
+# ggcoxfunctional(
+#     cox_fit,
+#     data = data[data$TBIClassKarlanderAny == 0, ]
+# )
+
+ggsave("schoenfeld.eps", arrangeGrob(grobs = assumptions), width = 16, height = 9, device = cairo_ps)
+```
+
+
+```{r}
+formula <- as.formula(
+  build_surv_formula_string(
+      futime = "FollowUpYears",
+      event = "DeathEvent",
+      covariates = c("TBIClassKarlanderMode")
+  )
+)
+      
+data$KarlWeights <- calculate_weights(
+  data = data,
+  cols = c("AgeFineDiscrete", "ECIDiscrete", "Gender"),
+  group = "TBIClassKarlanderMode"
+) 
+karl_fit <- surv_fit(
+  formula,
+  data = data,
+  weights = data$KarlWeights
+)
+
+karl_plot <- ggsurvplot(
+  fit = head(karl_fit, -1),
+  data = data[data$TBIClassKarlander != "Unknown", ],
+  censor = FALSE,
+  conf.int = FALSE,
+  size = 0.8,
+  # risk.table = TRUE,
+  tables.y.text = FALSE,
+
+  xlim = c(0, 10),
+  ylim = c(0.45, 1),
+  xlab = "Years since Epilepsy Index",
+  ylab = "Survival",
+  break.x.by = 5,
+  break.y.by = 0.1,
+  surv.scale = "percent",
+  fontsize = 6,
+
+  legend = "top",
+    legend.labs = c("NTE", "Concussion", "Fracture", "Diffuse Cerebral", "Focal Cerebral", "Extracerebral"),
+  
+  ggtheme = get_custom_theme()
+) %++% guides(color = guide_legend(nrow = 3, byrow = FALSE)) %++% scale_color_manual(values = c("black", "blue", "chartreuse4", "darkorange2", "brown3", "chocolate4")) %++%
+    scale_fill_manual(values = c("black", "blue", "chartreuse4", "darkorange2", "brown3", "chocolate4"))
+
+karl_plot$plot <- karl_plot$plot +
+    theme(
+        axis.line.x = element_line(color = "black"),
+        panel.border = element_blank()
+    ) +
+    geom_vline(xintercept = 0, color = "black")
+
+karl_plot <- karl_plot %>%
+    ggpar(
+        font.family = "serif",
+        legend.title = "",
+        font.tickslab = c(15, "bold", "black"),
+        font.legend = c(15, "bold", "black"),
+        font.title = c(15, "bold", "black"),
+        font.x = c(15, "bold", "black"),
+        font.y = c(15, "bold", "black")
+    )
+
+karl_plot_ci <- ggsurvplot(
+  fit = head(karl_fit, -1),
+  data = data[data$TBIClassKarlander != "Unknown", ],
+  censor = FALSE,
+  conf.int = TRUE,
+  size = 0.8,
+  # risk.table = TRUE,
+  tables.y.text = FALSE,
+
+  xlim = c(0, 10),
+  ylim = c(0.45, 1),
+  xlab = "Years since Epilepsy Index",
+  ylab = "Survival",
+  break.x.by = 5,
+  break.y.by = 0.1,
+  surv.scale = "percent",
+  fontsize = 6,
+
+  legend = "top",
+    legend.labs = c("NTE", "Concussion", "Fracture", "Diffuse Cerebral", "Focal Cerebral", "Extracerebral"),
+  
+  ggtheme = get_custom_theme()
+) %++% guides(color = guide_legend(nrow = 3, byrow = FALSE)) %++% scale_color_manual(values = c("black", "blue", "chartreuse4", "darkorange2", "brown3", "chocolate4")) %++%
+    scale_fill_manual(values = c("black", "blue", "chartreuse4", "darkorange2", "brown3", "chocolate4"))
+
+karl_plot_ci$plot <- karl_plot_ci$plot +
+    theme(
+        axis.line.x = element_line(color = "black"),
+        panel.border = element_blank()
+    ) +
+    geom_vline(xintercept = 0, color = "black")
+
+karl_plot_ci <- karl_plot_ci %>%
+    ggpar(
+        font.family = "serif",
+        legend.title = "",
+        font.tickslab = c(15, "bold", "black"),
+        font.legend = c(15, "bold", "black"),
+        font.title = c(15, "bold", "black"),
+        font.x = c(15, "bold", "black"),
+        font.y = c(15, "bold", "black")
+    )
+ggsave(file = "karl-ci.eps", karl_plot_ci$plot, device = cairo_ps width = 4.5, height = 9)
+
+id <- 1:nrow(data)
+
+karl_cox <- coxph(
+  formula,
+  data = data,
+  cluster = id,
+  weights = data$KarlWeights,
+  robust = TRUE
+)
+      
+formula <- as.formula(
+  build_surv_formula_string(
+      futime = "FollowUpYears",
+      event = "DeathEvent",
+      covariates = c("PTE")
+  )
+)
+      
+data$PTEWeights <- calculate_weights(
+  data = data,
+  cols = c("AgeFineDiscrete", "ECIDiscrete", "Gender"),
+  group = "PTE"
+) 
+pte_fit <- surv_fit(
+  formula,
+  data = data,
+  weights = data$PTEWeights
+)
+
+
+
+pte_cox <- coxph(
+  formula,
+  data = data,
+  cluster = id,
+  weights = data$PTEWeights,
+  robust = TRUE
+)
+
+
+pte_plot <- ggsurvplot(
+  fit = pte_fit,
+  data = data,
+  censor = FALSE,
+  conf.int = TRUE,
+  # conf.type = "log",
+  size = 0.8,
+  # risk.table = TRUE,
+  tables.y.text = FALSE,
+
+  xlim = c(0, 10),
+  ylim = c(0.45, 1),
+  xlab = "Years since Epilepsy Index",
+  ylab = "Survival",
+  break.x.by = 5,
+  break.y.by = 0.1,
+  surv.scale = "percent",
+  fontsize = 6,
+
+  legend = "top",
+  legend.labs = c("NTE", "PTE"),
+  
+  ggtheme = get_custom_theme()
+) %++% scale_color_manual(values = c("NTE" = "black", "PTE" = "darkorchid3")) %++%
+    scale_fill_manual(values = c("NTE" = "black", "PTE" = "darkorchid3"))
+
+pte_plot$plot <- pte_plot$plot +
+    theme(
+        axis.line.x = element_line(color = "black"),
+        panel.border = element_blank()
+    ) +
+    geom_vline(xintercept = 0, color = "black")
+
+pte_plot <- pte_plot %>%
+    ggpar(
+        font.family = "serif",
+        legend.title = "",
+        font.tickslab = c(15, "bold", "black"),
+        font.legend = c(15, "bold", "black"),
+        font.title = c(15, "bold", "black"),
+        font.x = c(15, "bold", "black"),
+        font.y = c(15, "bold", "black")
+    )
+    
+plots_with_guide_area <- pte_plot$plot + 
+  karl_plot$plot 
+
+grid <- plots_with_guide_area +
+    plot_layout(
+        byrow = TRUE,
+        ncol = 2,
+        nrow = 1
+        # axes = "collect"
+    )
+
+grid <- grid %>%
+    ggpar(
+        font.family = "serif",
+        legend.title = ""
+        # font.title = 15
+        # font.x = 12,
+        # font.y = 12
+    )
+
+ggsave(file = "grid.eps", width = 9, height = 9, plot = grid, device = cairo_ps)
+
+
+facet_plot <- ggsurvplot(
+  fit = head(karl_fit, -1),
+  data = data[data$TBIClassKarlanderMode != "Unknown",],
+  censor = FALSE,
+  conf.int = FALSE,
+  size = 0.6,
+  facet.by = "AgeOfOnsetDiscrete",
+  title = "PTE Subgroup Survival Analysis by Age of Epilepsy Onset",
+  # risk.table = TRUE,
+
+  xlim = c(0, 10),
+  ylim = c(0, 1),
+  xlab = "Years since PTE",
+  ylab = "Survival",
+  break.x.by = 5,
+  break.y.by = 0.1,
+  surv.scale = "percent",
+  fontsize = 6,
+  ncol = 4,
+  
+  short.panel.labs = TRUE,
+  panel.labs = list(AgeOfOnsetDiscrete = c("Young", "Middle-Aged", "Older", "Age >80")),
+
+  legend = "top",
+    legend.labs = c("NTE", "Concussion", "Fracture", "Diffuse Cerebral", "Focal Cerebral", "Extracerebral", "Unknown"),
+  
+  ggtheme = get_custom_theme() + theme(
+      strip.text = element_text(size = 15), axis.line.x = element_line(color = "black"), strip.background = element_blank())
+) + guides(color = guide_legend(nrow = 2, byrow = TRUE)) + scale_color_manual(values = c("black", "blue", "chartreuse4", "darkorange2", "brown3", "chocolate4", "white")) + theme(panel.spacing = unit(5, "lines")) + geom_vline(xintercept = 0, color = "black")
+
+facet_plot <- facet_plot %>%
+    ggpar(
+        font.family = "serif",
+        legend.title = "",
+        font.tickslab = c(20, "bold", "black"),
+        font.legend = c(20, "bold", "black"),
+        font.title = c(20, "bold", "black"),
+        font.x = c(20, "bold", "black"),
+        font.y = c(20, "bold", "black")
+    )
+
+ggsave(file = "facet.eps", width = 16, height = 9, plot = facet_plot, device = cairo_ps)
+
+
+grid
+facet_plot
+
+# example pointwise survival calculation
+# karl_summary <- summary(karl_cox)
+# diffSE <- sqrt(karl_summary$std.err[5]^2 + karl_summary$std.err[1]^2)
+# diffSurv <- karl_summary$surv[5] - karl_summary$surv[1]
+# z <- diffSurv / diffSE
+# p <- 2 * pnorm(abs(z), lower.tail = FALSE)
+# z
+# p
+# 
+# pte_summary <- summary(karl_cox)
+# diffSE <- sqrt(karl_summary$std.err[5]^2 + karl_summary$std.err[1]^2)
+# diffSurv <- karl_summary$surv[5] - karl_summary$surv[1]
+# z <- diffSurv / diffSE
+# p <- 2 * pnorm(abs(z), lower.tail = FALSE)
+# z
+# p
+
+```
+```{r}
+all_karl_table <- ggsurvtable(
+  fit = head(karl_fit, -1),
+  data = data[data$TBIClassKarlander != "Unknown", ],
+  fontsize  = 2,
+  survtable = c("risk.table"),
+  risk.table.type = "absolute",
+  
+  xlim = c(0, 10),
+  font.family = "serif",
+  
+  y.col.text = FALSE
+    
+)$data %>%
+    filter(time == 0 | time == 5 | time == 10) %>%
+    select(strata, time, n.risk) %>%
+    mutate(strata = sub(".*=", "", strata))
+
+all_pte_table <- ggsurvtable(
+  fit = pte_fit,
+  data = data,
+  fontsize  = 2,
+  survtable = c("risk.table"),
+  risk.table.type = "absolute",
+  
+  xlim = c(0, 10),
+  font.family = "serif",
+  
+  y.col.text = FALSE
+    
+)
+
+formula <- as.formula(
+  build_surv_formula_string(
+      futime = "FollowUpYears",
+      event = "DeathEvent",
+      covariates = c("TBIClassKarlanderMode")
+  )
+)
+
+data_list <- split(data, data$AgeOfOnsetDiscrete)
+all_karl_risk_tables <- lapply(data_list, function(df) {
+    fit <- surv_fit(
+        formula,
+        data = df,
+        weights = df$KarlWeights
+    )
+    ggrisktable(fit, data = df, legend = "none")
+})
+
+ggsave("young-risk.png", all_karl_risk_tables[[1]], width = 16, height = 9)
+ggsave("middle-risk.png", all_karl_risk_tables[[2]], width = 16, height = 9)
+ggsave("older-risk.png", all_karl_risk_tables[[3]], width = 16, height = 9)
+ggsave("over-80-risk.png", all_karl_risk_tables[[4]], width = 16, height = 9)
+```
+
+# Sensitivity Analysis
+
+```{r}
+numeric_covariates <- c("AgeOfOnset", "ECI")
+categorical_covariates <- c("Gender", "TBIClassKarlanderWorst")
+
+cox_fit_pte <- cox_analysis(
+    data = data,
+    age_labels = age_labels,
+    numeric_covariates = numeric_covariates,
+    categorical_covariates = c("TBIClassKarlanderAny"),
+)
+raw_results_pte <- extract_cox_fit_list_stats(cox_fit_pte, "Age Group")
+results_pte <- raw_results_pte %>%
+    mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+  select(`Age Group`, Covariate, HR_CI) %>%
+    filter(grepl("TBIClassKarlanderAny", Covariate)) %>%
+    pivot_wider(
+        names_from = Covariate,
+        values_from = HR_CI
+    )
+significant_matrix_pte <- raw_results_pte %>%
+  mutate(significant = raw_p < 0.05) %>%
+  select(`Age Group`, Covariate, significant) %>%
+    filter(grepl("TBIClassKarlanderAny", Covariate)) %>%
+  pivot_wider(
+    names_from = Covariate,
+    values_from = significant
+  )
+
+cox_fits_remainder <- cox_analysis(
+    data = data,
+    age_labels = age_labels,
+    numeric_covariates = numeric_covariates,
+    categorical_covariates = categorical_covariates,
+)
+raw_results_remainder <- extract_cox_fit_list_stats(cox_fits_remainder, "Age Group")
+
+results_remainder <- raw_results_remainder %>%
+    mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+  select(`Age Group`, Covariate, HR_CI) %>%
+    filter(grepl("^TBI", Covariate)) %>%
+    mutate(Covariate = gsub("^TBIClassKarlanderWorst", "", Covariate)) %>%
+    pivot_wider(
+        names_from = Covariate,
+        values_from = HR_CI
+    )
+
+significant_matrix_remainder <- raw_results_remainder %>%
+  mutate(significant = raw_p < 0.05) %>%
+  select(`Age Group`, Covariate, significant) %>%
+    filter(grepl("^TBI", Covariate)) %>%
+    mutate(Covariate = gsub("^TBIClassKarlanderWorst", "", Covariate)) %>%
+  pivot_wider(
+    names_from = Covariate,
+    values_from = significant
+  )
+
+results <- results_remainder %>%
+    left_join(results_pte, by = "Age Group") %>%
+    rename(All = TBIClassKarlanderAny) %>%
+    select(`Age Group`, All, everything()) %>%
+    select(-Unknown)
+    
+significant_matrix <- significant_matrix_remainder %>%
+    left_join(significant_matrix_pte, by = "Age Group") %>%
+    rename(All = TBIClassKarlanderAny) %>%
+    select(`Age Group`, All, everything()) %>%
+    select(-Unknown) %>%
+  select(-`Age Group`) %>%
+  as.matrix()
+    
+
+gt_table <- results %>%
+  gt(rowname_col = "Age Group") %>%
+  tab_stubhead(label = "Age Group") %>%
+  tab_header(title = "PTE Hazard Ratios from Multivariate Cox by TBI Classification") %>%
+    fmt_markdown(columns = everything()) %>%
+    bold_gt_table(significant_matrix = significant_matrix) %>%
+    format_gt_table
+
+# gtsave(gt_table, "cox-worst.docx")
+# gt_table
+```
+
+```{r}
+numeric_covariates <- c("AgeOfOnset", "ECI")
+categorical_covariates <- c("Gender", "AllTBIClassKarlanderMode")
+
+cox_fit_pte <- cox_analysis(
+    data = data,
+    age_labels = age_labels,
+    numeric_covariates = numeric_covariates,
+    categorical_covariates = c("AllTBIClassKarlanderAny"),
+)
+raw_results_pte <- extract_cox_fit_list_stats(cox_fit_pte, "Age Group")
+results_pte <- raw_results_pte %>%
+    mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+  select(`Age Group`, Covariate, HR_CI) %>%
+    filter(grepl("AllTBIClassKarlanderAny", Covariate)) %>%
+    pivot_wider(
+        names_from = Covariate,
+        values_from = HR_CI
+    )
+significant_matrix_pte <- raw_results_pte %>%
+  mutate(significant = raw_p < 0.05) %>%
+  select(`Age Group`, Covariate, significant) %>%
+    filter(grepl("AllTBIClassKarlanderAny", Covariate)) %>%
+  pivot_wider(
+    names_from = Covariate,
+    values_from = significant
+  )
+
+cox_fits_remainder <- cox_analysis(
+    data = data,
+    age_labels = age_labels,
+    numeric_covariates = numeric_covariates,
+    categorical_covariates = categorical_covariates,
+)
+raw_results_remainder <- extract_cox_fit_list_stats(cox_fits_remainder, "Age Group")
+
+results_remainder <- raw_results_remainder %>%
+    mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+  select(`Age Group`, Covariate, HR_CI) %>%
+    filter(grepl("^AllTBI", Covariate)) %>%
+    mutate(Covariate = gsub("^AllTBIClassKarlanderMode", "", Covariate)) %>%
+    pivot_wider(
+        names_from = Covariate,
+        values_from = HR_CI
+    )
+
+significant_matrix_remainder <- raw_results_remainder %>%
+  mutate(significant = raw_p < 0.05) %>%
+  select(`Age Group`, Covariate, significant) %>%
+    filter(grepl("^AllTBI", Covariate)) %>%
+    mutate(Covariate = gsub("^AllTBIClassKarlanderMode", "", Covariate)) %>%
+  pivot_wider(
+    names_from = Covariate,
+    values_from = significant
+  )
+
+results <- results_remainder %>%
+    left_join(results_pte, by = "Age Group") %>%
+    rename(All = AllTBIClassKarlanderAny) %>%
+    select(`Age Group`, All, everything()) %>%
+    select(-Unknown)
+    
+significant_matrix <- significant_matrix_remainder %>%
+    left_join(significant_matrix_pte, by = "Age Group") %>%
+    rename(All = AllTBIClassKarlanderAny) %>%
+    select(`Age Group`, All, everything()) %>%
+    select(-Unknown) %>%
+  select(-`Age Group`) %>%
+  as.matrix()
+    
+
+gt_table <- results %>%
+  gt(rowname_col = "Age Group") %>%
+  tab_stubhead(label = "Age Group") %>%
+  tab_header(title = "PTE Hazard Ratios from Multivariate Cox by TBI Classification") %>%
+    fmt_markdown(columns = everything()) %>%
+    bold_gt_table(significant_matrix = significant_matrix) %>%
+    format_gt_table
+
+# gtsave(gt_table, "cox-all.docx")
+gt_table
+```
+```{r}
+numeric_covariates <- c("AgeOfOnset", "ECI")
+categorical_covariates <- c("Gender", "TBIClassArmedWorst")
+
+cox_fit_pte <- cox_analysis(
+    data = data,
+    age_labels = age_labels,
+    numeric_covariates = numeric_covariates,
+    categorical_covariates = c("TBIClassArmedAny"),
+)
+raw_results_pte <- extract_cox_fit_list_stats(cox_fit_pte, "Age Group")
+results_pte <- raw_results_pte %>%
+    mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+  select(`Age Group`, Covariate, HR_CI) %>%
+    filter(grepl("TBIClassArmedAny", Covariate)) %>%
+    pivot_wider(
+        names_from = Covariate,
+        values_from = HR_CI
+    )
+significant_matrix_pte <- raw_results_pte %>%
+  mutate(significant = raw_p < 0.05) %>%
+  select(`Age Group`, Covariate, significant) %>%
+    filter(grepl("TBIClassArmedAny", Covariate)) %>%
+  pivot_wider(
+    names_from = Covariate,
+    values_from = significant
+  )
+
+cox_fits_remainder <- cox_analysis(
+    data = data,
+    age_labels = age_labels,
+    numeric_covariates = numeric_covariates,
+    categorical_covariates = categorical_covariates,
+)
+raw_results_remainder <- extract_cox_fit_list_stats(cox_fits_remainder, "Age Group")
+
+results_remainder <- raw_results_remainder %>%
+    mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+  select(`Age Group`, Covariate, HR_CI) %>%
+    filter(grepl("^TBI", Covariate)) %>%
+    mutate(Covariate = gsub("^TBIClassArmedWorst", "", Covariate)) %>%
+    pivot_wider(
+        names_from = Covariate,
+        values_from = HR_CI
+    )
+
+significant_matrix_remainder <- raw_results_remainder %>%
+  mutate(significant = raw_p < 0.05) %>%
+  select(`Age Group`, Covariate, significant) %>%
+    filter(grepl("^TBI", Covariate)) %>%
+    mutate(Covariate = gsub("^TBIClassArmedWorst", "", Covariate)) %>%
+  pivot_wider(
+    names_from = Covariate,
+    values_from = significant
+  )
+
+results <- results_remainder %>%
+    left_join(results_pte, by = "Age Group") %>%
+    rename(All = TBIClassArmedAny) %>%
+    select(`Age Group`, All, everything()) %>%
+    select(-Unknown)
+    
+significant_matrix <- significant_matrix_remainder %>%
+    left_join(significant_matrix_pte, by = "Age Group") %>%
+    rename(All = TBIClassArmedAny) %>%
+    select(`Age Group`, All, everything()) %>%
+    select(-Unknown) %>%
+  select(-`Age Group`) %>%
+  as.matrix()
+    
+
+gt_table <- results %>%
+  gt(rowname_col = "Age Group") %>%
+  tab_stubhead(label = "Age Group") %>%
+  tab_header(title = "PTE Hazard Ratios from Multivariate Cox by TBI Classification") %>%
+    fmt_markdown(columns = everything()) %>%
+    bold_gt_table(significant_matrix = significant_matrix) %>%
+    format_gt_table
+
+gtsave(gt_table, "cox-armed.docx")
+gt_table
+```
+```{r}
+numeric_covariates <- c("AgeOfOnset", "ECI")
+categorical_covariates <- c("Gender", "AllTBIClassKarlanderMode")
+
+cox_fit_pte <- cox_analysis(
+    data = nte_to_exclude_data,
+    age_labels = age_labels,
+    numeric_covariates = numeric_covariates,
+    categorical_covariates = c("AllTBIClassKarlanderAny"),
+)
+raw_results_pte <- extract_cox_fit_list_stats(cox_fit_pte, "Age Group")
+results_pte <- raw_results_pte %>%
+    mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+  select(`Age Group`, Covariate, HR_CI) %>%
+    filter(grepl("AllTBIClassKarlanderAny", Covariate)) %>%
+    pivot_wider(
+        names_from = Covariate,
+        values_from = HR_CI
+    )
+significant_matrix_pte <- raw_results_pte %>%
+  mutate(significant = raw_p < 0.05) %>%
+  select(`Age Group`, Covariate, significant) %>%
+    filter(grepl("AllTBIClassKarlanderAny", Covariate)) %>%
+  pivot_wider(
+    names_from = Covariate,
+    values_from = significant
+  )
+
+cox_fits_remainder <- cox_analysis(
+    data = nte_to_exclude_data,
+    age_labels = age_labels,
+    numeric_covariates = numeric_covariates,
+    categorical_covariates = categorical_covariates,
+)
+raw_results_remainder <- extract_cox_fit_list_stats(cox_fits_remainder, "Age Group")
+
+results_remainder <- raw_results_remainder %>%
+    mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+  select(`Age Group`, Covariate, HR_CI) %>%
+    filter(grepl("^AllTBI", Covariate)) %>%
+    mutate(Covariate = gsub("^AllTBIClassKarlanderMode", "", Covariate)) %>%
+    pivot_wider(
+        names_from = Covariate,
+        values_from = HR_CI
+    )
+
+significant_matrix_remainder <- raw_results_remainder %>%
+  mutate(significant = raw_p < 0.05) %>%
+  select(`Age Group`, Covariate, significant) %>%
+    filter(grepl("^AllTBI", Covariate)) %>%
+    mutate(Covariate = gsub("^AllTBIClassKarlanderMode", "", Covariate)) %>%
+  pivot_wider(
+    names_from = Covariate,
+    values_from = significant
+  )
+
+results <- results_remainder %>%
+    left_join(results_pte, by = "Age Group") %>%
+    rename(All = AllTBIClassKarlanderAny) %>%
+    select(`Age Group`, All, everything()) %>%
+    select(-Unknown)
+    
+significant_matrix <- significant_matrix_remainder %>%
+    left_join(significant_matrix_pte, by = "Age Group") %>%
+    rename(All = AllTBIClassKarlanderAny) %>%
+    select(`Age Group`, All, everything()) %>%
+    select(-Unknown) %>%
+  select(-`Age Group`) %>%
+  as.matrix()
+    
+
+gt_table <- results %>%
+  gt(rowname_col = "Age Group") %>%
+  tab_stubhead(label = "Age Group") %>%
+  tab_header(title = "PTE Hazard Ratios from Multivariate Cox by TBI Classification") %>%
+    fmt_markdown(columns = everything()) %>%
+    bold_gt_table(significant_matrix = significant_matrix) %>%
+    format_gt_table
+
+# gtsave(gt_table, "cox-nte-to-exclude.docx")
+gt_table
+```
+```{r}
+pte_data <- data[data$TBIClassKarlanderAny == 1,]
+nte_data <- data[data$TBIClassKarlanderAny == 0,]
+```
+```{r}
+nrow(pte_data)
+nrow(nte_data)
+
+mean(pte_data$AgeOfOnset)
+mean(nte_data$AgeOfOnset)
+
+table(pte_data$Gender) / nrow(pte_data)
+table(nte_data$Gender) / nrow(nte_data)
+
+table(data$DeathEvent)
+nrow(data[data$DeathEvent == TRUE,]) / sum(data$FollowUpYears) * 1000
+
+median(pte_data$FollowUpYears)
+median(nte_data$FollowUpYears)
+
+sum(pte_data$FollowUpYears)
+sum(nte_data$FollowUpYears)
+
+t.test(pte_data$AgeOfOnset, nte_data$AgeOfOnset)
+t.test(pte_data[pte_data$TBIClassKarlanderMode == "Extracerebral", ]$AgeOfOnset, nte_data$AgeOfOnset)
+
+chisq.test(table(data$TBIClassKarlanderAny, data$Gender))
+
+nrow(pte_data[pte_data$KarlanderExtracerebral == 1 & !(pte_data$KarlanderDiffuseCerebral == 1 | pte_data$KarlanderFocalCerebral == 1), ]) / nrow(pte_data[pte_data$KarlanderExtracerebral == 1, ]) 
+
+nrow(pte_data[pte_data$KarlanderFocalCerebral == 1 & !(pte_data$KarlanderDiffuseCerebral == 1 | pte_data$KarlanderExtracerebral == 1), ]) / nrow(pte_data[pte_data$KarlanderFocalCerebral == 1, ]) 
+
+nrow(pte_data[pte_data$KarlanderFocalCerebral == 1 & !(pte_data$KarlanderDiffuseCerebral == 1 | pte_data$KarlanderExtracerebral == 1 | pte_data$KarlanderConcussion == 1 | pte_data$KarlanderFracture == 1), ]) / nrow(pte_data[pte_data$KarlanderFocalCerebral == 1, ]) 
+
+nrow(pte_data[pte_data$KarlanderFracture == 1 & !(pte_data$KarlanderDiffuseCerebral == 1 | pte_data$KarlanderExtracerebral == 1 | pte_data$KarlanderConcussion == 1 | pte_data$KarlanderFocalCerebral == 1), ]) / nrow(pte_data[pte_data$KarlanderFracture == 1, ]) 
+
+nrow(pte_data[pte_data$KarlanderDiffuseCerebral == 1 & !(pte_data$KarlanderFracture == 1 | pte_data$KarlanderExtracerebral == 1 | pte_data$KarlanderConcussion == 1 | pte_data$KarlanderFocalCerebral == 1), ]) / nrow(pte_data[pte_data$KarlanderDiffuseCerebral == 1, ]) 
+
+nrow(pte_data[pte_data$KarlanderExtracerebral == 1 & !(pte_data$KarlanderFracture == 1 | pte_data$KarlanderDiffuseCerebral == 1 | pte_data$KarlanderConcussion == 1 | pte_data$KarlanderFocalCerebral == 1), ]) / nrow(pte_data[pte_data$KarlanderExtracerebral == 1, ]) 
+
+nrow(pte_data[pte_data$KarlanderConcussion == 1 & !(pte_data$KarlanderFracture == 1 | pte_data$KarlanderExtracerebral == 1 | pte_data$KarlanderDiffuseCerebral == 1 | pte_data$KarlanderFocalCerebral == 1), ]) / nrow(pte_data[pte_data$KarlanderConcussion == 1, ]) 
+
+summary(pte_cox)$logtest
+
+karl_two_summary <- summary(karl_fit, times = 2)
+diffSE <- sqrt(karl_two_summary$std.err[5]^2 + karl_two_summary$std.err[1]^2)
+diffSurv <- karl_two_summary$surv[5] - karl_two_summary$surv[1]
+z <- diffSurv / diffSE
+p <- 2 * pnorm(abs(z), lower.tail = FALSE)
+z
+p
+
+diffSE <- sqrt(karl_two_summary$std.err[3]^2 + karl_two_summary$std.err[1]^2)
+diffSurv <- karl_two_summary$surv[3] - karl_two_summary$surv[1]
+z <- diffSurv / diffSE
+p <- 2 * pnorm(abs(z), lower.tail = FALSE)
+z
+p
+
+karl_five_summary <- summary(karl_fit, times = 5)
+diffSE <- sqrt(karl_five_summary$std.err[3]^2 + karl_five_summary$std.err[1]^2)
+diffSurv <- karl_five_summary$surv[3] - karl_five_summary$surv[1]
+z <- diffSurv / diffSE
+p <- 2 * pnorm(abs(z), lower.tail = FALSE)
+z
+p
+
+# pte_summary <- summary(karl_cox)
+# diffSE <- sqrt(karl_summary$std.err[5]^2 + karl_summary$std.err[1]^2)
+# diffSurv <- karl_summary$surv[5] - karl_summary$surv[1]
+# z <- diffSurv / diffSE
+# p <- 2 * pnorm(abs(z), lower.tail = FALSE)
+# z
+# p
+```
+
+# ```{r}
+# km_plots <- function(
+#     data,
+#     futime = "YearsOfFollowUp", 
+#     event = "DeathObserved", 
+#     legend_labs = c("NTE", "PTE"),
+#     age_discrete_column = "AgeOfOnsetDiscrete",
+#     age_labels = c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+"),
+#     group = "PTE",
+#     covariates = NULL
+# ) {
+#     if (is.null(covariates)) {
+#         covariates <- c()
+#     }
+#     
+#     age_labels_with_all <- c("All", age_labels)
+#     n <- length(age_labels_with_all)
+# 
+#     plots <- vector(mode = "list", length = n)
+#     names(plots) <- age_labels_with_all
+# 
+#     for (i in 1:n) {
+#       age_label <- age_labels_with_all[[i]]
+#       if (age_label == "All") {
+#         age_subset <- data
+#       } else {
+#         age_subset <- data[data[[age_discrete_column]] == age_label, ]
+#       }
+#       formula <- as.formula(
+#           build_surv_formula_string(
+#               futime = futime,
+#               event = event,
+#               covariates = c(group)
+#           )
+#       )
+#       
+#       if (as.logical(length(covariates))) {
+#         age_subset$Weights <- calculate_weights(
+#           data = age_subset,
+#           cols = covariates,
+#           group = group
+#         ) 
+#         fit <- surv_fit(
+#           formula,
+#           data = age_subset,
+#           weights = age_subset$Weights
+#         )
+#       } else {
+#         fit <- surv_fit(
+#           formula,
+#           data = age_subset
+#         )
+#       }
+#       
+#       # id <- 1:nrow(age_subset)
+#       # cfit <- coxph(
+#       #     formula,
+#       #     data = age_subset,
+#       #     cluster = id,
+#       #     weights = age_subset$Weights
+#       # )
+#       # print(summary(cfit))
+#       
+#       plot <- my_ggsurvplot(
+#           fit = fit, 
+#           data = age_subset, 
+#           title = glue("Age {age_label}"), 
+#           legend_labs = legend_labs
+#       )
+#       plots[[i]] <- plot$plot
+#     }
+#     
+#     return(plots)
+# }
+# ```
+
+<!-- ```{r} -->
+<!-- plots <- km_plots( -->
+<!--     data = data, -->
+<!--     futime = "FollowUpYears",  -->
+<!--     event = "DeathEvent",  -->
+<!--     legend_labs = c("NTE", "Concussion", "Fracture", "Diffuse Cerebral", "Focal Cerebral", "Extracerebral", "Unknown"), -->
+<!--     # legend_labs = c("NTE", "Fracture", "Concussion", "Structural", "Unknown"), -->
+<!--     # legend_labs = c("NTE", "PTE"), -->
+<!--     age_discrete_column = "AgeOfOnsetDiscrete", -->
+<!--     age_labels = age_labels, -->
+<!--     group = "TBIClassKarlander", -->
+<!--     # group = "TBIClassChristensen", -->
+<!--     # group = "PTE", -->
+<!--     covariates = c("AgeOfOnsetDiscrete") -->
+<!-- ) -->
+
+<!-- plots -->
+<!-- ``` -->
+
+# ```{r}
+# column_names <- c(
+#     # "ICD93450",
+#     # "ICD93451",
+#     # "ICD93452",
+#     # "ICD93453",
+#     # "ICD93454",
+#     # "ICD93455",
+#     # "ICD93456",
+#     # "ICD93457",
+#     # "ICD93458",
+#     # "ICD93459",
+#     "ICD10G400",
+#     "ICD10G401",
+#     "ICD10G402",
+#     "ICD10G403",
+#     "ICD10G404",
+#     "ICD10G405",
+#     "ICD10G408",
+#     "ICD10G409",
+#     "ICD10G40A",
+#     "ICD10G40B"
+#     # "ICD10G40C"
+# )
+# 
+# for (column_name in column_names) {
+#     current_data <- data %>%
+#         filter(TBIClassKarlanderAny == 1 | !!sym(column_name) == 1)
+#    numeric_covariates <- c("AgeOfOnset", "ECI", "YearOfOnset")
+#     categorical_covariates <- c("Gender", "TBIClassKarlanderMode")
+# 
+#     cox_fit_pte <- cox_analysis(
+#         data = current_data,
+#         age_labels = age_labels,
+#         numeric_covariates = numeric_covariates,
+#         categorical_covariates = c("TBIClassKarlanderAny"),
+#     )
+#     raw_results_pte <- extract_cox_fit_list_stats(cox_fit_pte, "Age Group")
+#     results_pte <- raw_results_pte %>%
+#         mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+#       select(`Age Group`, Covariate, HR_CI) %>%
+#         filter(grepl("TBIClassKarlanderAny", Covariate)) %>%
+#         pivot_wider(
+#             names_from = Covariate,
+#             values_from = HR_CI
+#         )
+#     significant_matrix_pte <- raw_results_pte %>%
+#       mutate(significant = raw_p < 0.05) %>%
+#       select(`Age Group`, Covariate, significant) %>%
+#         filter(grepl("TBIClassKarlanderAny", Covariate)) %>%
+#       pivot_wider(
+#         names_from = Covariate,
+#         values_from = significant
+#       )
+# 
+#     cox_fits_remainder <- cox_analysis(
+#         data = current_data,
+#         age_labels = age_labels,
+#         numeric_covariates = numeric_covariates,
+#         categorical_covariates = categorical_covariates,
+#     )
+#     raw_results_remainder <- extract_cox_fit_list_stats(cox_fits_remainder, "Age Group")
+# 
+#     results_remainder <- raw_results_remainder %>%
+#         mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+#       select(`Age Group`, Covariate, HR_CI) %>%
+#         filter(grepl("^TBI", Covariate)) %>%
+#         mutate(Covariate = gsub("^TBIClassKarlanderMode", "", Covariate)) %>%
+#         pivot_wider(
+#             names_from = Covariate,
+#             values_from = HR_CI
+#         )
+# 
+#     significant_matrix_remainder <- raw_results_remainder %>%
+#       mutate(significant = raw_p < 0.05) %>%
+#       select(`Age Group`, Covariate, significant) %>%
+#         filter(grepl("^TBI", Covariate)) %>%
+#         mutate(Covariate = gsub("^TBIClassKarlanderMode", "", Covariate)) %>%
+#       pivot_wider(
+#         names_from = Covariate,
+#         values_from = significant
+#       )
+# 
+#     results <- results_remainder %>%
+#         left_join(results_pte, by = "Age Group") %>%
+#         rename(All = TBIClassKarlanderAny) %>%
+#         select(`Age Group`, All, everything()) %>%
+#         select(-Unknown)
+# 
+#     significant_matrix <- significant_matrix_remainder %>%
+#         left_join(significant_matrix_pte, by = "Age Group") %>%
+#         rename(All = TBIClassKarlanderAny) %>%
+#         select(`Age Group`, All, everything()) %>%
+#         select(-Unknown) %>%
+#       select(-`Age Group`) %>%
+#       as.matrix()
+# 
+# 
+#     gt_table <- results %>%
+#       gt(rowname_col = "Age Group") %>%
+#       tab_stubhead(label = "Age Group") %>%
+#       tab_header(title = "PTE Hazard Ratios from Multivariate Cox by TBI Classification") %>%
+#         fmt_markdown(columns = everything()) %>%
+#         bold_gt_table(significant_matrix = significant_matrix) %>%
+#         format_gt_table()
+# 
+#     gtsave(gt_table, glue("cox-{column_name}-restrict2.docx"))
+# }
+# ```

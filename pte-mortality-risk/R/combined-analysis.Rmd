@@ -1,0 +1,1649 @@
+---
+title: "Comparing All-Cause Mortality in PTE vs. Non-PTE"
+author: "Rohan Nagabhirava"
+date: "`r Sys.Date()`"
+# css: styles.css
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+
+---
+
+# Analysis Setup
+
+This section includes options for knitting of the Rmd document, loading of the necessary libraries for the analysis, definitions of functions to streamline analysis down the line, and the connection to the database.
+
+```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+options(encoding = "UTF-8")
+```
+
+```{r}
+library("dplyr")
+library("ggplot2")
+library("ggfortify")
+library("ggsci")
+library("glue")
+library("gridExtra")
+library("gt")
+library("gtsummary")
+library("lubridate")
+library("patchwork")
+library("ranger")
+library("rlang")
+library("RODBC")
+library("survival")
+library("survminer")
+library("tidyr")
+```
+
+```{r}
+get_custom_theme <- function() {
+  custom_theme <- theme_minimal() + 
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 12),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 6),
+      legend.key = element_rect(fill = NA),
+      legend.background = element_rect(fill = "white", color = "black"),
+      legend.position = "right"
+    )
+  return(custom_theme)
+}
+
+hist_plot <- function(data, x, binwidth, min, max, step, title, xlabel, ylabel) {
+  plt <- ggplot(
+    data = data, 
+    aes_string(x = x, fill = "as.factor(PTE)", y = "..density..")
+    ) +
+    geom_histogram(position = "identity", alpha = 0.5, binwidth = binwidth, na.rm = TRUE) +
+    scale_fill_manual(
+      values = c("0" = "blue", "1" = "red"),
+      labels = c("0" = "Non-PTE", "1" = "PTE")
+    ) +
+    scale_x_continuous(
+      breaks = seq(min, max, by = step),
+      labels = seq(min, max, by = step)
+    ) +
+    labs(
+      title = title,
+      x = xlabel,
+      y = ylabel,
+      fill = "PTE"
+    ) +
+    get_custom_theme()
+  return(plt)
+}
+
+bar_plot <- function(data, x, title, xlabel, ylabel) {
+  summary_data <- data %>%
+    group_by(across(all_of(c("PTE", x)))) %>%
+    summarise(count = n()) %>%
+    mutate(proportion = count / sum(count)) %>%
+    ungroup()
+
+  plt <- ggplot(data = summary_data, aes_string(x = x, y = "proportion", fill = "as.factor(PTE)")) +
+    geom_bar(stat = "identity", position = "dodge", alpha = 0.5, color = "black") +
+    scale_fill_manual(
+      values = c("0" = "blue", "1" = "red"),
+      labels = c("0" = "Non-PTE", "1" = "PTE")
+    ) +
+    labs(
+      title = title,
+      x = xlabel,
+      y = ylabel,
+      fill = "PTE"
+    ) +
+    get_custom_theme()
+  return(plt)
+}
+
+my_ggsurvplot <- function(fit, data, title, legend_labs) {
+    plot <- ggsurvplot(
+      fit = fit,
+      data = data,
+      censor = FALSE,
+      conf.int = TRUE,
+      size = 0.2,
+
+      xlim = c(0, 10),
+      ylim = c(0, 1),
+      xlab = "Years",
+      ylab = "Survival",
+      break.x.by = 1,
+      break.y.by = 0.1,
+      surv.scale = "percent",
+
+      legend = "right",
+      legend.labs = legend_labs,
+      
+      title = title,
+      ggtheme = get_custom_theme()
+    )
+    return(plot)
+}
+
+three_by_three_grid <- function(plots, order, title) {
+    plots_with_guide_area <- plots[[1]] + 
+      plots[[2]] + 
+      guide_area() + 
+      plots[[3]] + 
+      plots[[4]] + 
+      plots[[5]] + 
+      plots[[6]] + 
+      plots[[7]] + 
+      plots[[8]] 
+    
+    grid <- plots_with_guide_area +
+        plot_layout(
+            byrow = TRUE,
+            ncol = 3,
+            nrow = 3,
+            guides = "collect",
+            axes = "collect"
+        ) + 
+        plot_annotation(
+            title = title, 
+            theme = theme(plot.title = element_text(hjust = 0.5, size = 16))
+        )
+    return(grid)
+}
+
+plot_cox <- function(
+    cox_fits, 
+    legend_labs, 
+    age_discrete_column = "AgeOfOnsetDiscrete",
+    numeric_covariates = NULL, 
+    categorical_covariates = NULL
+) {
+    if (is.null(numeric_covariates)) {
+        numeric_covariates <- c()
+    }
+    if (is.null(categorical_covariates)) {
+        categorical_covariates <- c()
+    }
+    
+    age_labels_with_all <- names(cox_fits)
+    n <- length(age_labels_with_all)
+
+    plots <- vector(mode = "list", length = n)
+    names(plots) <- age_labels_with_all
+    
+    for (i in 1:n) {
+      age_label <- age_labels_with_all[[i]]
+      cox_fit <- cox_fits[[i]]
+      if (age_label == "All") {
+        age_subset <- data
+      } else {
+        age_subset <- data[data[[age_discrete_column]] == age_label, ]
+      }
+      new_data <- calculate_prediction_data(
+        data = age_subset, 
+        numeric_cols = numeric_covariates, 
+        categorical_cols = categorical_covariates
+      )
+      fit <- survfit(
+        formula = cox_fit,
+        newdata = new_data
+      )
+      plot <- my_ggsurvplot(
+          fit = fit, 
+          data = age_subset, 
+          title = glue("Age {age_label}"), 
+          legend_labs = legend_labs
+         )
+    plots[[i]] <- plot$plot
+    }
+    
+    return(plots)
+}
+
+```
+
+```{r}
+build_surv_formula_string <- function(futime, event, covariates) {
+    formula <- glue("Surv({futime}, {event}) ~ {paste(covariates, collapse = ' + ')}")
+    return(formula)
+}
+
+calculate_weights <- function(data, cols, group) {
+  index <- data[, c(cols, group)]
+  
+  tab1 <- table(data[cols]) / nrow(data)
+  tab2 <- table(index) / nrow(data)
+
+  n_groups <- dim(tab2)[length(cols) + 1]
+  rwt <- rep(tab1, times = n_groups) / tab2
+
+  return(rwt[as.matrix(index)])
+}
+
+calculate_prediction_data <- function(data, numeric_cols, categorical_cols) {
+    cols <- c(numeric_cols, categorical_cols)
+    new_data_values <- vector("list", length = length(cols))
+    names(new_data_values) <- cols
+    
+    for (col in numeric_cols) {
+        if (!(col %in% names(data))) {
+            stop(glue("{col} not found in supplied data"))
+        }
+        new_data_values[[col]] <- mean(data[[col]], na.rm = TRUE)
+    }
+    for (col in categorical_cols) {
+        if (!(col %in% names(data))) {
+            stop(glue("{col} not found in supplied data"))
+        }
+        new_data_values[[col]] <- unique(data[[col]])
+    }
+    rows_needed <- prod(unlist(sapply(new_data_values, length)))
+    
+    new_data <- data.frame(matrix(
+        ncol = length(cols),
+        nrow = rows_needed
+    ))
+    names(new_data) <- cols
+    for (col in cols) {
+        new_data[[col]] <- rep(
+            new_data_values[[col]],
+            length.out = rows_needed
+        )
+    }
+    
+    return(new_data)
+}
+    
+bold_gt_table <- function(gt_table, significant_matrix) {
+    bolded_gt_table <- gt_table
+    for (i in seq_len(nrow(significant_matrix))) {
+        bolded_gt_table <- bolded_gt_table %>%
+            tab_style(
+              style = cell_text(weight = "bold"),
+              locations = cells_body(
+                columns = colnames(significant_matrix)[significant_matrix[i, ]],
+                rows = i
+              )
+        )
+    }
+    return(bolded_gt_table)
+}
+    
+format_gt_table <- function(gt_table) {
+    formatted_gt_table <- gt_table %>%
+
+    tab_style(
+        style = list(
+            cell_text(size = px(18))
+    ),
+        locations = cells_column_labels()
+    ) %>%
+    tab_style(
+        style = cell_text(align = "center"),
+        locations = list(
+            cells_column_labels(), 
+            cells_body(), 
+            cells_stub(),
+            cells_stubhead()
+        )
+    ) %>%
+    return(formatted_gt_table)
+}
+```
+
+```{r}
+assign_asterisks <- function(p_value) {
+  case_when(
+    p_value < 0.001 ~ "***",
+    p_value < 0.01 ~ "**",
+    p_value < 0.05 ~ "*",
+    TRUE ~ ""
+  )
+}
+
+format_p_values <- function(p) {
+    case_when(
+        p < 0.001 ~ "<0.001***",
+        p < 0.01 ~ sprintf("%.3f**", p),
+        p < 0.05 ~ sprintf("%.3f*", p),
+        TRUE ~ sprintf("%.3f", p)
+      )
+}
+
+extract_cox_fit_stats <- function(cox_fit) {
+  summary_fit <- summary(cox_fit)
+  hr <- summary_fit$coefficients[, "exp(coef)"]
+  ci_lower <- summary_fit$conf.int[, "lower .95"]
+  ci_upper <- summary_fit$conf.int[, "upper .95"]
+  p_values <- summary_fit$coefficients[, "Pr(>|z|)"]
+  
+  stats <- data.frame(
+    Covariate = rownames(summary_fit$coefficients),
+    HR = format(round(hr, digits = 2), nsmall = 2),
+    CI = glue("({format(round(ci_lower, 2), nsmall = 2)}, {format(round(ci_upper, 2), nsmall = 2)})"),
+    raw_p = p_values,
+    p = format_p_values(p_values)
+  )
+  return(stats)
+}
+
+extract_cox_fit_list_stats <- function(cox_fits, group_name) {
+    results <- lapply(cox_fits, extract_cox_fit_stats) %>%
+        bind_rows(.id = group_name)
+    return(results)
+}
+```
+
+```{r}
+km_plots <- function(
+    data,
+    futime = "YearsOfFollowUp", 
+    event = "DeathObserved", 
+    legend_labs = c("Non-PTE", "PTE"),
+    age_discrete_column = "AgeOfOnsetDiscrete",
+    age_labels = c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+"),
+    group = "PTE",
+    covariates = NULL
+) {
+    if (is.null(covariates)) {
+        covariates <- c()
+    }
+    
+    age_labels_with_all <- c("All", age_labels)
+    n <- length(age_labels_with_all)
+
+    plots <- vector(mode = "list", length = n)
+    names(plots) <- age_labels_with_all
+
+    for (i in 1:n) {
+      age_label <- age_labels_with_all[[i]]
+      if (age_label == "All") {
+        age_subset <- data
+      } else {
+        age_subset <- data[data[[age_discrete_column]] == age_label, ]
+      }
+      formula <- as.formula(
+          build_surv_formula_string(
+              futime = futime,
+              event = event,
+              covariates = c("PTE")
+          )
+      )
+      
+      if (as.logical(length(covariates))) {
+        age_subset$Weights <- calculate_weights(
+          data = age_subset,
+          cols = covariates,
+          group = group
+        ) 
+        fit <- surv_fit(
+          formula,
+          data = age_subset,
+          weights = age_subset$Weights
+        )
+      } else {
+        fit <- surv_fit(
+          formula,
+          data = age_subset
+        )
+      }
+      plot <- my_ggsurvplot(
+          fit = fit, 
+          data = age_subset, 
+          title = glue("Age {age_label}"), 
+          legend_labs = legend_labs
+      )
+      plots[[i]] <- plot$plot
+    }
+    
+    return(plots)
+}
+
+cox_analysis <- function(
+    data,
+    futime = "YearsOfFollowUp", 
+    event = "DeathObserved", 
+    age_discrete_column = "AgeOfOnsetDiscrete",
+    age_labels = c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+"),
+    numeric_covariates = NULL, 
+    categorical_covariates = NULL
+) {
+    if (is.null(numeric_covariates)) {
+        numeric_covariates <- c()
+    }
+    if (is.null(categorical_covariates)) {
+        categorical_covariates <- c()
+    }
+    
+    age_labels_with_all <- c("All", age_labels)
+    n <- length(age_labels_with_all)
+
+    cox_fits <- vector(mode = "list", length = n)
+    names(cox_fits) <- age_labels_with_all
+
+    for (i in 1:n) {
+      age_label <- age_labels_with_all[[i]]
+      if (age_label == "All") {
+        age_subset <- data
+      } else {
+        age_subset <- data[data[[age_discrete_column]] == age_label, ]
+      }
+      
+      cox_fit <- coxph(
+        as.formula(build_surv_formula_string(
+            futime = futime,
+            event = event,
+            covariates = c(numeric_covariates, categorical_covariates)
+        )),
+        data = age_subset,
+        robust = TRUE,
+        model = TRUE
+      )
+      cox_fits[[i]] <- cox_fit
+      
+    }
+
+    return(cox_fits)
+}
+
+```
+
+```{r}
+conn <- tryCatch({
+    odbcDriverConnect(
+        "driver={SQL Server};server=vhacdwrb03.vha.med.va.gov;database=SCS_EEGUtil;trusted_connection=true"
+    )
+}, warning = function(w) {
+    message("Not connected to VA network, loading fake-data.csv...")
+    return(NULL)
+}, error = function(e) {
+    message("Not connected to VA network, loading fake-data.csv...")
+    return(NULL)
+})
+```
+
+
+# Cohort Statistics
+
+Here, we show the distributions of the variables of interest along with the distributions of the discretized versions of each of these variables after being grouped as above to show that there are large sample sizes in each group. 
+
+We also compare the two PTE and non-PTE groups. See https://pubmed.ncbi.nlm.nih.gov/28498196 for ECI calculation.
+
+```{r}
+if (is.null(conn)) {
+    raw_data <- read.csv("../dummy_data/combined.csv")
+} else {
+    raw_data <- sqlQuery(
+        conn,
+        "SELECT coh.PatientICN, coh.FirstDXDateTime, coh.BirthDateTime, coh.LatestVisitDateTime, coh.DeathDateTime, dem.Gender, dem.Race, dem.Ethnicity, dem.ServiceConnectedPercent, elix.ECI, tbi.TBIDateTime, tbi.TBIICDCode, tbi.ICD10 FROM[EEG].[rn_cohort2] coh INNER JOIN [EEG].[rn_demographics] dem ON coh.PatientICN = dem.PatientICN INNER JOIN [EEG].[rn_elix2] elix ON coh.PatientICN = elix.PatientICN LEFT JOIN [EEG].[rn_tbi] tbi ON coh.PatientICN = tbi.PatientICN ;"
+    )
+}
+```
+
+```{r}
+age_labels <- c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+") 
+
+data <- raw_data %>%
+    mutate(across(all_of(colnames(raw_data)[grepl("DateTime", colnames(raw_data))]), 
+                  ~ as_date(parse_date_time(., orders = c("ymd HMS", "ymd"))))) %>%
+    mutate(DeathObserved = ifelse(!is.na(DeathDateTime), TRUE, FALSE)) %>%
+    mutate(YearsOfFollowUp = ifelse(
+        !is.na(DeathDateTime),
+        interval(FirstDXDateTime, DeathDateTime) %>% as.numeric("years"),
+        interval(FirstDXDateTime, LatestVisitDateTime) %>% as.numeric("years")
+    )) %>%
+    mutate(YearsFromTBIToPTE = interval(TBIDateTime, FirstDXDateTime) %>% as.numeric("years")) %>%
+    mutate(PTE = ifelse(is.na(YearsFromTBIToPTE), 0, as.numeric(YearsFromTBIToPTE < 5))) %>%
+    mutate(AgeOfOnset = interval(BirthDateTime, FirstDXDateTime) %>% as.numeric("years")) %>%
+    mutate(YearOfOnset = as.numeric(format(FirstDXDateTime, "%Y"))) %>%
+    mutate(ECI = ifelse(is.na(ECI), 0, ECI)) %>%
+    mutate(ServiceConnectedPercent = ifelse(is.na(ServiceConnectedPercent), 0, ServiceConnectedPercent)) %>%
+    mutate(AgeOfOnsetDiscrete = cut(
+        AgeOfOnset, 
+        breaks = c(0, 30, 40, 50, 60, 70, 80, Inf), 
+        labels = age_labels, 
+        right = FALSE)
+    ) %>%
+    mutate(YearOfOnsetDiscrete = cut(
+         YearOfOnset, 
+         breaks = c(2004, 2009, 2014, 2019, 2024), 
+         labels = c("2004-2008", "2009-2013", "2014-2018", "2019-2023"), 
+         right = FALSE)
+    ) %>%
+    mutate(ECIDiscrete = cut(
+         ECI, 
+         breaks = c(-Inf, 0, 25, 50, Inf), 
+         labels = c("[-inf,0)", "[0,25)", "[25,50)", "[50,inf)"), 
+         right = FALSE)
+    ) %>%
+    mutate(ServiceConnectedPercentDiscrete = cut(
+         ServiceConnectedPercent, 
+         breaks = c(0, 10, 40, 70, 100, Inf), 
+         labels = c("0", "10-30", "40-60", "70-90", "100"), 
+         right = FALSE
+    ))
+    
+data <- data %>%
+    filter(YearsOfFollowUp >= 0) %>%
+    filter(year(FirstDXDateTime) >= 2004 & year(FirstDXDateTime) < 2024) %>%
+    filter(AgeOfOnset > 0)
+```
+
+```{r}
+age_hist <- hist_plot(
+  data = data,
+  x = "AgeOfOnset",
+  binwidth = 1,
+  min = 0,
+  max = 100,
+  step = 10,
+  title = "Age of Onset by PTE Status",
+  xlabel = "Age of Onset",
+  ylabel = "Proportion"
+) + theme(plot.title = element_blank())
+
+age_bar <- bar_plot(
+  data = data,
+  x = "AgeOfOnsetDiscrete",
+  title = "Age of Onset by PTE Status",
+  xlabel = "Age of Onset",
+  ylabel = "Proportion"
+) + theme(plot.title = element_blank(), legend.position = "none")
+
+year_hist <- hist_plot(
+  data = data,
+  x = "YearOfOnset",
+  binwidth = 1,
+  min = 2004,
+  max = 2024,
+  step = 5,
+  title = "Year of Onset by PTE Status",
+  xlabel = "Year of Onset",
+  ylabel = "Proportion"
+) + theme(plot.title = element_blank())
+
+year_bar <- bar_plot(
+  data = data,
+  x = "YearOfOnsetDiscrete",
+  title = "Year of Onset by PTE Status",
+  xlabel = "Year of Onset",
+  ylabel = "Proportion"
+) + theme(plot.title = element_blank(), legend.position = "none")
+
+eci_hist <- hist_plot(
+  data = data,
+  x = "ECI",
+  binwidth = 1,
+  min = -30,
+  max = 100,
+  step = 10,
+  title = "ECI by PTE Status",
+  xlabel = "ECI",
+  ylabel = "Proportion"
+) + theme(plot.title = element_blank())
+
+eci_bar <- bar_plot(
+  data = data,
+  x = "ECIDiscrete",
+  title = "ECI by PTE Status",
+  xlabel = "ECI",
+  ylabel = "Proportion"
+) + theme(plot.title = element_blank(), legend.position = "none")
+
+service_hist <- hist_plot(
+  data = data,
+  x = "ServiceConnectedPercent",
+  binwidth = 10,
+  min = 0,
+  max = 100,
+  step = 10,
+  title = "Service Connection by PTE Status",
+  xlabel = "Service Connection",
+  ylabel = "Proportion"
+) + theme(plot.title = element_blank())
+
+service_bar <- bar_plot(
+  data = data,
+  x = "ServiceConnectedPercentDiscrete",
+  title = "Service Connection by PTE Status",
+  xlabel = "Service Connection",
+  ylabel = "Proportion"
+) + theme(plot.title = element_blank(), legend.position = "none")
+
+grid <- age_hist + year_hist + eci_hist + service_hist +
+    age_bar + year_bar + eci_bar + service_bar +
+    plot_layout(
+        byrow = TRUE,
+        nrow = 2,
+        ncol = 4,
+        guides = "collect",
+        axis_titles = "collect"
+    ) + 
+    plot_annotation(
+        title = "Distributions of Potential Covariates", 
+        theme = theme(plot.title = element_text(hjust = 0.5, size = 18))
+    )
+
+ggsave(
+  plot = grid,
+  device = "png",
+  filename = "distributions.png",
+  width = 16,
+  height = 8,
+  units = "in"
+)
+```
+
+![](distributions.png)
+
+
+```{r demographics}
+
+summary_table <- data %>%
+  select("AgeOfOnset", "YearOfOnset", "Gender", "Race", "Ethnicity", "ECI", "ServiceConnectedPercent", "PTE") %>%
+  tbl_summary(
+    by = "PTE",
+    missing = "ifany",
+    statistic = list(
+        all_continuous() ~ "{mean} ({sd})",
+        all_categorical() ~ "{n} ({p}%)"
+    ),
+    label = list(
+      "AgeOfOnset" ~ "Age of Onset",
+      "YearOfOnset" ~ "Year of Onset",
+      "ServiceConnectedPercent" ~ "Service Connection"
+    )
+  ) %>%
+  add_p(
+    pvalue_fun = format_p_values
+    ) %>%
+  bold_p(t = 0.05) %>%
+  add_stat_label() %>%
+  modify_header(
+    stat_1 = "**Non-PTE**\n\nN = {style_number(n)}",
+    stat_2 = "**PTE**\n\nN = {style_number(n)}"
+  ) %>%
+  modify_spanning_header(
+    all_stat_cols() ~ "**Epilepsy Classification**"
+  ) %>%
+  as_gt() %>%
+  gt::tab_header(
+    title = "Cohort Demographics"
+  ) 
+  
+summary_table
+```
+
+# Kaplan-Meier Survival
+
+## Unadjusted
+
+We use right censored Kaplan-Meier analysis to visualize the differences in survival between patients with PTE and those with non-PTE.
+
+```{r}
+km_analysis <- km_plots(
+    data = data
+)
+
+plots <- km_analysis
+grid <- three_by_three_grid(
+    plots = plots,
+    title = "Kaplan-Meier Survival, Unadjusted"
+)
+
+ggsave(
+  plot = grid,
+  device = "png",
+  filename = "km-unadjusted-survival.png",
+  width = 8,
+  height = 6,
+  units = "in"
+)
+
+```
+
+![](km-unadjusted-survival.png)
+
+
+## Adjusted
+
+To adjust the curves, a frequenncy weighting approach, as described in https://cran.r-project.org/web/packages/survival/vignettes/adjcurve.pdf was applied.
+
+```{r}
+covariates <- c("AgeOfOnsetDiscrete", "YearOfOnsetDiscrete", "ECIDiscrete", "ServiceConnectedPercentDiscrete")
+
+
+km_analysis <- km_plots(
+    data = data,
+    covariates = covariates
+)
+
+plots <- km_analysis
+grid <- three_by_three_grid(
+    plots = plots,
+    title = "Kaplan-Meier Survival, Adjusted"
+)
+
+ggsave(
+  plot = grid,
+  device = "png",
+  filename = "km-adjusted-survival.png",
+  width = 8,
+  height = 6,
+  units = "in"
+)
+```
+
+![](km-adjusted-survival.png)
+
+# Changing the Analysis
+
+I decided that the reweighting procedure according to frequency weights has a flaw. The procedure requires the binning of continuous variables into discrete categories. This is fine when the distributions of the continuous variable are similar within a category across all groups. However, this is not the case here due to the different shapes of the age distribution in PTE and non-PTE. Though the differences observed may only be around half a year, that can lead to significant variations with sample sizes this large.
+
+As a result, it is more ideal to have a model that can offer some sort of continuous adjustment. The Cox Proportional Hazards model works great in this situation because it is a regression model of the hazard to the patient at each given point in time. The examples I had seen have been using categorical variables for this as well, but it works well, and probably better, for continuous variables. 
+
+It is also much easier to conduct than frequency weighting since covariates can easily be added to the model to adjust for them. Once the coefficients for the hazard of different variables are estimated, the information can be used to plot predicted survival curves.
+
+Lastly, to obtain statistical analysis for the Kaplan-Meier curves, I would need to fit a Cox model anyways, so this is the more direct way of getting the statistics and effect sizes of the covariates. 
+
+```{r}
+overall_age <- hist_plot(
+  data = data,
+  x = "AgeOfOnset",
+  binwidth = 1,
+  min = 0,
+  max = 100,
+  step = 10,
+  title = "Age of Onset by PTE Status",
+  xlabel = "Age of Onset",
+  ylabel = "Proportion"
+)
+
+age_label <- "50-59"
+
+t_test <- t.test(
+  data[data$AgeOfOnsetDiscrete == age_label & data$PTE == 0, "AgeOfOnset"],
+  data[data$AgeOfOnsetDiscrete == age_label & data$PTE == 1, "AgeOfOnset"]
+)
+mean_non_pte <- t_test$estimate[["mean of x"]]
+mean_pte <- t_test$estimate[["mean of y"]]
+
+subset_age <- hist_plot(
+  data = data[data$AgeOfOnsetDiscrete == age_label, ],
+  x = "AgeOfOnset",
+  binwidth = 1,
+  min = 0,
+  max = 100,
+  step = 10,
+  title = glue("Age of Onset by PTE Status\nfor Age Group {age_label}"),
+  xlabel = "Age of Onset",
+  ylabel = "Proportion"
+) + 
+  geom_vline(aes(xintercept = mean_non_pte), color = "blue", linetype = "dashed") +
+  geom_vline(aes(xintercept = mean_pte), color = "red", linetype = "dashed") +
+  # annotate("text", x = mean_non_pte, y = .2, label = glue("Mean Age in Non-PTE: {round(mean_non_pte, 2)}"), color = "blue") + 
+  # annotate("text", x = mean_pte, y = .2, label = glue("Mean Age in PTE: {round(mean_pte, 2)}"), color = "red") + 
+  annotate("text", x = 55, y = .3, label = glue("t-statistic: {round(t_test$statistic, 2)}\np-value: {format.pval(t_test$p.value, digits = 2)}"), color = "black")
+
+
+grid.arrange(overall_age, subset_age, ncol = 2)
+
+```
+
+# Cox Proportional Hazards Model
+
+## Explanation
+
+The Cox Proportional Hazards model with multiple covariates can be interpreted as follows:
+
+- Hazard = Risk/probability of death per unit of time, given that the patient has survived until that point
+- Hazard Ratio = Patients in group B have X.XXX times the hazard as those in group A.
+
+I continue to stratify the analysis by age group because collapsing all the groups down into on can take away some of the nuances regarding the effect of PTE being different in different age groups. As a result, instead of using a stratified Cox model, which calculates only one hazard for all of the different age groups, I use multiple Cox models to determine the hazard that PTE poses at each age group individually.
+
+## Univariate Survival
+
+```{r}
+categorical_covariates <- c("PTE")
+legend_labs <- c("Non-PTE", "PTE")
+
+cox_fits <- cox_analysis(
+    data = data,
+    categorical_covariates = categorical_covariates
+)
+plots <- plot_cox(
+    cox_fits, 
+    legend_labs = legend_labs, 
+    categorical_covariates = categorical_covariates
+)
+raw_results <- extract_cox_fit_list_stats(cox_fits, "Age Group")
+
+grid <- three_by_three_grid(
+    plots = plots,
+    title =  "Predicted Survival from Univariate Cox Model"
+)
+
+gt_table <- raw_results %>%
+  select("Age Group", "HR", "CI", "p") %>%
+  gt(rowname_col = "Age Group") %>%
+  tab_stubhead(label = "Age Group") %>%
+  cols_label(
+    CI ~ "95% CI"
+  ) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(
+      columns = vars(HR),
+      rows = as.numeric(raw_results$raw_p) < 0.05
+    )
+  ) %>%
+  tab_header(title = "PTE Hazard Ratios from Univariate Cox Models") %>%
+  format_gt_table()
+  
+ggsave(
+  plot = grid,
+  device = "png",
+  filename = "univariate-survival.png",
+  width = 8,
+  height = 6,
+  units = "in"
+)
+
+gt_table
+```
+
+![](univariate-survival.png)
+
+
+## Multivariate Survival
+
+```{r}
+numeric_covariates <- c("AgeOfOnset", "YearOfOnset", "ECI", "ServiceConnectedPercent")
+categorical_covariates <- c("PTE")
+legend_labs <- c("Non-PTE", "PTE")
+
+cox_fits <- cox_analysis(
+    data = data,
+    numeric_covariates = numeric_covariates,
+    categorical_covariates = categorical_covariates,
+)
+plots <- plot_cox(
+  cox_fits, 
+  legend_labs, 
+  numeric_covariates = numeric_covariates, 
+  categorical_covariates = categorical_covariates
+)
+raw_results <- extract_cox_fit_list_stats(cox_fits, "Age Group")
+
+grid <- three_by_three_grid(
+    plots = plots,
+    title =  "Predicted Survival from Multivariate Cox Model"
+)
+
+full_results <- raw_results %>%
+    mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+  select(`Age Group`, Covariate, HR_CI) %>%
+    pivot_wider(
+        names_from = Covariate,
+        values_from = HR_CI
+    )
+
+significant_matrix <- raw_results %>%
+  mutate(significant = raw_p < 0.05) %>%
+  select(`Age Group`, Covariate, significant) %>%
+  pivot_wider(
+    names_from = Covariate,
+    values_from = significant
+  ) %>%
+  select(-`Age Group`) %>%
+  as.matrix()
+
+full_gt_table <- full_results %>%
+  gt(rowname_col = "Age Group") %>%
+  tab_stubhead(label = "Age Group") %>%
+  tab_header(title = "Hazard Ratios from Multivariate Cox Models") %>%
+    cols_width(
+        PTE ~ px(100),
+        ECI ~ px(100)
+    ) %>%
+    cols_label(
+        AgeOfOnset ~ "Age of Onset",
+        YearOfOnset ~ "Year of Onset",
+        ECI ~ "ECI",
+        ServiceConnectedPercent ~ "Service Connection",
+        PTE ~ "PTE"
+    ) %>%
+    fmt_markdown(columns = everything()) %>%
+    bold_gt_table(significant_matrix = significant_matrix) %>%
+    format_gt_table
+
+# pte_results <- raw_results %>%
+#     filter(Covariate == "PTE")
+# 
+# pte_gt_table <- pte_results %>%
+#   select("Age Group", "HR", "CI", "p") %>%
+#   gt(rowname_col = "Age Group") %>%
+#   tab_stubhead(label = "Age Group") %>%
+#   cols_label(
+#     CI ~ "95% CI"
+#   ) %>%
+#   tab_style(
+#     style = cell_text(weight = "bold"),
+#     locations = cells_body(
+#       columns = vars(HR),
+#       rows = as.numeric(pte_results$raw_p) < 0.05
+#     )
+#   ) %>%
+#   tab_header(title = "PTE Hazard Ratios from Multivariate Cox Models") %>%
+#   format_gt_table
+#   
+  
+ggsave(
+  plot = grid,
+  device = "png",
+  filename = "multivariate-survival.png",
+  width = 8,
+  height = 6,
+  units = "in"
+)
+
+full_gt_table
+```
+
+![](multivariate-survival.png)
+
+
+
+
+# Grouping by TBI
+
+There is evidence in the literature that milder forms of TBI generally do not predispose a patient to developing PTE in the same way that more severe TBIs do. Therefore, it is helpful to differentiate between the type of TBI when looking at mortality.
+
+## Isolating Severe TBI by ICD-10 Definitions
+
+Here, we isolate severe TBI according to the ICD code of the traumatic brain injury.
+
+There are a few weaknesses to this approach:
+
+1. Many of the PTE patients (33.4%) have codes V15.52 or Z87.820, which are the ICD-9 and ICD-10 codes for personal history of traumatic brain injury and do not clarify the severity. 
+
+2. These codes are those that were put in at the visit closest to, but before, a patient's diagnosis of epilepsy. As a result, if they had a severe TBI before that, and still within 5 years, it would be overshadowed by a more recent TBI that may have not been classified as severe.
+
+3. I could not find an authoritative source on which codes can be considered severe and which would be mild/moderate. I used my own judgement to determine severity by looking at the ICD code definitions. In general, I considered severe TBI to involve an intracranial hemorrhage and/or greater than a 1 hour loss of consciousness.
+
+4. Only 7% of the PTE patients were classified as having severe TBI. This can probably be remedied to some extent by fixing the above concerns.
+
+```{r}
+
+severe_code_regex_icd9 <- "^8(50\\.[234]|[0-9]*[345])$"
+
+data_pte_icd10 <- data[data$PTE == 1 & data$ICD10 == 1, ]
+matching_icn_icd9 <- data_pte_icd10[grep(severe_code_regex_icd9, data_pte_icd10[["TBIICDCode"]]), "PatientICN"]
+
+severe_code_prefixes_icd10 <- c(
+  "S06.1",
+  "S06.3",
+  "S06.4",
+  "S06.5",
+  "S06.6",
+  "S06.A",
+  "S06.2X3",
+  "S06.2X4",
+  "S06.2X5",
+  "S06.2X6",
+  "S06.9X3",
+  "S06.9X4",
+  "S06.9X5",
+  "S06.9X6",
+  "S06.813",
+  "S06.814",
+  "S06.815",
+  "S06.816"
+)
+
+data_pte_icd10 <- data[data$PTE == 1 & data$ICD10 == 1, ]
+
+matching_rows <- apply(
+  data_pte_icd10,
+  1,
+  function(row) {
+    any(
+      startsWith(
+        row[["TBIICDCode"]],
+        severe_code_prefixes_icd10
+      )
+    )
+  }
+)
+
+matching_icn_icd10 <- data_pte_icd10[matching_rows, "PatientICN"]
+
+data$TBISeverity <- "None"
+data[data$PTE == 1, ]$TBISeverity <- "Unknown"
+data[data$PatientICN %in% c(matching_icn_icd9, matching_icn_icd10), ]$TBISeverity <- "Severe"
+data$TBISeverity <- factor(data$TBISeverity, levels = c("None", "Unknown", "Severe"))
+```
+
+```{r}
+
+summary_table <- data %>%
+  select("AgeOfOnset", "YearOfOnset", "Gender", "Race", "Ethnicity", "ECI", "ServiceConnectedPercent", "TBISeverity") %>%
+  tbl_summary(
+    by = "TBISeverity",
+    missing = "ifany",
+    statistic = list(
+        all_continuous() ~ "{mean} ({sd})",
+        all_categorical() ~ "{n} ({p}%)"
+    ),
+    label = list(
+      "AgeOfOnset" ~ "Age of Onset",
+      "YearOfOnset" ~ "Year of Onset",
+      "ServiceConnectedPercent" ~ "Service Connection"
+    )
+  ) %>%
+  add_p(
+    pvalue_fun = format_p_values
+    ) %>%
+  bold_p(t = 0.05) %>%
+  add_stat_label() %>%
+  # modify_header(
+  #   stat_1 = "**Non-PTE**\n\nN = {style_number(n)}",
+  #   stat_2 = "**PTE**\n\nN = {style_number(n)}"
+  # ) %>%
+  modify_spanning_header(
+    all_stat_cols() ~ "**TBI Classification**"
+  ) %>%
+  as_gt() %>%
+  gt::tab_header(
+    title = "Cohort Demographics"
+  ) 
+  
+summary_table
+```
+
+```{r}
+numeric_covariates <- c("AgeOfOnset", "YearOfOnset", "ECI", "ServiceConnectedPercent")
+categorical_covariates <- c("TBISeverity")
+legend_labs <- c("None", "Unknown", "Severe")
+
+cox_fits <- cox_analysis(
+    data = data,
+    numeric_covariates = numeric_covariates,
+    categorical_covariates = categorical_covariates,
+)
+plots <- plot_cox(
+  cox_fits, 
+  legend_labs, 
+  numeric_covariates = numeric_covariates, 
+  categorical_covariates = categorical_covariates
+)
+raw_results <- extract_cox_fit_list_stats(cox_fits, "Age Group")
+
+grid <- three_by_three_grid(
+    plots = plots,
+    title =  "Predicted Survival from Univariate Cox Model"
+)
+
+results <- raw_results %>%
+    mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+  select(`Age Group`, Covariate, HR_CI) %>%
+    filter(grepl("^TBI", Covariate)) %>%
+    mutate(Covariate = gsub("^TBISeverity", "", Covariate)) %>%
+    pivot_wider(
+        names_from = Covariate,
+        values_from = HR_CI
+    )
+
+significant_matrix <- raw_results %>%
+  mutate(significant = raw_p < 0.05) %>%
+  select(`Age Group`, Covariate, significant) %>%
+    filter(grepl("^TBI", Covariate)) %>%
+    mutate(Covariate = gsub("^TBISeverity", "", Covariate)) %>%
+  pivot_wider(
+    names_from = Covariate,
+    values_from = significant
+  ) %>%
+  select(-`Age Group`) %>%
+  as.matrix()
+
+
+gt_table <- results %>%
+  gt(rowname_col = "Age Group") %>%
+  tab_stubhead(label = "Age Group") %>%
+  tab_header(title = "PTE Hazard Ratios from Multivariate Cox Models by TBI Classification") %>%
+    fmt_markdown(columns = everything()) %>%
+    bold_gt_table(significant_matrix = significant_matrix) %>%
+    format_gt_table
+
+ggsave(
+  plot = grid,
+  device = "png",
+  filename = "multivariate-survival-my-tbi-classification.png",
+  width = 8,
+  height = 6,
+  units = "in"
+)
+
+gt_table
+```
+
+![](multivariate-survival-my-tbi-classification.png)
+
+
+## Grouping by Karlander with Modifications
+
+TBI is also classified according to the type of injury. Karlander et al. (2021)
+provided the rough classification according to ICD-10 codes. The adaptation to 
+ICD-9 was done with the help of the mapping at
+https://health.mil/Reference-Center/Publications/2015/12/01/TBI-Code-Map.
+
+Classification   | ICD-9 Codes                  | ICD-10 Codes 
+Unknown          | 854.0, 907.0, 959.01, V15.52 | S06.A, Z87.820
+Mild             | 310.2, 850                   | F07.81, S06.01                
+Fracture         | 800, 801, 803, 804, 905.0    | S02.0, S02.1, S02.7, S02.9 
+Focal Cerebral   | 851, 853                     | S06.3             
+Diffuse Cerebral | 854.1                        | S06.1, S06.2, S06.7, S06.8, S06.9    
+Extracerebral    | 852                          | S06.4, S06.5, S06.6         
+
+Notes: S06.A should be coded along with another S06 code indicating the type
+of injury, so only patients with and ICD-10 TBI classification of Z87.820 should 
+potentially have an unknown classification. 854.0 may map to diffuse or focal TBI, 
+so it is classified as unknown.
+
+The severity of the TBI classifications in increasing order is considered to be:
+
+1. Unknown
+2. Mild
+3. Fracture
+4. Focal Cerebral, Diffuse Cerebral, Extracerebral
+
+All TBI visits over the last 5 years are gathered. Then, the most severe TBI,
+according to the above list is chosen. Ties are broken by choosing the TBI
+closest to the date at which patients first meet our epilepsy criteria.
+
+See tbi.sql for details.
+
+```{r}
+if (is.null(conn)) {
+    raw_data <- read.csv("../dummy_data/combined.csv")
+} else {
+    raw_data <- sqlQuery(
+        conn,
+        "SELECT coh.PatientICN, coh.FirstDXDateTime, coh.BirthDateTime, coh.LatestVisitDateTime, coh.DeathDateTime, dem.Gender, dem.Race, dem.Ethnicity, dem.ServiceConnectedPercent, elix.ECI, tbi.Classification AS TBIClassification, tbi.ICDCode FROM[EEG].[rn_cohort2] coh INNER JOIN [EEG].[rn_demographics] dem ON coh.PatientICN = dem.PatientICN INNER JOIN [EEG].[rn_elix2] elix ON coh.PatientICN = elix.PatientICN LEFT JOIN [EEG].[rnTBI3] tbi ON coh.PatientICN = tbi.PatientICN ;"
+    )
+}
+```
+
+```{r}
+age_labels <- c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+") 
+
+data <- raw_data %>%
+    mutate(across(all_of(colnames(raw_data)[grepl("DateTime", colnames(raw_data))]), 
+                  ~ as_date(parse_date_time(., orders = c("ymd HMS", "ymd"))))) %>%
+    mutate(DeathObserved = ifelse(!is.na(DeathDateTime), TRUE, FALSE)) %>%
+    mutate(YearsOfFollowUp = ifelse(
+        !is.na(DeathDateTime),
+        interval(FirstDXDateTime, DeathDateTime) %>% as.numeric("years"),
+        interval(FirstDXDateTime, LatestVisitDateTime) %>% as.numeric("years")
+    )) %>%
+    mutate(PTE = ifelse(trimws(TBIClassification) == "" | is.na(TBIClassification), 0, 1)) %>%
+    mutate(TBIClassification = case_when(
+        trimws(TBIClassification) == "" ~ "None",
+        is.na(TBIClassification) ~ "None",
+        TRUE ~ TBIClassification
+    )) %>%
+    mutate(TBIClassification = factor(
+        TBIClassification, 
+        levels = c("None", "Unknown", "Mild", "Fracture", "Focal Cerebral", "Diffuse Cerebral", "Extracerebral")
+    )) %>%
+    mutate(AgeOfOnset = interval(BirthDateTime, FirstDXDateTime) %>% as.numeric("years")) %>%
+    mutate(YearOfOnset = as.numeric(format(FirstDXDateTime, "%Y"))) %>%
+    # mutate(ECI = ifelse(is.na(ECI), 0, ECI)) %>%
+    mutate(ServiceConnectedPercent = ifelse(is.na(ServiceConnectedPercent), 0, ServiceConnectedPercent)) %>%
+    mutate(AgeOfOnsetDiscrete = cut(
+        AgeOfOnset, 
+        breaks = c(0, 30, 40, 50, 60, 70, 80, Inf), 
+        labels = age_labels, 
+        right = FALSE)
+    ) %>%
+    mutate(YearOfOnsetDiscrete = cut(
+         YearOfOnset, 
+         breaks = c(2004, 2009, 2014, 2019, 2024), 
+         labels = c("2004-2008", "2009-2013", "2014-2018", "2019-2023"), 
+         right = FALSE)
+    ) %>%
+    mutate(ECIDiscrete = cut(
+         ECI, 
+         breaks = c(-Inf, 0, 25, 50, Inf), 
+         labels = c("[-inf,0)", "[0,25)", "[25,50)", "[50,inf)"), 
+         right = FALSE)
+    ) %>%
+    mutate(ServiceConnectedPercentDiscrete = cut(
+         ServiceConnectedPercent, 
+         breaks = c(0, 10, 40, 70, 100, Inf), 
+         labels = c("0", "10-30", "40-60", "70-90", "100"), 
+         right = FALSE
+    ))
+    
+data <- data %>%
+    filter(YearsOfFollowUp >= 0) %>%
+    filter(year(FirstDXDateTime) >= 2004 & year(FirstDXDateTime) < 2024) %>%
+    filter(AgeOfOnset > 0)
+```
+
+```{r}
+
+summary_table <- data %>%
+  select("AgeOfOnset", "YearOfOnset", "Gender", "Race", "Ethnicity", "ECI", "ServiceConnectedPercent", "TBIClassification") %>%
+  tbl_summary(
+    by = "TBIClassification",
+    missing = "ifany",
+    statistic = list(
+        all_continuous() ~ "{mean} ({sd})",
+        all_categorical() ~ "{n} ({p}%)"
+    ),
+    label = list(
+      "AgeOfOnset" ~ "Age of Onset",
+      "YearOfOnset" ~ "Year of Onset",
+      "ServiceConnectedPercent" ~ "Service Connection"
+    )
+  ) %>%
+  add_p(
+    pvalue_fun = format_p_values
+    ) %>%
+  bold_p(t = 0.05) %>%
+  add_stat_label() %>%
+  # modify_header(
+  #   stat_1 = "**Non-PTE**\n\nN = {style_number(n)}",
+  #   stat_2 = "**PTE**\n\nN = {style_number(n)}"
+  # ) %>%
+  modify_spanning_header(
+    all_stat_cols() ~ "**TBI Classification**"
+  ) %>%
+  as_gt() %>%
+  gt::tab_header(
+    title = "Cohort Demographics"
+  ) 
+  
+summary_table
+```
+
+```{r}
+numeric_covariates <- c("AgeOfOnset", "ECI", "ServiceConnectedPercent")
+categorical_covariates <- c("TBIClassification")
+legend_labs <- c("None", "Unknown", "Mild", "Fracture", "Focal Cerebral", "Diffuse Cerebral", "Extracerebral")
+
+cox_fits <- cox_analysis(
+    data = data,
+    numeric_covariates = numeric_covariates,
+    categorical_covariates = categorical_covariates,
+)
+raw_results <- extract_cox_fit_list_stats(cox_fits, "Age Group")
+
+results <- raw_results %>%
+    mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+  select(`Age Group`, Covariate, HR_CI) %>%
+    filter(grepl("^TBI", Covariate)) %>%
+    mutate(Covariate = gsub("^TBIClassification", "", Covariate)) %>%
+    pivot_wider(
+        names_from = Covariate,
+        values_from = HR_CI
+    )
+
+significant_matrix <- raw_results %>%
+  mutate(significant = raw_p < 0.05) %>%
+  select(`Age Group`, Covariate, significant) %>%
+    filter(grepl("^TBI", Covariate)) %>%
+    mutate(Covariate = gsub("^TBIClassification", "", Covariate)) %>%
+  pivot_wider(
+    names_from = Covariate,
+    values_from = significant
+  ) %>%
+  select(-`Age Group`) %>%
+  as.matrix()
+
+
+gt_table <- results %>%
+  gt(rowname_col = "Age Group") %>%
+  tab_stubhead(label = "Age Group") %>%
+  tab_header(title = "PTE Hazard Ratios from Multivariate Cox Models by TBI Classification") %>%
+    fmt_markdown(columns = everything()) %>%
+    bold_gt_table(significant_matrix = significant_matrix) %>%
+    format_gt_table
+
+gt_table
+```
+
+# ECI Change
+
+The current ECI code looked for comorbidities before 01/01/2024. I changed it to look only in the 5 years before the date a patient meets epilepsy criteria. These are the updated results.
+
+
+
+## Original Grouping by Karlander (Bugged)
+
+These results from the meeting are bugged. When choosing where to classify a patient with multiple ICD codes, my plan was to choose the classification that is considered more severe. However, when ordering in SQL, I sorted by the classification's name instead of the ranking of its severity. This led to "Unknown" being overrepresented since the sorting was in descending order.
+
+```{r}
+if (is.null(conn)) {
+    raw_data <- read.csv("../dummy_data/combined.csv")
+} else {
+    raw_data <- sqlQuery(
+        conn,
+        "SELECT coh.PatientICN, coh.FirstDXDateTime, coh.BirthDateTime, coh.LatestVisitDateTime, coh.DeathDateTime, dem.Gender, dem.Race, dem.Ethnicity, dem.ServiceConnectedPercent, elix.ECI, tbi.Classification AS TBIClassification, tbi.ICDCode FROM[EEG].[rn_cohort2] coh INNER JOIN [EEG].[rn_demographics] dem ON coh.PatientICN = dem.PatientICN LEFT JOIN [EEG].[rn_elix3] elix ON coh.PatientICN = elix.PatientICN LEFT JOIN [EEG].[rnTBI4] tbi ON coh.PatientICN = tbi.PatientICN ;"
+    )
+}
+```
+
+```{r}
+age_labels <- c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+") 
+
+data <- raw_data %>%
+    mutate(across(all_of(colnames(raw_data)[grepl("DateTime", colnames(raw_data))]), 
+                  ~ as_date(parse_date_time(., orders = c("ymd HMS", "ymd"))))) %>%
+    mutate(DeathObserved = ifelse(!is.na(DeathDateTime), TRUE, FALSE)) %>%
+    mutate(YearsOfFollowUp = ifelse(
+        !is.na(DeathDateTime),
+        interval(FirstDXDateTime, DeathDateTime) %>% as.numeric("years"),
+        interval(FirstDXDateTime, LatestVisitDateTime) %>% as.numeric("years")
+    )) %>%
+    mutate(PTE = ifelse(trimws(TBIClassification) == "" | is.na(TBIClassification), 0, 1)) %>%
+    mutate(TBIClassification = case_when(
+        trimws(TBIClassification) == "" ~ "None",
+        is.na(TBIClassification) ~ "None",
+        TRUE ~ TBIClassification
+    )) %>%
+    mutate(TBIClassification = factor(
+        TBIClassification, 
+        levels = c("None", "Unknown", "Mild", "Fracture", "Focal Cerebral", "Diffuse Cerebral", "Extracerebral")
+    )) %>%
+    mutate(AgeOfOnset = interval(BirthDateTime, FirstDXDateTime) %>% as.numeric("years")) %>%
+    mutate(YearOfOnset = as.numeric(format(FirstDXDateTime, "%Y"))) %>%
+    # mutate(ECI = ifelse(is.na(ECI), 0, ECI)) %>%
+    mutate(ServiceConnectedPercent = ifelse(is.na(ServiceConnectedPercent), 0, ServiceConnectedPercent)) %>%
+    mutate(AgeOfOnsetDiscrete = cut(
+        AgeOfOnset, 
+        breaks = c(0, 30, 40, 50, 60, 70, 80, Inf), 
+        labels = age_labels, 
+        right = FALSE)
+    ) %>%
+    mutate(YearOfOnsetDiscrete = cut(
+         YearOfOnset, 
+         breaks = c(2004, 2009, 2014, 2019, 2024), 
+         labels = c("2004-2008", "2009-2013", "2014-2018", "2019-2023"), 
+         right = FALSE)
+    ) %>%
+    mutate(ECIDiscrete = cut(
+         ECI, 
+         breaks = c(-Inf, 0, 25, 50, Inf), 
+         labels = c("[-inf,0)", "[0,25)", "[25,50)", "[50,inf)"), 
+         right = FALSE)
+    ) %>%
+    mutate(ServiceConnectedPercentDiscrete = cut(
+         ServiceConnectedPercent, 
+         breaks = c(0, 10, 40, 70, 100, Inf), 
+         labels = c("0", "10-30", "40-60", "70-90", "100"), 
+         right = FALSE
+    ))
+    
+data <- data %>%
+    filter(YearsOfFollowUp >= 0) %>%
+    filter(year(FirstDXDateTime) >= 2004 & year(FirstDXDateTime) < 2024) %>%
+    filter(AgeOfOnset > 0)
+```
+
+```{r}
+
+summary_table <- data %>%
+  select("AgeOfOnset", "YearOfOnset", "Gender", "Race", "Ethnicity", "ECI", "ServiceConnectedPercent", "TBIClassification") %>%
+  tbl_summary(
+    by = "TBIClassification",
+    missing = "ifany",
+    statistic = list(
+        all_continuous() ~ "{mean} ({sd})",
+        all_categorical() ~ "{n} ({p}%)"
+    ),
+    label = list(
+      "AgeOfOnset" ~ "Age of Onset",
+      "YearOfOnset" ~ "Year of Onset",
+      "ServiceConnectedPercent" ~ "Service Connection"
+    )
+  ) %>%
+  add_p(
+    pvalue_fun = format_p_values
+    ) %>%
+  bold_p(t = 0.05) %>%
+  add_stat_label() %>%
+  # modify_header(
+  #   stat_1 = "**Non-PTE**\n\nN = {style_number(n)}",
+  #   stat_2 = "**PTE**\n\nN = {style_number(n)}"
+  # ) %>%
+  modify_spanning_header(
+    all_stat_cols() ~ "**TBI Classification**"
+  ) %>%
+  as_gt() %>%
+  gt::tab_header(
+    title = "Cohort Demographics"
+  ) 
+  
+summary_table
+```
+
+```{r}
+numeric_covariates <- c("AgeOfOnset", "ECI", "ServiceConnectedPercent")
+categorical_covariates <- c("TBIClassification")
+legend_labs <- c("None", "Unknown", "Mild", "Fracture", "Focal Cerebral", "Diffuse Cerebral", "Extracerebral")
+
+cox_fits <- cox_analysis(
+    data = data,
+    numeric_covariates = numeric_covariates,
+    categorical_covariates = categorical_covariates,
+)
+raw_results <- extract_cox_fit_list_stats(cox_fits, "Age Group")
+
+results <- raw_results %>%
+    mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+  select(`Age Group`, Covariate, HR_CI) %>%
+    filter(grepl("^TBI", Covariate)) %>%
+    mutate(Covariate = gsub("^TBIClassification", "", Covariate)) %>%
+    pivot_wider(
+        names_from = Covariate,
+        values_from = HR_CI
+    )
+
+significant_matrix <- raw_results %>%
+  mutate(significant = raw_p < 0.05) %>%
+  select(`Age Group`, Covariate, significant) %>%
+    filter(grepl("^TBI", Covariate)) %>%
+    mutate(Covariate = gsub("^TBIClassification", "", Covariate)) %>%
+  pivot_wider(
+    names_from = Covariate,
+    values_from = significant
+  ) %>%
+  select(-`Age Group`) %>%
+  as.matrix()
+
+
+gt_table <- results %>%
+  gt(rowname_col = "Age Group") %>%
+  tab_stubhead(label = "Age Group") %>%
+  tab_header(title = "PTE Hazard Ratios from Multivariate Cox Models by TBI Classification") %>%
+    fmt_markdown(columns = everything()) %>%
+    bold_gt_table(significant_matrix = significant_matrix) %>%
+    format_gt_table
+
+gt_table
+```
+
+## Fixed TBI Grouping
+
+```{r}
+if (is.null(conn)) {
+    raw_data <- read.csv("../dummy_data/combined.csv")
+} else {
+    raw_data <- sqlQuery(
+        conn,
+        "SELECT coh.PatientICN, coh.FirstDXDateTime, coh.BirthDateTime, coh.LatestVisitDateTime, coh.DeathDateTime, dem.Gender, dem.Race, dem.Ethnicity, dem.ServiceConnectedPercent, elix.ECI, tbi.Classification AS TBIClassification, tbi.ICDCode FROM[EEG].[rn_cohort2] coh INNER JOIN [EEG].[rn_demographics] dem ON coh.PatientICN = dem.PatientICN LEFT JOIN [EEG].[rn_elix3] elix ON coh.PatientICN = elix.PatientICN LEFT JOIN [EEG].[rnTBI3] tbi ON coh.PatientICN = tbi.PatientICN ;"
+    )
+}
+```
+
+```{r}
+age_labels <- c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+") 
+
+data <- raw_data %>%
+    mutate(across(all_of(colnames(raw_data)[grepl("DateTime", colnames(raw_data))]), 
+                  ~ as_date(parse_date_time(., orders = c("ymd HMS", "ymd"))))) %>%
+    mutate(DeathObserved = ifelse(!is.na(DeathDateTime), TRUE, FALSE)) %>%
+    mutate(YearsOfFollowUp = ifelse(
+        !is.na(DeathDateTime),
+        interval(FirstDXDateTime, DeathDateTime) %>% as.numeric("years"),
+        interval(FirstDXDateTime, LatestVisitDateTime) %>% as.numeric("years")
+    )) %>%
+    mutate(PTE = ifelse(trimws(TBIClassification) == "" | is.na(TBIClassification), 0, 1)) %>%
+    mutate(TBIClassification = case_when(
+        trimws(TBIClassification) == "" ~ "None",
+        is.na(TBIClassification) ~ "None",
+        TRUE ~ TBIClassification
+    )) %>%
+    mutate(TBIClassification = factor(
+        TBIClassification, 
+        levels = c("None", "Unknown", "Mild", "Fracture", "Focal Cerebral", "Diffuse Cerebral", "Extracerebral")
+    )) %>%
+    mutate(AgeOfOnset = interval(BirthDateTime, FirstDXDateTime) %>% as.numeric("years")) %>%
+    mutate(YearOfOnset = as.numeric(format(FirstDXDateTime, "%Y"))) %>%
+    mutate(ECI = ifelse(is.na(ECI), 0, ECI)) %>%
+    mutate(ServiceConnectedPercent = ifelse(is.na(ServiceConnectedPercent), 0, ServiceConnectedPercent)) %>%
+    mutate(AgeOfOnsetDiscrete = cut(
+        AgeOfOnset, 
+        breaks = c(0, 30, 40, 50, 60, 70, 80, Inf), 
+        labels = age_labels, 
+        right = FALSE)
+    ) %>%
+    mutate(YearOfOnsetDiscrete = cut(
+         YearOfOnset, 
+         breaks = c(2004, 2009, 2014, 2019, 2024), 
+         labels = c("2004-2008", "2009-2013", "2014-2018", "2019-2023"), 
+         right = FALSE)
+    ) %>%
+    mutate(ECIDiscrete = cut(
+         ECI, 
+         breaks = c(-Inf, 0, 25, 50, Inf), 
+         labels = c("[-inf,0)", "[0,25)", "[25,50)", "[50,inf)"), 
+         right = FALSE)
+    ) %>%
+    mutate(ServiceConnectedPercentDiscrete = cut(
+         ServiceConnectedPercent, 
+         breaks = c(0, 10, 40, 70, 100, Inf), 
+         labels = c("0", "10-30", "40-60", "70-90", "100"), 
+         right = FALSE
+    ))
+    
+data <- data %>%
+    filter(YearsOfFollowUp >= 0) %>%
+    filter(year(FirstDXDateTime) >= 2004 & year(FirstDXDateTime) < 2024) %>%
+    filter(AgeOfOnset > 0)
+```
+
+```{r}
+
+summary_table <- data %>%
+  select("AgeOfOnset", "YearOfOnset", "Gender", "Race", "Ethnicity", "ECI", "ServiceConnectedPercent", "TBIClassification") %>%
+  tbl_summary(
+    by = "TBIClassification",
+    missing = "ifany",
+    statistic = list(
+        all_continuous() ~ "{mean} ({sd})",
+        all_categorical() ~ "{n} ({p}%)"
+    ),
+    label = list(
+      "AgeOfOnset" ~ "Age of Onset",
+      "YearOfOnset" ~ "Year of Onset",
+      "ServiceConnectedPercent" ~ "Service Connection"
+    )
+  ) %>%
+  add_p(
+    pvalue_fun = format_p_values
+    ) %>%
+  bold_p(t = 0.05) %>%
+  add_stat_label() %>%
+  # modify_header(
+  #   stat_1 = "**Non-PTE**\n\nN = {style_number(n)}",
+  #   stat_2 = "**PTE**\n\nN = {style_number(n)}"
+  # ) %>%
+  modify_spanning_header(
+    all_stat_cols() ~ "**TBI Classification**"
+  ) %>%
+  as_gt() %>%
+  gt::tab_header(
+    title = "Cohort Demographics"
+  ) 
+  
+summary_table
+```
+
+```{r}
+numeric_covariates <- c("AgeOfOnset", "YearOfOnset", "ECI", "ServiceConnectedPercent")
+categorical_covariates <- c("TBIClassification")
+legend_labs <- c("None", "Unknown", "Mild", "Fracture", "Focal Cerebral", "Diffuse Cerebral", "Extracerebral")
+
+cox_fits <- cox_analysis(
+    data = data,
+    numeric_covariates = numeric_covariates,
+    categorical_covariates = categorical_covariates,
+)
+raw_results <- extract_cox_fit_list_stats(cox_fits, "Age Group")
+
+results <- raw_results %>%
+    mutate(HR_CI = glue("{HR}<br>{CI}")) %>%
+  select(`Age Group`, Covariate, HR_CI) %>%
+    filter(grepl("^TBI", Covariate)) %>%
+    mutate(Covariate = gsub("^TBIClassification", "", Covariate)) %>%
+    pivot_wider(
+        names_from = Covariate,
+        values_from = HR_CI
+    )
+
+significant_matrix <- raw_results %>%
+  mutate(significant = raw_p < 0.05) %>%
+  select(`Age Group`, Covariate, significant) %>%
+    filter(grepl("^TBI", Covariate)) %>%
+    mutate(Covariate = gsub("^TBIClassification", "", Covariate)) %>%
+  pivot_wider(
+    names_from = Covariate,
+    values_from = significant
+  ) %>%
+  select(-`Age Group`) %>%
+  as.matrix()
+
+
+gt_table <- results %>%
+  gt(rowname_col = "Age Group") %>%
+  tab_stubhead(label = "Age Group") %>%
+  tab_header(title = "PTE Hazard Ratios from Multivariate Cox Models by TBI Classification") %>%
+    fmt_markdown(columns = everything()) %>%
+    bold_gt_table(significant_matrix = significant_matrix) %>%
+    format_gt_table
+
+gt_table
+```
+
+```{r}
+odbcClose(conn)
+knitr::knit_exit()
+
+```
+
+# Abstract
+
+Mortality in post-traumatic epilepsy (PTE) has previously been compared to mortality in those who experience a traumatic brain injury (TBI) and do not develop epilepsy [[1](https://pmc.ncbi.nlm.nih.gov/articles/PMC9553825/), [2](https://pubmed.ncbi.nlm.nih.gov/30068629/), [3](https://pmc.ncbi.nlm.nih.gov/articles/PMC6406809/)]. What remains to be seen is whether mortality in those who develop PTE differs from those who develop epilepsy due to other causes (non-PTE). We analyzed administrative data in the Veterans Affairs (VA) Corporate Data Warehouse (CDW). All patients who met our epilepsy criteria from 2004 - 2023 were included in our cohort (N = ...). Patients were classified as having PTE (N = ...) if a TBI was documented in the 5 years prior to the date at which they met our epilepsy criteria. The severity of the TBI was classified as mild, moderate, and severe according to the duration of loss of consciousness (LOC) indicated by the ICD code [[4](https://pubmed.ncbi.nlm.nih.gov/12708551/)]. We performed our analysis using a multiple Cox proprtional hazards model where patients were grouped by age group. Other covariates included in our model were Age, Elixhauser Comorbidity Index (ECI), and Service Connection at the VA. Our results show that PTE (HR = 1.08, 95% CI = (1.02, 1.14)) leads to worse mortality in patients older than 80 years of age. Our findings indicate that the etiology of epilepsy plays a role in prognosis for older adults. Replication of this study outside of the VA setting can help confirm whether the trends hold in the general population as well.
+
+# Notes
+
+I did not implement the epilepsy-specific (ES) comorbidity index yet. 
+
+Though I classified TBI severity by LOC, many of the ICD codes are still ambiguous with respect to the duration of the LOC that they patient suffered. This led to small sample sizes and subsequently wide confidence intervals that do not yield much information. [Karlander et al.](https://pmc.ncbi.nlm.nih.gov/articles/PMC9553825/) had a different method of classifying TBI (eg. mild, extracerebral, focal cerebral, etc.) that I should look into in order to ensure the majority of the ICD codes are well-classified, hopefully yielding clearer results.
+
+[Karlander et al.](https://pmc.ncbi.nlm.nih.gov/articles/PMC9553825/) also define non-PTE as those who experience a TBI and do not develop epilepsy subsequently. On the other hand, I have been defining non-PTE as epilepsy due to non-posttraumatic causes. I should probably find an alternative term to define this group.
+
+# Questions

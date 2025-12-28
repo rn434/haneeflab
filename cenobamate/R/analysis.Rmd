@@ -1,0 +1,147 @@
+---
+title: "Cenobamate usage at the VHA"
+author: "Rohan Nagabhirava"
+date: "`r Sys.Date()`"
+css: styles.css
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+# Setup
+
+This section includes options for knitting of the Rmd document, loading of the necessary libraries for the analysis, definitions of functions to streamline analysis down the line, and the connection to the database.
+
+```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+options(encoding = "UTF-8")
+```
+
+```{r}
+library("dplyr")
+library("ggplot2")
+library("ggfortify")
+library("ggsci")
+library("glue")
+library("gridExtra")
+library("gt")
+library("gtsummary")
+library("lubridate")
+library("patchwork")
+library("ranger")
+library("rlang")
+library("RODBC")
+library("survival")
+library("survminer")
+library("tidyr")
+```
+
+# Analysis
+
+At present, this section has data for all patients in ORD_Haneef with a prescription for cenobamate from 2020-2024. An analysis of CDW as a whole was done, which showed 421 patients with cenobamate usage. ORD_Haneef was used for now because the data is more readily accessible and 411 of the 421 total patients are present in ORD_Haneef.
+
+## Database Query
+
+```{r}
+conn <- tryCatch({
+    odbcDriverConnect(
+        "driver={SQL Server};server=vhacdwrb03.vha.med.va.gov;database=ORD_Haneef_202402056D;trusted_connection=true"
+    )
+}, warning = function(w) {
+    message("Not connected to VA network, loading fake-data.csv...")
+    return(NULL)
+}, error = function(e) {
+    message("Not connected to VA network, loading fake-data.csv...")
+    return(NULL)
+})
+```
+
+```{r}
+if (is.null(conn)) {
+    raw_data <- read.csv("../dummy_data/combined.csv")
+} else {
+    raw_data <- sqlQuery(
+        conn,
+        "SELECT * FROM ORD_Haneef_202402056D.Dflt.rnCenobamateCohortData;"
+    )
+}
+```
+
+## Data Cleanup
+
+```{r}
+data <- raw_data %>%
+    mutate(across(all_of(colnames(raw_data)[grepl("Date", colnames(raw_data))]), 
+                  ~ as_date(parse_date_time(., orders = c("ymd"))))) %>%
+    mutate(Age = as.numeric(difftime(Sys.Date(), BirthDate, units = "days") / 365.25))
+
+other_drug_data <- data %>%
+    filter(OtherDrug != "CENOBAMATE") %>%
+    mutate(YearsToCenobamate = as.numeric(difftime(CenobamateDate, OtherDrugDate, units = "days") / 365.25))
+
+unique_data <- data %>%
+    distinct(PatientICN, Age, Gender, Race, Ethnicity)
+    
+```
+
+## Data Analysis
+
+```{r}
+summary_table <- unique_data %>%
+  select("Age", "Gender", "Race", "Ethnicity") %>%
+  tbl_summary(
+    missing = "ifany",
+    statistic = list(
+        all_continuous() ~ "{mean} ({sd})",
+        all_categorical() ~ "{n} ({p}%)"
+    )
+  ) %>%
+  add_stat_label() %>%
+  as_gt() %>%
+  gt::tab_header(
+    title = "Cenobamate Cohort Demographics"
+  ) 
+  
+filename = "../tables/summary.docx"
+if (file.exists(filename)) {
+    invisible(file.remove(filename))
+}
+gtsave(summary_table, filename)
+summary_table
+```
+
+```{r}
+age_hist <- ggplot(data = unique_data, aes(x = Age)) +
+    geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+    labs(title = "Age Distribution of Cenobamate Cohort", x = "Age", y = "Count")
+
+age_hist_wide <- ggplot(data = unique_data, aes(x = Age)) +
+    geom_histogram(binwidth = 5, fill = "blue", color = "black") +
+    labs(title = "Age Distribution of Cenobamate Cohort (wider binwidth for visualization)", x = "Age", y = "Count")
+
+ggsave("../figures/age_hist.png", age_hist, width = 8, height = 5)
+ggsave("../figures/age_hist_wide.png", age_hist_wide, width = 8, height = 5)
+
+age_hist
+age_hist_wide
+```
+
+```{r}
+other_drug_bar <- ggplot(data = other_drug_data, aes(x = OtherDrug)) +
+    geom_bar(fill = "blue", color = "black") +
+    labs(title = "Frequency of Non-Cenobamate ASM Usage", x = "ASM", y = "Count") +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+other_drug_box <- ggplot(data = other_drug_data, aes(x = OtherDrug, y = YearsToCenobamate)) +
+    geom_boxplot() +  
+    labs(title = "Years to Start Cenobamate after each ASM", x = "ASM", y = "Years") +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+ggsave("../figures/other_drug_bar.png", other_drug_bar, width = 8, height = 5)
+ggsave("../figures/other_drug_box.png", other_drug_box, width = 8, height = 5)
+
+other_drug_bar
+other_drug_box
+```

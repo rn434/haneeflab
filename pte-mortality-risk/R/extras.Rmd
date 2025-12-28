@@ -1,0 +1,839 @@
+---
+title: "extras"
+output: html_document
+date: "2025-05-26"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+<!-- # CDW Work -->
+
+<!-- ```{r} -->
+<!-- if (is.null(conn)) { -->
+<!--     raw_data <- read.csv("../dummy_data/combined.csv") -->
+<!-- } else { -->
+<!--     raw_data <- sqlQuery( -->
+<!--         conn, -->
+<!--         "SELECT coh.PatientICN, coh.FirstDXDateTime, coh.BirthDateTime, coh.LatestVisitDateTime, coh.DeathDateTime, dem.Gender, dem.Race, dem.Ethnicity, dem.ServiceConnectedPercent, elix.ECI, tbi.Classification AS TBIClassification, tbi.ICDCode FROM[EEG].[rn_cohort2] coh INNER JOIN [EEG].[rn_demographics] dem ON coh.PatientICN = dem.PatientICN INNER JOIN [EEG].[rn_elix2] elix ON coh.PatientICN = elix.PatientICN LEFT JOIN [EEG].[rnTBI3] tbi ON coh.PatientICN = tbi.PatientICN ;" -->
+<!--     ) -->
+<!-- } -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- age_labels <- c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+")  -->
+
+<!-- data <- raw_data %>% -->
+<!--     mutate(across(all_of(colnames(raw_data)[grepl("DateTime", colnames(raw_data))]),  -->
+<!--                   ~ as_date(parse_date_time(., orders = c("ymd HMS", "ymd"))))) %>% -->
+<!--     mutate(DeathEvent = ifelse(!is.na(DeathDateTime), TRUE, FALSE)) %>% -->
+<!--     mutate(FollowUpYears = ifelse( -->
+<!--         !is.na(DeathDateTime), -->
+<!--         interval(FirstDXDateTime, DeathDateTime) %>% as.numeric("years"), -->
+<!--         interval(FirstDXDateTime, LatestVisitDateTime) %>% as.numeric("years") -->
+<!--     )) %>% -->
+<!--     mutate(PTE = ifelse(trimws(TBIClassification) == "" | is.na(TBIClassification), 0, 1)) %>% -->
+<!--     mutate(TBIClassification = case_when( -->
+<!--         trimws(TBIClassification) == "" ~ "None", -->
+<!--         is.na(TBIClassification) ~ "None", -->
+<!--         TRUE ~ TBIClassification -->
+<!--     )) %>% -->
+<!--     mutate(TBIClassification = factor( -->
+<!--         TBIClassification,  -->
+<!--         levels = c("None", "Unknown", "Mild", "Fracture", "Focal Cerebral", "Diffuse Cerebral", "Extracerebral") -->
+<!--     )) %>% -->
+<!--     mutate(AgeOfOnset = interval(BirthDateTime, FirstDXDateTime) %>% as.numeric("years")) %>% -->
+<!--     mutate(YearOfOnset = as.numeric(format(FirstDXDateTime, "%Y"))) %>% -->
+<!--     # mutate(ECI = ifelse(is.na(ECI), 0, ECI)) %>% -->
+<!--     mutate(ServiceConnectedPercent = ifelse(is.na(ServiceConnectedPercent), 0, ServiceConnectedPercent)) %>% -->
+<!--     mutate(AgeOfOnsetDiscrete = cut( -->
+<!--         AgeOfOnset,  -->
+<!--         breaks = c(0, 30, 40, 50, 60, 70, 80, Inf),  -->
+<!--         labels = age_labels,  -->
+<!--         right = FALSE) -->
+<!--     ) %>% -->
+<!--     mutate(YearOfOnsetDiscrete = cut( -->
+<!--          YearOfOnset,  -->
+<!--          breaks = c(2004, 2009, 2014, 2019, 2024),  -->
+<!--          labels = c("2004-2008", "2009-2013", "2014-2018", "2019-2023"),  -->
+<!--          right = FALSE) -->
+<!--     ) %>% -->
+<!--     mutate(ECIDiscrete = cut( -->
+<!--          ECI,  -->
+<!--          breaks = c(-Inf, 0, 25, 50, Inf),  -->
+<!--          labels = c("[-inf,0)", "[0,25)", "[25,50)", "[50,inf)"),  -->
+<!--          right = FALSE) -->
+<!--     ) %>% -->
+<!--     mutate(ServiceConnectedPercentDiscrete = cut( -->
+<!--          ServiceConnectedPercent,  -->
+<!--          breaks = c(0, 10, 40, 70, 100, Inf),  -->
+<!--          labels = c("0", "10-30", "40-60", "70-90", "100"),  -->
+<!--          right = FALSE -->
+<!--     )) -->
+
+<!-- data <- data %>% -->
+<!--     filter(FollowUpYears >= 0) %>% -->
+<!--     filter(year(FirstDXDateTime) >= 2004 & year(FirstDXDateTime) < 2024) %>% -->
+<!--     filter(AgeOfOnset > 0) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- summary_table <- data %>% -->
+<!--   select("AgeOfOnset", "Gender", "Race", "Ethnicity", "ECI", "ServiceConnectedPercent", "TBIClassification") %>% -->
+<!--   tbl_summary( -->
+<!--     by = "TBIClassification", -->
+<!--     missing = "ifany", -->
+<!--     statistic = list( -->
+<!--         all_continuous() ~ "{mean} ({sd})", -->
+<!--         all_categorical() ~ "{n} ({p}%)" -->
+<!--     ), -->
+<!--     label = list( -->
+<!--       "AgeOfOnset" ~ "Age of Onset", -->
+<!--       "ServiceConnectedPercent" ~ "Service Connection" -->
+<!--     ) -->
+<!--   ) %>% -->
+<!--   add_stat_label() %>% -->
+<!--   modify_spanning_header( -->
+<!--     all_stat_cols() ~ "**TBI Classification**" -->
+<!--   ) %>% -->
+<!--   modify_column_hide(columns = "stat_2") %>% -->
+<!--   as_gt() %>% -->
+<!--   gt::tab_header( -->
+<!--     title = "Cohort Demographics" -->
+<!--   )  -->
+
+<!-- summary_table -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- numeric_covariates <- c("AgeOfOnset", "ECI", "ServiceConnectedPercent") -->
+<!-- categorical_covariates <- c("TBIClassification") -->
+
+<!-- cox_fit_pte <- cox_analysis( -->
+<!--     data = data, -->
+<!--     numeric_covariates = numeric_covariates, -->
+<!--     categorical_covariates = c("PTE"), -->
+<!-- ) -->
+<!-- raw_results_pte <- extract_cox_fit_list_stats(cox_fit_pte, "Age Group") -->
+<!-- results_pte <- raw_results_pte %>% -->
+<!--     mutate(HR_CI = glue("{HR}<br>{CI}")) %>% -->
+<!--   select(`Age Group`, Covariate, HR_CI) %>% -->
+<!--     filter(grepl("PTE", Covariate)) %>% -->
+<!--     pivot_wider( -->
+<!--         names_from = Covariate, -->
+<!--         values_from = HR_CI -->
+<!--     ) -->
+<!-- significant_matrix_pte <- raw_results_pte %>% -->
+<!--   mutate(significant = raw_p < 0.05) %>% -->
+<!--   select(`Age Group`, Covariate, significant) %>% -->
+<!--     filter(grepl("PTE", Covariate)) %>% -->
+<!--   pivot_wider( -->
+<!--     names_from = Covariate, -->
+<!--     values_from = significant -->
+<!--   ) -->
+
+<!-- cox_fits_remainder <- cox_analysis( -->
+<!--     data = data, -->
+<!--     numeric_covariates = numeric_covariates, -->
+<!--     categorical_covariates = categorical_covariates, -->
+<!-- ) -->
+<!-- raw_results_remainder <- extract_cox_fit_list_stats(cox_fits_remainder, "Age Group") -->
+
+<!-- results_remainder <- raw_results_remainder %>% -->
+<!--     mutate(HR_CI = glue("{HR}<br>{CI}")) %>% -->
+<!--   select(`Age Group`, Covariate, HR_CI) %>% -->
+<!--     filter(grepl("^TBI", Covariate)) %>% -->
+<!--     mutate(Covariate = gsub("^TBIClassification", "", Covariate)) %>% -->
+<!--     pivot_wider( -->
+<!--         names_from = Covariate, -->
+<!--         values_from = HR_CI -->
+<!--     ) -->
+
+<!-- significant_matrix_remainder <- raw_results_remainder %>% -->
+<!--   mutate(significant = raw_p < 0.05) %>% -->
+<!--   select(`Age Group`, Covariate, significant) %>% -->
+<!--     filter(grepl("^TBI", Covariate)) %>% -->
+<!--     mutate(Covariate = gsub("^TBIClassification", "", Covariate)) %>% -->
+<!--   pivot_wider( -->
+<!--     names_from = Covariate, -->
+<!--     values_from = significant -->
+<!--   ) -->
+
+<!-- results <- results_remainder %>% -->
+<!--     left_join(results_pte, by = "Age Group") %>% -->
+<!--     rename(All = PTE) %>% -->
+<!--     select(`Age Group`, All, everything()) %>% -->
+<!--     select(-Unknown) -->
+
+<!-- significant_matrix <- significant_matrix_remainder %>% -->
+<!--     left_join(significant_matrix_pte, by = "Age Group") %>% -->
+<!--     rename(All = PTE) %>% -->
+<!--     select(`Age Group`, All, everything()) %>% -->
+<!--     select(-Unknown) %>% -->
+<!--   select(-`Age Group`) %>% -->
+<!--   as.matrix() -->
+
+
+<!-- gt_table <- results %>% -->
+<!--   gt(rowname_col = "Age Group") %>% -->
+<!--   tab_stubhead(label = "Age Group") %>% -->
+<!--   tab_header(title = "PTE Hazard Ratios from Multivariate Cox Models by TBI Classification") %>% -->
+<!--     fmt_markdown(columns = everything()) %>% -->
+<!--     bold_gt_table(significant_matrix = significant_matrix) %>% -->
+<!--     format_gt_table -->
+
+<!-- gt_table -->
+<!-- ``` -->
+
+<!-- # ORD_Haneef Work -->
+
+<!-- ```{r} -->
+<!-- conn <- tryCatch({ -->
+<!--     odbcDriverConnect( -->
+<!--         "driver={SQL Server};server=vhacdwrb03.vha.med.va.gov;database=ORD_Haneef_202402056D;trusted_connection=true" -->
+<!--     ) -->
+<!-- }, warning = function(w) { -->
+<!--     message("Not connected to VA network, loading fake-data.csv...") -->
+<!--     return(NULL) -->
+<!-- }, error = function(e) { -->
+<!--     message("Not connected to VA network, loading fake-data.csv...") -->
+<!--     return(NULL) -->
+<!-- }) -->
+<!-- ``` -->
+
+<!-- ## Analysis 1 -->
+
+<!-- Changes from the prior analysis include: -->
+<!-- - Epilepsy diagnosis is determined using new code that I wrote instead of the adaptation of Richard's, though we use the same criteria. It is not clear to me yet why our epilepsy diagnosis dates looks so different. -->
+<!-- - TBI was originally determined by looking for a TBI in the 5 years preceding the epilepsy diagnosis date. The new analysis determines TBI by looking for the oldest TBI diagnosis event. -->
+<!-- - Diagnoses were determined using Outpat.VDiagnosis, but now they aggregate diagnosis data from many different tables, so the information should be more complete. -->
+<!-- - The new analysis excludes patients who pass away within 30 days of epilepsy diagnosis. -->
+<!-- - Service connection is determined by a flag on the visit at which we consider them to met epilepsy criteria. -->
+
+<!-- ```{r} -->
+<!-- if (is.null(conn)) { -->
+<!--     raw_data <- read.csv("../dummy_data/combined.csv") -->
+<!-- } else { -->
+<!--     raw_data <- sqlQuery( -->
+<!--         conn, -->
+<!--         "SELECT * FROM ORD_Haneef_202402056D.Dflt.rnCohortInfo;" -->
+<!--     ) -->
+<!-- } -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- age_breaks <- c(0, 30, 40, 50, 60, 70, 80, Inf) -->
+<!-- age_labels <- c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+")  -->
+
+<!-- data <- raw_data %>% -->
+<!--     mutate(across(all_of(colnames(raw_data)[grepl("Date", colnames(raw_data))]),  -->
+<!--                   ~ as_date(parse_date_time(., orders = c("ymd"))))) %>% -->
+<!--     mutate(DeathEvent = ifelse(is.na(DeathDate), FALSE, TRUE)) %>% -->
+<!--     mutate(FollowUpYears = ifelse( -->
+<!--         DeathEvent, -->
+<!--         interval(DxDate, DeathDate) %>% as.numeric("years"), -->
+<!--         interval(DxDate, LatestFollowUpDate) %>% as.numeric("years") -->
+<!--     )) %>% -->
+<!--     mutate(AgeOfOnset = interval(BirthDate, DxDate) %>% as.numeric("years")) %>% -->
+<!--     mutate(AgeOfOnsetDiscrete = cut( -->
+<!--         AgeOfOnset,  -->
+<!--         breaks = age_breaks,  -->
+<!--         labels = age_labels,  -->
+<!--         right = FALSE) -->
+<!--     ) %>% -->
+<!--     mutate( -->
+<!--         TBIClass = ifelse(is.na(TBIClass), "None", TBIClass) -->
+<!--     ) %>% -->
+<!--     mutate( -->
+<!--         TBIClass = factor( -->
+<!--             TBIClass, -->
+<!--             levels = c( -->
+<!--                 "None",  -->
+<!--                 "Fracture", -->
+<!--                 "Concussive",  -->
+<!--                 "Diffuse Cerebral",  -->
+<!--                 "Focal Cerebral", -->
+<!--                 "Extracerebral", -->
+<!--                 "Unknown Class" -->
+<!--             ) -->
+<!--         ) -->
+<!--     ) -->
+
+<!-- data <- data %>% -->
+<!--     filter(FollowUpYears >= 0.1) %>% -->
+<!--     filter(year(DxDate) >= 2005 & year(DxDate) < 2023) %>% -->
+<!--     filter(ifelse( -->
+<!--         is.na(TBIDate), -->
+<!--         TRUE, -->
+<!--         as.numeric(interval(TBIDate, DxDate), "years") >= 0 -->
+<!--     )) -->
+
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- summary_table <- data %>% -->
+<!--   select("AgeOfOnset", "Gender", "Race", "Ethnicity", "ECI", "ServiceConnectedFlag", "TBIClass") %>% -->
+<!--   tbl_summary( -->
+<!--     by = "TBIClass", -->
+<!--     missing = "ifany", -->
+<!--     statistic = list( -->
+<!--         all_continuous() ~ "{mean} ({sd})", -->
+<!--         all_categorical() ~ "{n} ({p}%)" -->
+<!--     ), -->
+<!--     label = list( -->
+<!--       "AgeOfOnset" ~ "Age of Onset", -->
+<!--       "ServiceConnectedFlag" ~ "Service Connected" -->
+<!--     ) -->
+<!--   ) %>% -->
+<!--   add_stat_label() %>% -->
+<!--   modify_spanning_header( -->
+<!--     all_stat_cols() ~ "**TBI Classification**" -->
+<!--   ) %>% -->
+<!--   modify_column_hide(columns = "stat_2") %>% -->
+<!--   as_gt() %>% -->
+<!--   gt::tab_header( -->
+<!--     title = "Cohort Demographics" -->
+<!--   )  -->
+
+<!-- summary_table -->
+<!-- ``` -->
+
+
+<!-- ```{r} -->
+<!-- numeric_covariates <- c("AgeOfOnset", "ECI", "ServiceConnectedFlag") -->
+<!-- categorical_covariates <- c("TBIClass") -->
+
+<!-- gt_tables <- list() -->
+
+<!-- for (years in c(2, 5, 1000)) { -->
+<!--     data_subset <- data %>% -->
+<!--         filter(ifelse( -->
+<!--             is.na(TBIDate), -->
+<!--             TRUE, -->
+<!--             as.numeric(interval(TBIDate, DxDate), "years") <= years -->
+<!--         )) -->
+
+<!--     cox_fits <- cox_analysis( -->
+<!--         data = data_subset, -->
+<!--         numeric_covariates = numeric_covariates, -->
+<!--         categorical_covariates = categorical_covariates, -->
+<!--     ) -->
+<!--     raw_results <- extract_cox_fit_list_stats(cox_fits, "Age Group") -->
+
+<!--     results <- raw_results %>% -->
+<!--         mutate(HR_CI = glue("{HR}<br>{CI}")) %>% -->
+<!--         select(`Age Group`, Covariate, HR_CI) %>% -->
+<!--         filter(grepl("^TBI", Covariate)) %>% -->
+<!--         mutate(Covariate = gsub("^TBIClass", "", Covariate)) %>% -->
+<!--         pivot_wider( -->
+<!--             names_from = Covariate, -->
+<!--             values_from = HR_CI -->
+<!--         ) -->
+
+<!--     significant_matrix <- raw_results %>% -->
+<!--         mutate(significant = raw_p < 0.05) %>% -->
+<!--         select(`Age Group`, Covariate, significant) %>% -->
+<!--         filter(grepl("^TBI", Covariate)) %>% -->
+<!--         mutate(Covariate = gsub("^TBIClass", "", Covariate)) %>% -->
+<!--         pivot_wider( -->
+<!--             names_from = Covariate, -->
+<!--             values_from = significant -->
+<!--         ) %>% -->
+<!--         select(-`Age Group`) %>% -->
+<!--         as.matrix() -->
+
+<!--     gt_table <- results %>% -->
+<!--         gt(rowname_col = "Age Group") %>% -->
+<!--         tab_stubhead(label = "Age Group") %>% -->
+<!--         tab_header(title = glue("PTE Hazard Ratios by TBI Class\nRestricted to TBI within {years} Years")) %>% -->
+<!--         fmt_markdown(columns = everything()) %>% -->
+<!--         bold_gt_table(significant_matrix = significant_matrix) %>% -->
+<!--         format_gt_table -->
+
+<!--     gt_tables[[glue("{years}")]] <- gt_table -->
+<!-- } -->
+
+<!-- gt_tables[["2"]] -->
+<!-- gt_tables[["5"]] -->
+<!-- gt_tables[["1000"]] -->
+<!-- ``` -->
+
+<!-- ## Analysis 2 -->
+
+<!-- - Epilepsy criteria was simplified to simply be any diagnosis of epilepsy -->
+<!-- - The search for TBI now excludes diagnosis of TBI history. This is done to better pinpoint the approximate date at which the TBI actually occurred. -->
+
+<!-- ```{r} -->
+<!-- if (is.null(conn)) { -->
+<!--     raw_data <- read.csv("../dummy_data/combined.csv") -->
+<!-- } else { -->
+<!--     raw_data <- sqlQuery( -->
+<!--         conn, -->
+<!--         "SELECT * FROM ORD_Haneef_202402056D.Dflt.rnCohortInfo2;" -->
+<!--     ) -->
+<!-- } -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- age_breaks <- c(0, 30, 40, 50, 60, 70, 80, Inf) -->
+<!-- age_labels <- c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+")  -->
+
+<!-- data <- raw_data %>% -->
+<!--     mutate(across(all_of(colnames(raw_data)[grepl("Date", colnames(raw_data))]),  -->
+<!--                   ~ as_date(parse_date_time(., orders = c("ymd"))))) %>% -->
+<!--     mutate(DeathEvent = ifelse(is.na(DeathDate), FALSE, TRUE)) %>% -->
+<!--     mutate(FollowUpYears = ifelse( -->
+<!--         DeathEvent, -->
+<!--         interval(DxDate, DeathDate) %>% as.numeric("years"), -->
+<!--         interval(DxDate, LatestFollowUpDate) %>% as.numeric("years") -->
+<!--     )) %>% -->
+<!--     mutate(AgeOfOnset = interval(BirthDate, DxDate) %>% as.numeric("years")) %>% -->
+<!--     mutate(AgeOfOnsetDiscrete = cut( -->
+<!--         AgeOfOnset,  -->
+<!--         breaks = age_breaks,  -->
+<!--         labels = age_labels,  -->
+<!--         right = FALSE) -->
+<!--     ) %>% -->
+<!--     mutate( -->
+<!--         TBIClass = ifelse(is.na(TBIClass), "None", TBIClass) -->
+<!--     ) %>% -->
+<!--     mutate( -->
+<!--         TBIClass = factor( -->
+<!--             TBIClass, -->
+<!--             levels = c( -->
+<!--                 "None",  -->
+<!--                 "Fracture", -->
+<!--                 "Concussive",  -->
+<!--                 "Diffuse Cerebral",  -->
+<!--                 "Focal Cerebral", -->
+<!--                 "Extracerebral", -->
+<!--                 "Unknown Class" -->
+<!--             ) -->
+<!--         ) -->
+<!--     ) -->
+
+<!-- data <- data %>% -->
+<!--     filter(FollowUpYears >= 0.1) %>% -->
+<!--     filter(year(DxDate) >= 2005 & year(DxDate) < 2023) %>% -->
+<!--     filter(ifelse( -->
+<!--         is.na(TBIDate), -->
+<!--         TRUE, -->
+<!--         as.numeric(interval(TBIDate, DxDate), "years") >= 0 -->
+<!--     )) -->
+
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- summary_table <- data %>% -->
+<!--   select("AgeOfOnset", "Gender", "Race", "Ethnicity", "ECI", "ServiceConnectedFlag", "TBIClass") %>% -->
+<!--   tbl_summary( -->
+<!--     by = "TBIClass", -->
+<!--     missing = "ifany", -->
+<!--     statistic = list( -->
+<!--         all_continuous() ~ "{mean} ({sd})", -->
+<!--         all_categorical() ~ "{n} ({p}%)" -->
+<!--     ), -->
+<!--     label = list( -->
+<!--       "AgeOfOnset" ~ "Age of Onset", -->
+<!--       "ServiceConnectedFlag" ~ "Service Connected" -->
+<!--     ) -->
+<!--   ) %>% -->
+<!--   add_stat_label() %>% -->
+<!--   modify_spanning_header( -->
+<!--     all_stat_cols() ~ "**TBI Classification**" -->
+<!--   ) %>% -->
+<!--   modify_column_hide(columns = "stat_2") %>% -->
+<!--   as_gt() %>% -->
+<!--   gt::tab_header( -->
+<!--     title = "Cohort Demographics" -->
+<!--   )  -->
+
+<!-- summary_table -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- numeric_covariates <- c("AgeOfOnset", "ECI", "ServiceConnectedFlag") -->
+<!-- categorical_covariates <- c("TBIClass") -->
+
+<!-- gt_tables <- list() -->
+
+<!-- for (years in c(2, 5, 1000)) { -->
+<!--     data_subset <- data %>% -->
+<!--         filter(ifelse( -->
+<!--             is.na(TBIDate), -->
+<!--             TRUE, -->
+<!--             as.numeric(interval(TBIDate, DxDate), "years") <= years -->
+<!--         )) -->
+
+<!--     cox_fits <- cox_analysis( -->
+<!--         data = data_subset, -->
+<!--         numeric_covariates = numeric_covariates, -->
+<!--         categorical_covariates = categorical_covariates, -->
+<!--     ) -->
+<!--     raw_results <- extract_cox_fit_list_stats(cox_fits, "Age Group") -->
+
+<!--     results <- raw_results %>% -->
+<!--         mutate(HR_CI = glue("{HR}<br>{CI}")) %>% -->
+<!--         select(`Age Group`, Covariate, HR_CI) %>% -->
+<!--         filter(grepl("^TBI", Covariate)) %>% -->
+<!--         mutate(Covariate = gsub("^TBIClass", "", Covariate)) %>% -->
+<!--         pivot_wider( -->
+<!--             names_from = Covariate, -->
+<!--             values_from = HR_CI -->
+<!--         ) -->
+
+<!--     significant_matrix <- raw_results %>% -->
+<!--         mutate(significant = raw_p < 0.05) %>% -->
+<!--         select(`Age Group`, Covariate, significant) %>% -->
+<!--         filter(grepl("^TBI", Covariate)) %>% -->
+<!--         mutate(Covariate = gsub("^TBIClass", "", Covariate)) %>% -->
+<!--         pivot_wider( -->
+<!--             names_from = Covariate, -->
+<!--             values_from = significant -->
+<!--         ) %>% -->
+<!--         select(-`Age Group`) %>% -->
+<!--         as.matrix() -->
+
+<!--     gt_table <- results %>% -->
+<!--         gt(rowname_col = "Age Group") %>% -->
+<!--         tab_stubhead(label = "Age Group") %>% -->
+<!--         tab_header(title = glue("PTE Hazard Ratios by TBI Class\nRestricted to TBI within {years} Years")) %>% -->
+<!--         fmt_markdown(columns = everything()) %>% -->
+<!--         bold_gt_table(significant_matrix = significant_matrix) %>% -->
+<!--         format_gt_table -->
+
+<!--     gt_tables[[glue("{years}")]] <- gt_table -->
+<!-- } -->
+
+<!-- gt_tables[["2"]] -->
+<!-- gt_tables[["5"]] -->
+<!-- gt_tables[["1000"]] -->
+<!-- ``` -->
+
+<!-- ## Analysis 3 -->
+
+<!-- - TBI classification is grouped into concussive, structural, fracture instead. This is because ICD codes 854.0* are large proportion of the found ICD codes, but it may map to diffuse or focal TBI, leading to a large number of unknown TBIs. -->
+
+<!-- ```{r} -->
+<!-- if (is.null(conn)) { -->
+<!--     raw_data <- read.csv("../dummy_data/combined.csv") -->
+<!-- } else { -->
+<!--     raw_data <- sqlQuery( -->
+<!--         conn, -->
+<!--         "SELECT * FROM ORD_Haneef_202402056D.Dflt.rnCohortInfo3;" -->
+<!--     ) -->
+<!-- } -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- age_breaks <- c(0, 30, 40, 50, 60, 70, 80, Inf) -->
+<!-- age_labels <- c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+")  -->
+
+<!-- data <- raw_data %>% -->
+<!--     mutate(across(all_of(colnames(raw_data)[grepl("Date", colnames(raw_data))]),  -->
+<!--                   ~ as_date(parse_date_time(., orders = c("ymd"))))) %>% -->
+<!--     mutate(DeathEvent = ifelse(is.na(DeathDate), FALSE, TRUE)) %>% -->
+<!--     mutate(FollowUpYears = ifelse( -->
+<!--         DeathEvent, -->
+<!--         interval(DxDate, DeathDate) %>% as.numeric("years"), -->
+<!--         interval(DxDate, LatestFollowUpDate) %>% as.numeric("years") -->
+<!--     )) %>% -->
+<!--     mutate(AgeOfOnset = interval(BirthDate, DxDate) %>% as.numeric("years")) %>% -->
+<!--     mutate(AgeOfOnsetDiscrete = cut( -->
+<!--         AgeOfOnset,  -->
+<!--         breaks = age_breaks,  -->
+<!--         labels = age_labels,  -->
+<!--         right = FALSE) -->
+<!--     ) %>% -->
+<!--     mutate( -->
+<!--         TBIClass = ifelse(is.na(TBIClass), "None", TBIClass) -->
+<!--     ) %>% -->
+<!--     mutate( -->
+<!--         TBIClass = factor( -->
+<!--             TBIClass, -->
+<!--             levels = c( -->
+<!--                 "None",  -->
+<!--                 "Concussive", -->
+<!--                 "Fracture",  -->
+<!--                 "Structural"  -->
+<!--             ) -->
+<!--         ) -->
+<!--     ) -->
+
+<!-- data <- data %>% -->
+<!--     filter(FollowUpYears >= 0.1) %>% -->
+<!--     filter(year(DxDate) >= 2005 & year(DxDate) < 2023) %>% -->
+<!--     filter(ifelse( -->
+<!--         is.na(TBIDate), -->
+<!--         TRUE, -->
+<!--         as.numeric(interval(TBIDate, DxDate), "years") >= 0 -->
+<!--     )) -->
+
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- summary_table <- data %>% -->
+<!--   select("AgeOfOnset", "Gender", "Race", "Ethnicity", "ECI", "ServiceConnectedFlag", "TBIClass") %>% -->
+<!--   tbl_summary( -->
+<!--     by = "TBIClass", -->
+<!--     missing = "ifany", -->
+<!--     statistic = list( -->
+<!--         all_continuous() ~ "{mean} ({sd})", -->
+<!--         all_categorical() ~ "{n} ({p}%)" -->
+<!--     ), -->
+<!--     label = list( -->
+<!--       "AgeOfOnset" ~ "Age of Onset", -->
+<!--       "ServiceConnectedFlag" ~ "Service Connected" -->
+<!--     ) -->
+<!--   ) %>% -->
+<!--   add_stat_label() %>% -->
+<!--   modify_spanning_header( -->
+<!--     all_stat_cols() ~ "**TBI Classification**" -->
+<!--   ) %>% -->
+<!--   modify_column_hide(columns = "stat_2") %>% -->
+<!--   as_gt() %>% -->
+<!--   gt::tab_header( -->
+<!--     title = "Cohort Demographics" -->
+<!--   )  -->
+
+<!-- summary_table -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- numeric_covariates <- c("AgeOfOnset", "ECI", "ServiceConnectedFlag") -->
+<!-- categorical_covariates <- c("TBIClass") -->
+
+<!-- gt_tables <- list() -->
+
+<!-- for (years in c(2, 5, 1000)) { -->
+<!--     data_subset <- data %>% -->
+<!--         filter(ifelse( -->
+<!--             is.na(TBIDate), -->
+<!--             TRUE, -->
+<!--             as.numeric(interval(TBIDate, DxDate), "years") <= years -->
+<!--         )) -->
+
+<!--     cox_fits <- cox_analysis( -->
+<!--         data = data_subset, -->
+<!--         numeric_covariates = numeric_covariates, -->
+<!--         categorical_covariates = categorical_covariates, -->
+<!--     ) -->
+<!--     raw_results <- extract_cox_fit_list_stats(cox_fits, "Age Group") -->
+
+<!--     results <- raw_results %>% -->
+<!--         mutate(HR_CI = glue("{HR}<br>{CI}")) %>% -->
+<!--         select(`Age Group`, Covariate, HR_CI) %>% -->
+<!--         filter(grepl("^TBI", Covariate)) %>% -->
+<!--         mutate(Covariate = gsub("^TBIClass", "", Covariate)) %>% -->
+<!--         pivot_wider( -->
+<!--             names_from = Covariate, -->
+<!--             values_from = HR_CI -->
+<!--         ) -->
+
+<!--     significant_matrix <- raw_results %>% -->
+<!--         mutate(significant = raw_p < 0.05) %>% -->
+<!--         select(`Age Group`, Covariate, significant) %>% -->
+<!--         filter(grepl("^TBI", Covariate)) %>% -->
+<!--         mutate(Covariate = gsub("^TBIClass", "", Covariate)) %>% -->
+<!--         pivot_wider( -->
+<!--             names_from = Covariate, -->
+<!--             values_from = significant -->
+<!--         ) %>% -->
+<!--         select(-`Age Group`) %>% -->
+<!--         as.matrix() -->
+
+<!--     gt_table <- results %>% -->
+<!--         gt(rowname_col = "Age Group") %>% -->
+<!--         tab_stubhead(label = "Age Group") %>% -->
+<!--         tab_header(title = glue("PTE Hazard Ratios by TBI Class\nRestricted to TBI within {years} Years")) %>% -->
+<!--         fmt_markdown(columns = everything()) %>% -->
+<!--         bold_gt_table(significant_matrix = significant_matrix) %>% -->
+<!--         format_gt_table -->
+
+<!--     gt_tables[[glue("{years}")]] <- gt_table -->
+<!-- } -->
+
+<!-- gt_tables[["2"]] -->
+<!-- gt_tables[["5"]] -->
+<!-- gt_tables[["1000"]] -->
+<!-- ``` -->
+
+<!-- ## Analysis 4 -->
+
+<!-- Changes from last analysis: -->
+<!-- - Classification reverted to subclassification of structural TBI (this makes this analysis quite similar to analysis 2) -->
+<!-- - Patients with a diagnosis of TBI history after epilepsy diagnosis are excluded from NTIE -->
+
+<!-- ```{r} -->
+<!-- if (is.null(conn)) { -->
+<!--     raw_data <- read.csv("../dummy_data/combined.csv") -->
+<!-- } else { -->
+<!--     raw_data <- sqlQuery( -->
+<!--         conn, -->
+<!--         "SELECT * FROM ORD_Haneef_202402056D.Dflt.rnCohortInfo4;" -->
+<!--     ) -->
+<!-- } -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- age_breaks <- c(0, 30, 40, 50, 60, 70, 80, Inf) -->
+<!-- age_labels <- c("<30", "30-39", "40-49", "50-59", "60-69", "70-79", "80+")  -->
+
+<!-- data <- raw_data %>% -->
+<!--     mutate(across(all_of(colnames(raw_data)[grepl("Date", colnames(raw_data))]),  -->
+<!--                   ~ as_date(parse_date_time(., orders = c("ymd"))))) %>% -->
+<!--     mutate(DeathEvent = ifelse(is.na(DeathDate), FALSE, TRUE)) %>% -->
+<!--     mutate(FollowUpYears = ifelse( -->
+<!--         DeathEvent, -->
+<!--         interval(DxDate, DeathDate) %>% as.numeric("years"), -->
+<!--         interval(DxDate, LatestFollowUpDate) %>% as.numeric("years") -->
+<!--     )) %>% -->
+<!--     mutate(AgeOfOnset = interval(BirthDate, DxDate) %>% as.numeric("years")) %>% -->
+<!--     mutate(AgeOfOnsetDiscrete = cut( -->
+<!--         AgeOfOnset,  -->
+<!--         breaks = age_breaks,  -->
+<!--         labels = age_labels,  -->
+<!--         right = FALSE) -->
+<!--     ) %>% -->
+<!--     mutate( -->
+<!--         TBIClass = ifelse(is.na(TBIClass), "None", TBIClass) -->
+<!--     ) %>% -->
+<!--     mutate( -->
+<!--         TBIClass = factor( -->
+<!--             TBIClass, -->
+<!--             levels = c( -->
+<!--                 "None",  -->
+<!--                 "Fracture", -->
+<!--                 "Concussive",  -->
+<!--                 "Diffuse Cerebral",  -->
+<!--                 "Focal Cerebral", -->
+<!--                 "Extracerebral", -->
+<!--                 "Unknown Class" -->
+<!--             ) -->
+<!--         ) -->
+<!--     ) -->
+
+<!-- data <- data %>% -->
+<!--     filter(FollowUpYears >= 0.1) %>% -->
+<!--     filter(year(DxDate) >= 2005 & year(DxDate) < 2023) %>% -->
+<!--     filter(ifelse( -->
+<!--         is.na(TBIDate), -->
+<!--         TRUE, -->
+<!--         as.numeric(interval(TBIDate, DxDate), "years") >= 0 -->
+<!--     )) %>% -->
+<!--     filter(ifelse( -->
+<!--         is.na(TBIDate), -->
+<!--         is.na(FirstTBIHistoryDate) & is.na(LastTBIHistoryDate), -->
+<!--         TRUE -->
+<!--     )) -->
+
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- summary_table <- data %>% -->
+<!--   select("AgeOfOnset", "Gender", "Race", "Ethnicity", "ECI", "ServiceConnectedFlag", "TBIClass") %>% -->
+<!--   tbl_summary( -->
+<!--     by = "TBIClass", -->
+<!--     missing = "ifany", -->
+<!--     statistic = list( -->
+<!--         all_continuous() ~ "{mean} ({sd})", -->
+<!--         all_categorical() ~ "{n} ({p}%)" -->
+<!--     ), -->
+<!--     label = list( -->
+<!--       "AgeOfOnset" ~ "Age of Onset", -->
+<!--       "ServiceConnectedFlag" ~ "Service Connected" -->
+<!--     ) -->
+<!--   ) %>% -->
+<!--   add_stat_label() %>% -->
+<!--   modify_spanning_header( -->
+<!--     all_stat_cols() ~ "**TBI Classification**" -->
+<!--   ) %>% -->
+<!--   modify_column_hide(columns = "stat_2") %>% -->
+<!--   as_gt() %>% -->
+<!--   gt::tab_header( -->
+<!--     title = "Cohort Demographics" -->
+<!--   )  -->
+
+<!-- summary_table -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- numeric_covariates <- c("AgeOfOnset", "ECI", "ServiceConnectedFlag") -->
+<!-- categorical_covariates <- c("TBIClass") -->
+
+<!-- gt_tables <- list() -->
+
+<!-- for (years in c(2, 5, 1000)) { -->
+<!--     data_subset <- data %>% -->
+<!--         filter(ifelse( -->
+<!--             is.na(TBIDate), -->
+<!--             TRUE, -->
+<!--             as.numeric(interval(TBIDate, DxDate), "years") <= years -->
+<!--         )) -->
+
+<!--     cox_fits <- cox_analysis( -->
+<!--         data = data_subset, -->
+<!--         numeric_covariates = numeric_covariates, -->
+<!--         categorical_covariates = categorical_covariates, -->
+<!--     ) -->
+<!--     raw_results <- extract_cox_fit_list_stats(cox_fits, "Age Group") -->
+
+<!--     results <- raw_results %>% -->
+<!--         mutate(HR_CI = glue("{HR}<br>{CI}")) %>% -->
+<!--         select(`Age Group`, Covariate, HR_CI) %>% -->
+<!--         filter(grepl("^TBI", Covariate)) %>% -->
+<!--         mutate(Covariate = gsub("^TBIClass", "", Covariate)) %>% -->
+<!--         pivot_wider( -->
+<!--             names_from = Covariate, -->
+<!--             values_from = HR_CI -->
+<!--         ) -->
+
+<!--     significant_matrix <- raw_results %>% -->
+<!--         mutate(significant = raw_p < 0.05) %>% -->
+<!--         select(`Age Group`, Covariate, significant) %>% -->
+<!--         filter(grepl("^TBI", Covariate)) %>% -->
+<!--         mutate(Covariate = gsub("^TBIClass", "", Covariate)) %>% -->
+<!--         pivot_wider( -->
+<!--             names_from = Covariate, -->
+<!--             values_from = significant -->
+<!--         ) %>% -->
+<!--         select(-`Age Group`) %>% -->
+<!--         as.matrix() -->
+
+<!--     gt_table <- results %>% -->
+<!--         gt(rowname_col = "Age Group") %>% -->
+<!--         tab_stubhead(label = "Age Group") %>% -->
+<!--         tab_header(title = glue("PTE Hazard Ratios by TBI Class\nRestricted to TBI within {years} Years")) %>% -->
+<!--         fmt_markdown(columns = everything()) %>% -->
+<!--         bold_gt_table(significant_matrix = significant_matrix) %>% -->
+<!--         format_gt_table -->
+
+<!--     gt_tables[[glue("{years}")]] <- gt_table -->
+<!-- } -->
+
+<!-- gt_tables[["2"]] -->
+<!-- gt_tables[["5"]] -->
+<!-- gt_tables[["1000"]] -->
+<!-- ``` -->

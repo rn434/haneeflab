@@ -1,0 +1,19 @@
+Bipolar
+- ICD9: 296*
+- ICD10: F31*
+
+Migraine
+- ICD9: 346*
+- ICD10: G43*
+
+Neuropathic pain
+- ICD9: 35*, 729.2*
+- ICD10: G5*, G6*, M79.2*
+- Notes: I think this is where we probably would need to make the most changes. This is because there is not a category of neuropathic pain, it just seems to go with neuropathy of whichever nerve is affected. I have kept this very broad, including pretty much any peripheral neuropathy (may or may not be pain). Maybe we can discuss categories of chronic/generalized pain too.
+
+TBI (These come from AFHSB Surveillance Case Definition)
+- ICD9: 310.2*, 80[01234]*, 85[01234]*, 907.0*, 950.[123]*, 959.01*, V15.52*
+- ICD10: F07.81*, S02.[0189]*, S04.0[234]*, S06*, S07.1*, Z87.820*
+- Notes: I think including trauma to optic chiasm (ICD9: 950.[0123]* and S04.0[234]*) could be dubious, so we can discuss that. However, it is included in an official list, so maybe it is easier to just keep it.
+
+I added an asterisk to the end of all codes for searching purposes, but some of them already show the code in its entirety (eg. 907.0).

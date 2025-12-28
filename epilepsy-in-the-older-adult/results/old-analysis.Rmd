@@ -1,0 +1,699 @@
+---
+title: "Epilepsy in the Older Adult"
+author: "Rohan Nagabhirava"
+date: "`r Sys.Date()`"
+css: styles.css
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+# Analysis Setup
+
+This section includes options for knitting of the Rmd document, loading of the necessary libraries for the analysis, definitions of functions to streamline analysis down the line, and the connection to the database.
+
+```{r, message=FALSE, results='hide'}
+packages <- c(
+  "data.table", "ggplot2", "ggfortify", "ggpubr", "ggrepel", "ggsci", 
+  "glue", "gt", "lubridate", "ranger", "rlang", "RODBC", "tidyr",
+  "purrr", "FSA", "quantreg", "gtsummary", "gtable", "scales", 
+  "broom", "dplyr", "conflicted", "knitr", "MatrixModels", "rmarkdown", "stringr"
+)
+
+installed <- packages %in% rownames(installed.packages())
+if(any(!installed)) {
+  install.packages(packages[!installed], type = "binary")
+}
+
+invisible(lapply(packages, library, character.only = TRUE))
+conflicts_prefer(dplyr::select, dplyr::filter, dplyr::first)
+```
+
+```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+options(encoding = "UTF-8")
+```
+
+```{r}
+conn <- tryCatch({
+    odbcDriverConnect(
+        "driver={SQL Server};server=vhacdwrb03.vha.med.va.gov;database=SCS_EEGUtil;trusted_connection=true"
+    )
+}, warning = function(w) {
+    message("Not connected to VA network")
+    return(NULL)
+}, error = function(e) {
+    message("Not connected to VA network")
+    return(NULL)
+})
+```
+
+# Load Data
+
+```{r}
+if (is.null(conn)) {
+    stop("Not connected to VA network")
+} else {
+    raw_epilepsy_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnEpilepsy;")
+    raw_first_seizure_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnIndexEpisode;")
+    raw_demographics_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnDemographics;")
+    mri_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnMRI;")
+    eeg_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnEEG;")
+    ct_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnCT;")
+    holter_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnHolterMonitor;")
+    tilt_data <- sqlQuery(conn, "SELECT * FROM SCS_EEGUtil.EEG.rnTiltTable;")
+}
+```
+
+## Initial Data Processing
+
+```{r}
+data_list <- c(
+    "raw_epilepsy_data",
+    "raw_first_seizure_data",
+    "raw_demographics_data",
+    "mri_data",
+    "eeg_data",
+    "ct_data",
+    "holter_data",
+    "tilt_data"
+)
+
+for (data_name in data_list) {
+    data <- get(data_name)
+    data <- data %>% mutate(PatientICN = as.character(PatientICN))
+    assign(data_name, data, envir = .GlobalEnv)
+}
+
+epilepsy_data <- raw_epilepsy_data %>%
+    mutate(DefiniteEpilepsyDxDate = as_date(parse_date_time(DxDate, orders = c("ymd")))) %>%
+    select(PatientICN, DefiniteEpilepsyDxDate)
+
+first_seizure_data <- raw_first_seizure_data %>%
+    mutate(across(-any_of(c("PatientICN")),
+                  ~ as_date(parse_date_time(., orders = c("ymd")))))
+
+index_diagnoses <- colnames(first_seizure_data)[!(colnames(first_seizure_data)) %in% c("PatientICN", "Stroke")]
+
+demographics_data <- raw_demographics_data %>%
+    mutate(across(c("BirthDate", "DeathDate"), ~ as_date(parse_date_time(., orders = c("ymd"))))) %>%
+    mutate(Race = case_when(
+        Race == "WHITE NOT OF HISP ORIG" ~ "WHITE",
+        TRUE ~ Race
+    ))
+```
+
+## Applying Rules to Filter First Event
+
+- Only use 5-year lookback
+- Filter TIA if also stroke code
+
+```{r}
+combined_dx_data <- epilepsy_data %>%
+    inner_join(first_seizure_data, by = "PatientICN") %>%
+    inner_join(demographics_data, by = "PatientICN") %>%
+  mutate(across(index_diagnoses,~ if_else(
+    !is.na(.) & (. >= DefiniteEpilepsyDxDate - lubridate::years(5)) & (. <= DefiniteEpilepsyDxDate),
+    ., NA))) %>%
+  mutate(TIA = if_else(is.na(Stroke), as.Date(TIA), NA)) %>%
+  select(-Stroke) %>%
+    filter(!is.na(BirthDate)) %>%
+    mutate(Age = interval(BirthDate, DefiniteEpilepsyDxDate) %>% as.numeric("years")) %>%
+    mutate(AgeGroup = ifelse(Age <= 64, "Younger", "Older")) %>%
+    mutate(AgeGroup = factor(AgeGroup, levels = c("Younger", "Older"))) %>%
+    filter(DefiniteEpilepsyDxDate >= "2005-01-01" & DefiniteEpilepsyDxDate < "2025-01-01")
+```
+
+# Analysis
+
+## Age Distribution
+
+```{r}
+plt <- combined_dx_data %>%
+  ggplot(aes(x = Age)) +
+  geom_histogram(binwidth = 2, fill = "steelblue", color = "white") +
+  theme_minimal() +
+  labs(
+    title = "Age Histogram",
+    x = "Age",
+    y = "Count"
+  )
+
+plt
+```
+
+## Proportion of Epilepsy Associated with Each Seizure-Like Diagnosis
+
+```{r}
+plt <- combined_dx_data %>%
+    pivot_longer(
+        cols = index_diagnoses,
+        names_to = "Dx",
+        values_to = "DxDate"
+    ) %>%
+    filter(!is.na(DxDate)) %>%
+    group_by(AgeGroup) %>%
+    mutate(GroupTotal = n_distinct(PatientICN)) %>%
+    ungroup() %>%
+    group_by(Dx, AgeGroup) %>%
+    summarise(
+        n = n(), 
+        GroupTotal = first(GroupTotal),
+        .groups = "drop"
+    ) %>%
+    mutate(Proportion = n / GroupTotal) %>%
+    ggplot(aes(x = Dx, y = Proportion, fill = AgeGroup)) +
+    geom_col(position = position_dodge()) +
+    labs(
+        title = "Proportion of Epilepsy Associated with Each Seizure-Like Diagnosis",
+        x = "Diagnosis",
+        y = "Proportion",
+        fill = "Age Group"
+    ) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+plt
+```
+
+## Latency
+
+```{r}
+
+setDT(combined_dx_data)
+
+combined_dx_data[, c("MinDxDate", "MinDx") := {
+  vals <- unlist(.SD)
+  if (all(is.na(vals))) {
+    list(NA, NA)
+  } else {
+    min_val <- min(vals, na.rm = TRUE)
+    min_col <- names(.SD)[which.min(vals)]
+    list(as.Date(min_val, origin = "1970-01-01"), min_col)
+  }
+}, .SDcols = index_diagnoses, by = seq_len(nrow(combined_dx_data))]
+
+combined_dx_data <- as.data.frame(combined_dx_data) %>% filter(!is.na(MinDxDate))
+
+no_latency_data <- combined_dx_data %>%
+    filter(MinDxDate == DefiniteEpilepsyDxDate | MinDx %in% c("Epilepsy", "Convulsions"))
+
+raw_latency_data <- combined_dx_data %>%
+    filter(!(MinDxDate == DefiniteEpilepsyDxDate | MinDx %in% c("Epilepsy", "Convulsions")))
+```
+
+```{r}
+mri_counts <- mri_data %>%
+  inner_join(raw_latency_data, by = "PatientICN") %>%
+  filter(MRIDate >= MinDxDate & MRIDate <= pmin(DefiniteEpilepsyDxDate, MinDxDate %m+% months(6))) %>%
+  group_by(PatientICN) %>%
+  summarise(MRICount = n())
+
+eeg_counts <- eeg_data %>%
+  inner_join(raw_latency_data, by = "PatientICN") %>%
+  filter(EEGDate >= MinDxDate & EEGDate <= pmin(DefiniteEpilepsyDxDate, MinDxDate %m+% months(6))) %>%
+  group_by(PatientICN) %>%
+  summarise(EEGCount = n())
+
+ct_counts <- ct_data %>%
+  inner_join(raw_latency_data, by = "PatientICN") %>%
+  filter(CTDate >= MinDxDate & CTDate <= pmin(DefiniteEpilepsyDxDate, MinDxDate %m+% months(6))) %>%
+  group_by(PatientICN) %>%
+  summarise(CTCount = n())
+
+holter_counts <- holter_data %>%
+  inner_join(raw_latency_data, by = "PatientICN") %>%
+  filter(HolterMonitorDate >= MinDxDate & HolterMonitorDate <= pmin(DefiniteEpilepsyDxDate, MinDxDate %m+% months(6))) %>%
+  group_by(PatientICN) %>%
+  summarise(HolterCount = n())
+
+tilt_counts <- tilt_data %>%
+  inner_join(raw_latency_data, by = "PatientICN") %>%
+  filter(TiltTableDate >= MinDxDate & TiltTableDate <= pmin(DefiniteEpilepsyDxDate, MinDxDate %m+% months(6))) %>%
+  group_by(PatientICN) %>%
+  summarise(TiltCount = n())
+```
+
+```{r}
+latency_data <- raw_latency_data %>%
+  left_join(mri_counts, by = "PatientICN") %>%
+  mutate(MRICount = replace_na(MRICount, 0)) %>%
+  left_join(eeg_counts, by = "PatientICN") %>%
+  mutate(EEGCount = replace_na(EEGCount, 0)) %>%
+  left_join(ct_counts, by = "PatientICN") %>%
+  mutate(CTCount = replace_na(CTCount, 0)) %>%
+  left_join(holter_counts, by = "PatientICN") %>%
+  mutate(HolterCount = replace_na(HolterCount, 0)) %>%
+  left_join(tilt_counts, by = "PatientICN") %>%
+  mutate(TiltCount = replace_na(TiltCount, 0)) %>%
+    mutate(NewAge = interval(BirthDate, MinDxDate) %>% as.numeric("years")) %>%
+    mutate(NewAgeGroup = ifelse(NewAge <= 64, "Younger", "Older")) %>%
+    mutate(NewAgeGroup = factor(NewAgeGroup, levels = c("Younger", "Older"))) %>%
+  mutate(latency = interval(MinDxDate, DefiniteEpilepsyDxDate) %>% as.numeric("months"))
+```
+```{r}
+plt <- latency_data %>%
+  ggplot(aes(x = AgeGroup, y = latency)) +
+  geom_violin(fill = "skyblue", color = "darkblue", alpha = 0.5, trim = TRUE) +
+  geom_boxplot(width = 0.1, fill = "white", color = "black", outlier.shape = NA) +
+  theme_minimal(base_size = 14) +
+  labs(
+    title = "Delay to Diagnosis by Epilepsy Onset",
+    x = "Epilepsy Onset",
+    y = "Diagnostic Delay (months)"
+  ) +
+  scale_x_discrete(labels = c("Younger" = "Early", "Older" = "Late")) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    axis.title = element_text(face = "bold"),
+    axis.title.y = element_text(margin = margin(r = 15))
+  )
+
+plt
+ggsave("box-violin.pdf", plt)
+```
+
+```{r}
+table(latency_data$AgeGroup)
+
+wilcox.test(latency ~ AgeGroup, data = latency_data)
+wilcox.test(latency ~ AgeGroup, data = latency_data %>% filter(MinDx == "Syncope"))
+wilcox.test(latency ~ AgeGroup, data = latency_data %>% filter(MinDx == "TIA"))
+
+latency_data %>%
+  group_by(AgeGroup) %>%
+  summarise(
+    Q1 = quantile(latency, 0.25, na.rm = TRUE),
+    Median = quantile(latency, 0.50, na.rm = TRUE),
+    Q3 = quantile(latency, 0.75, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+```
+
+```{r}
+plt <- latency_data %>%
+  count(AgeGroup, MinDx) %>%
+  group_by(AgeGroup) %>%
+  mutate(prop = n / sum(n)) %>%
+  ungroup() %>%
+  ggplot(aes(x = stringr::str_wrap(MinDx, width = 10), y = prop, fill = AgeGroup)) +
+  geom_col(position = "dodge") +
+  theme_minimal() +
+  labs(
+    title = "Percentage of Epilepsy Patients\nwith Each Initial Diagnosis",
+    x = "Initial Diagnosis",
+    y = "Percentage",
+    fill = "Epilepsy Onset"
+  ) +
+  scale_fill_discrete(
+    labels = c("Younger"= "Early", "Older" = "Late")
+  ) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    axis.title = element_text(face = "bold"),
+    axis.title.y = element_text(margin = margin(r = 15)),
+    legend.title = element_text(face = "bold")
+  )
+
+plt
+ggsave("first-diagnosis.pdf", plt)
+```
+
+### Latency by Initial Diagnosis
+
+```{r}
+plt2 <- latency_data %>%
+  filter(MinDx == "Syncope") %>%
+  ggplot(aes(x = AgeGroup, y = latency)) +
+  geom_boxplot(fill = "skyblue", color = "darkblue") +
+  theme_minimal() +
+  labs(
+    title = "Latency by Age Group with Initial Dx of Syncope",
+    x = "Age Group",
+    y = "Latency (months)"
+  )
+plt2
+```
+
+```{r}
+latency_table <- bind_rows(
+  latency_data %>%
+    group_by(MinDx) %>%
+    summarise(
+      n_younger = sum(AgeGroup == "Younger", na.rm = TRUE),
+      n_older = sum(AgeGroup == "Older", na.rm = TRUE),
+      median_younger = median(latency[AgeGroup == "Younger"], na.rm = TRUE),
+      median_older = median(latency[AgeGroup == "Older"], na.rm = TRUE),
+      wilcox_res = list(tryCatch(
+        wilcox.test(latency ~ AgeGroup, data = cur_data(), exact = FALSE),
+        error = function(e) NA
+      )),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      W = sapply(wilcox_res, function(x) if (inherits(x, "htest")) x$statistic else NA_real_),
+      p_value = sapply(wilcox_res, function(x) if (inherits(x, "htest")) x$p.value else NA_real_)
+    ) %>%
+    select(-wilcox_res),
+  latency_data %>%
+    summarise(
+      MinDx = "Overall",
+      n_younger = sum(AgeGroup == "Younger", na.rm = TRUE),
+      n_older = sum(AgeGroup == "Older", na.rm = TRUE),
+      median_younger = median(latency[AgeGroup == "Younger"], na.rm = TRUE),
+      median_older = median(latency[AgeGroup == "Older"], na.rm = TRUE),
+      wilcox_res = list(tryCatch(
+        wilcox.test(latency ~ AgeGroup, data = cur_data(), exact = FALSE),
+        error = function(e) NA
+      )),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      W = sapply(wilcox_res, function(x) if (inherits(x, "htest")) x$statistic else NA_real_),
+      p_value = sapply(wilcox_res, function(x) if (inherits(x, "htest")) x$p.value else NA_real_)
+    ) %>%
+    select(-wilcox_res)
+) %>%
+  mutate(
+    Median_Younger = glue("{sprintf('%.1f', median_younger)} (n = {n_younger})"),
+    Median_Older = glue("{sprintf('%.1f', median_older)} (n = {n_older})")
+  ) %>%
+  select(MinDx, Median_Younger, Median_Older, W, p_value) %>%
+  gt() %>%
+  fmt_number(columns = W, decimals = 1) %>%
+  fmt_number(columns = p_value, decimals = 3) %>%
+  cols_label(
+    MinDx = "Diagnosis",
+    Median_Younger = "Younger Median (n)",
+    Median_Older = "Older Median (n)",
+    W = "Wilcoxon W",
+    p_value = "p-value"
+  )
+
+
+latency_table
+gtsave(latency_table, "latency-table.docx")
+```
+
+### Bubble Plot
+
+```{r}
+latency_data_summary <- latency_data %>%
+  group_by(AgeGroup, MinDx) %>%
+  summarise(
+    n_patients = n(),
+    median_latency = median(latency, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  group_by(AgeGroup) %>%
+  mutate(pct_patients = 100 * n_patients / sum(n_patients)) %>%
+  ungroup()
+```
+```{r}
+plt <- latency_data_summary %>%
+  ggplot(aes(x = stringr::str_wrap(MinDx, width = 10), y = median_latency, size = pct_patients, color = AgeGroup)) +
+  geom_point(alpha = 0.4) +
+  geom_point(aes(color = AgeGroup, fill = AgeGroup), shape = 21, size = 1.5, stroke = 0.1, show.legend = FALSE) +
+  geom_text_repel(aes(label = sprintf("%.1f%%", pct_patients)),
+            size = 4, show.legend = FALSE, max.overlaps = Inf,
+            box.padding = 0.4, point.padding = 0.5) +
+  scale_size(range = c(6, 30), name = "Percent of Patients in Age Group") +
+  scale_y_continuous(limits = c(0, 25)) +
+  labs(x = "Initial Diagnosis", y = "Median Diagnostic Delay (months)", color = "Epilepsy Onset",
+       title = "Diagnostic Delay by Initial Diagnosis") +
+  scale_color_discrete(
+    labels = c("Younger"= "Early", "Older" = "Late")
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    axis.title = element_text(face = "bold"),
+    axis.title.y = element_text(margin = margin(r = 15)),
+    legend.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank()
+  ) +
+  guides(size = "none")
+
+
+plt
+ggsave("bubble-plot.pdf", plt, width = 8, height = 6)
+```
+
+## Workup Associations with Latency
+
+```{r}
+latency_data <- latency_data %>%
+  mutate(MRIDone = MRICount >= 1) %>%
+  mutate(EEGDone = EEGCount >= 1) %>%
+  mutate(MRIOrEEGDone = (MRICount >= 1 & EEGCount >= 1)) %>%
+  mutate(CTDone = CTCount >= 1) %>%
+  mutate(HolterDone = HolterCount >= 1) %>%
+  mutate(TiltDone = TiltCount >= 1) %>%
+  mutate(`No CT, No MRI, No EEG` = !(CTDone | MRIDone | EEGDone)) %>%
+  mutate(`CT, No MRI, No EEG` = CTDone & !(EEGDone | MRIDone)) %>%
+  mutate(`No CT, MRI, No EEG` = MRIDone & !(CTDone | EEGDone)) %>%
+  mutate(`No CT, No MRI, EEG` = EEGDone & !(CTDone | MRIDone)) %>%
+  mutate(`CT, MRI, No EEG` = CTDone & MRIDone & !EEGDone) %>%
+  mutate(`CT, No MRI, EEG` = CTDone & EEGDone & !MRIDone) %>%
+  mutate(`No CT, MRI, EEG` = MRIDone & EEGDone & !CTDone) %>%
+  mutate(`CT, MRI, EEG` = CTDone & MRIDone & EEGDone)
+```
+
+```{r}
+workup_cols <- c(
+  "CTDone", "MRIDone", "EEGDone", "HolterDone", "TiltDone",
+  "No CT, No MRI, No EEG", "CT, No MRI, No EEG", "No CT, MRI, No EEG",
+  "No CT, No MRI, EEG", "CT, MRI, No EEG", "CT, No MRI, EEG",
+  "No CT, MRI, EEG", "CT, MRI, EEG", "MRIOrEEGDone"
+)
+
+latency_table_by_workup <- map_dfr(workup_cols, function(col) {
+  subset_data <- latency_data %>% filter(.data[[col]] == TRUE)
+
+  n_younger <- sum(subset_data$AgeGroup == "Younger", na.rm = TRUE)
+  n_older <- sum(subset_data$AgeGroup == "Older", na.rm = TRUE)
+
+  med_younger <- median(subset_data$latency[subset_data$AgeGroup == "Younger"], na.rm = TRUE)
+  med_older <- median(subset_data$latency[subset_data$AgeGroup == "Older"], na.rm = TRUE)
+
+  # Run Wilcoxon test safely
+  wilcox_res <- tryCatch(
+    wilcox.test(latency ~ AgeGroup, data = subset_data, exact = FALSE),
+    error = function(e) NA
+  )
+
+  W_stat <- if (inherits(wilcox_res, "htest")) wilcox_res$statistic else NA_real_
+  p_val <- if (inherits(wilcox_res, "htest")) wilcox_res$p.value else NA_real_
+
+  tibble(
+    Workup = col,
+    Median_Younger = glue("{sprintf('%.1f', med_younger)} (n = {n_younger})"),
+    Median_Older = glue("{sprintf('%.1f', med_older)} (n = {n_older})"),
+    W = W_stat,
+    p_value = p_val
+  )
+})
+
+
+latency_table_by_workup <- latency_table_by_workup %>%
+  gt() %>%
+  fmt_number(columns = p_value, decimals = 3)
+
+latency_table_by_workup
+gtsave(latency_table_by_workup, "latency-table-workup.docx")
+
+```
+```{r}
+# --- 1. Fit quantile regression (median) ---
+fit <- rq(
+  latency ~ AgeGroup * (CTDone + MRIDone + EEGDone + HolterDone + TiltDone),
+  tau = 0.5,
+  data = latency_data
+)
+
+# --- 2. Build newdata for prediction ---
+tests <- c("CT", "MRI", "EEG", "Holter", "Tilt")
+newdata <- map_dfr(tests, function(t) {
+  expand.grid(
+    AgeGroup = c("Younger", "Older"),
+    test_done = c(FALSE, TRUE)
+  ) %>%
+    mutate(
+      CTDone = FALSE,
+      MRIDone = FALSE,
+      EEGDone = FALSE,
+      HolterDone = FALSE,
+      TiltDone = FALSE,
+      !!paste0(t, "Done") := test_done,
+      test = t
+    )
+})
+
+# --- 3. Predict median delay ---
+newdata <- newdata %>%
+  mutate(
+    pred = predict(fit, newdata),
+    AgeGroup = factor(AgeGroup, levels = c("Younger", "Older"))
+  )
+
+# --- 4. Optional: compute approximate confidence intervals ---
+# Note: quantreg has summary.rq for standard errors; here we'll get them per row
+# ci <- summary(fit, se = "boot")$coefficients
+# For simplicity, here we'll just plot point estimates.  
+# Advanced: use bootstrap or `predict(..., interval=TRUE)` equivalents
+
+# --- 5. Plot ---
+test_labels <- c(
+  CT = "CT Head",
+  MRI = "MRI Head",
+  EEG = "EEG",
+  Holter = "Ambulatory\nECG",
+  Tilt = "Tilt Table"
+)
+plt <- ggplot(newdata, aes(x = AgeGroup, y = pred, fill = test_done)) +
+  geom_col(position = position_dodge(width = 0.7), width = 0.6) +
+  facet_wrap(~ test, scales = "free_y", labeller = as_labeller(test_labels), ncol = 3) +
+  scale_fill_manual(values = c("FALSE" = "#a6cee3", "TRUE" = "#1f78b4"),
+                    labels = c("No", "Yes")) +
+  labs(
+    x = "Epilepsy Onset",
+    y = "Predicted Media\nDiagnosticDelay (months)",
+    fill = "Test Performed",
+    title = "Predicted Diagnostic Delay\nby Diagnostic Test"
+  ) +
+  scale_x_discrete(labels = c("Younger" = "Early", "Older" = "Late")) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    axis.title = element_text(face = "bold"),
+    legend.title = element_text(face = "bold"),
+    axis.title.y = element_text(margin = margin(r = 15)),
+    legend.position = "top",
+    strip.text = element_text(face = "bold")
+  )
+
+plt
+ggsave("quantile-regression.pdf", plt, width = 8, height = 6)
+# rq(latency ~ MRIOrEEGDone * AgeGroup, tau = 0.5, data = latency_data)$coefficients
+# rq(latency ~ MRIDone * AgeGroup, tau = 0.5, data = latency_data)$coefficients
+# rq(latency ~ EEGDone * AgeGroup, tau = 0.5, data = latency_data)$coefficients
+```
+
+## Summary Table
+
+```{r}
+summary_table <- latency_data %>%
+  select(Age, Sex, Race, Ethnicity, AgeGroup) %>%
+  tbl_summary(
+    by = "AgeGroup",
+    missing = "ifany",
+    statistic = list(
+        all_continuous() ~ "{mean} ({sd})",
+        all_categorical() ~ "{n} ({p}%)"
+    ),
+    digits = list(
+      all_continuous() ~ c(1, 1),
+      all_categorical() ~ c(0, 2)
+    )
+  ) %>%
+  add_stat_label() %>%
+  as_gt() %>%
+  gt::tab_header(
+    title = "Cohort Demographics"
+  ) 
+
+summary_table
+gtsave(summary_table, "summary-table.docx")
+```
+```{r}
+chisq.test(latency_data$Sex, latency_data$AgeGroup)
+chisq.test(latency_data$EEGDone, latency_data$AgeGroup)
+chisq.test(latency_data$CTDone, latency_data$AgeGroup)
+```
+
+## Survival Analysis
+
+```{r}
+# latency_data <- latency_data %>%
+#     mutate(AgeGroupCoarse = ifelse(
+#         Age < 60,
+#         "Younger",
+#         "Older"
+#     )) %>%
+#   mutate(AgeGroupCoarse = factor(AgeGroupCoarse, levels = c("Younger", "Older")))
+# 
+# plt1 <- latency_data %>% ggplot(aes(x = latency, color = AgeGroup)) +
+#   stat_ecdf(geom = "step") +
+#   labs(
+#     x = "Delay to Epilepsy Diagnosis (months)",
+#     y = " Proportion Diagnosed",
+#     color = "Age Group"
+#   ) +
+#   theme_minimal()
+# 
+# plt2 <- latency_data %>% ggplot(aes(x = latency, color = AgeGroupCoarse)) +
+#   stat_ecdf(geom = "step") +
+#   labs(
+#     x = "Delay to Epilepsy Diagnosis (months)",
+#     y = "Proportion Diagnosed",
+#     color = "Age Group"
+#   ) +
+#   theme_minimal()
+# 
+# plt3 <- latency_data %>% 
+#   mutate(AgeGroup = as.character(AgeGroup)) %>%
+#   bind_rows(
+#     latency_data %>%
+#       mutate(AgeGroup = "All")
+#   ) %>%
+#   mutate(AgeGroup = factor(AgeGroup, levels = c("All", "Younger", "Middle", "Older"))) %>%
+#   ggplot(aes(x = latency, color = AgeGroup)) +
+#   stat_ecdf(geom = "step") +
+#   scale_y_continuous(labels = label_percent()) +
+#   facet_wrap(~ MRIEEGStatus) +
+#   labs(
+#     x = "Delay to Epilepsy Diagnosis (months)",
+#     y = "Percent Diagnosed",
+#     color = "Age Group"
+#   ) +
+#   theme_minimal()
+# plt3
+# 
+# plt4 <- latency_data %>% 
+#   mutate(AgeGroupCoarse = as.character(AgeGroupCoarse)) %>%
+#   bind_rows(
+#     latency_data %>%
+#       mutate(AgeGroupCoarse = "All")
+#   ) %>%
+#   mutate(AgeGroupCoarse = factor(AgeGroupCoarse, levels = c("All", "Younger", "Middle", "Older"))) %>%
+#   ggplot(aes(x = latency, color = MRIEEGStatus)) +
+#   stat_ecdf(geom = "step") +
+#   scale_y_continuous(labels = label_percent()) +
+#   facet_wrap(~ AgeGroupCoarse) +
+#   labs(
+#     x = "Delay to Epilepsy Diagnosis (months)",
+#     y = "Percent Diagnosed",
+#     color = "EEG/MRI Workup"
+#   ) +
+#   theme_minimal()
+# plt4
+# 
+# 
+# ggsave("survival_3_groups.png", plot = plt1)
+# ggsave("survival_2_groups.png", plot = plt2)
+# ggsave("survival_3_groups_eeg_mri.png", plot = plt3)
+# ggsave("survival_2_groups_eeg_mri.png", plot = plt4, width = 7, height = 4)
+```
+
+# Next Steps
+
+- Adjusting for Sex
+
+
+

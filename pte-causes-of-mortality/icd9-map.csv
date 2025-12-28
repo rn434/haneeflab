@@ -1,0 +1,1636 @@
+﻿ICD_Start,ICD_End,Cause,Level
+001,001.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+002.0,029,"Communicable, maternal, neonatal, and nutritional diseases",1
+032,034.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+036,036.3,"Communicable, maternal, neonatal, and nutritional diseases",1
+036.5,037.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+040,040,"Communicable, maternal, neonatal, and nutritional diseases",1
+040.1,041.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+042,066.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+070.0,070.2,"Communicable, maternal, neonatal, and nutritional diseases",1
+071,075.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+078.3,078.7,"Communicable, maternal, neonatal, and nutritional diseases",1
+079,079.7,"Communicable, maternal, neonatal, and nutritional diseases",1
+080,083.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+084.0,084.5,"Communicable, maternal, neonatal, and nutritional diseases",1
+084.7,084.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+085.0,085.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+086,088,"Communicable, maternal, neonatal, and nutritional diseases",1
+088.8,088.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+090,101.6,"Communicable, maternal, neonatal, and nutritional diseases",1
+104,104.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+120,124.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+125.4,125.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+127,127.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+128,129.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+136,136.2,"Communicable, maternal, neonatal, and nutritional diseases",1
+137,139.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+181,181.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+244.2,244.2,"Communicable, maternal, neonatal, and nutritional diseases",1
+260,263.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+265,269.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+281.0,281.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+320.0,320.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+321,323.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+381,383.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+390,390.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+392,392,"Communicable, maternal, neonatal, and nutritional diseases",1
+392.9,392.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+425.6,425.6,"Communicable, maternal, neonatal, and nutritional diseases",1
+460,464.4,"Communicable, maternal, neonatal, and nutritional diseases",1
+464.8,464.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+465.0,465.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+466,469,"Communicable, maternal, neonatal, and nutritional diseases",1
+470.0,470.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+475,475.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+476.9,476.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+480,482.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+483.0,483.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+484.0,484.7,"Communicable, maternal, neonatal, and nutritional diseases",1
+487,489,"Communicable, maternal, neonatal, and nutritional diseases",1
+630,636.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+638,638.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+640,679.1,"Communicable, maternal, neonatal, and nutritional diseases",1
+716.0,716.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+730.4,730.6,"Communicable, maternal, neonatal, and nutritional diseases",1
+760,760.6,"Communicable, maternal, neonatal, and nutritional diseases",1
+760.8,768,"Communicable, maternal, neonatal, and nutritional diseases",1
+768.2,770,"Communicable, maternal, neonatal, and nutritional diseases",1
+770.1,775.0,"Communicable, maternal, neonatal, and nutritional diseases",1
+775.4,779.3,"Communicable, maternal, neonatal, and nutritional diseases",1
+779.6,779.8,"Communicable, maternal, neonatal, and nutritional diseases",1
+V09,V09.9,"Communicable, maternal, neonatal, and nutritional diseases",1
+042,044.9,HIV/AIDS and sexually transmitted infections,2
+054.1,054.1,HIV/AIDS and sexually transmitted infections,2
+090,099.9,HIV/AIDS and sexually transmitted infections,2
+042,044.9,HIV/AIDS,3
+,,HIV/AIDS–drug-susceptible tuberculosis,4
+,,HIV/AIDS–multidrug-resistant tuberculosis without extensive drug resistance,
+,,HIV/AIDS–extensively drug-resistant tuberculosis,4
+042,044.9,HIV/AIDS resulting in other diseases,4
+054.1,054.1,Sexually transmitted infections excluding HIV,3
+090,099.9,Sexually transmitted infections excluding HIV,3
+090,097.9,Syphilis,4
+,,Chlamydial infection,4
+098,098.9,Gonococcal infection,4
+099,099.9,Other sexually transmitted infections,4
+010,019.9,Respiratory infections and tuberculosis,2
+034.0,034.0,Respiratory infections and tuberculosis,2
+079.6,079.6,Respiratory infections and tuberculosis,2
+137,137.9,Respiratory infections and tuberculosis,2
+138.0,138.9,Respiratory infections and tuberculosis,2
+381,383.9,Respiratory infections and tuberculosis,2
+460,464.4,Respiratory infections and tuberculosis,2
+464.8,464.9,Respiratory infections and tuberculosis,2
+465.0,465.8,Respiratory infections and tuberculosis,2
+466,469,Respiratory infections and tuberculosis,2
+470.0,470.0,Respiratory infections and tuberculosis,2
+475,475.9,Respiratory infections and tuberculosis,2
+476.9,476.9,Respiratory infections and tuberculosis,2
+480,482.8,Respiratory infections and tuberculosis,2
+483.0,483.9,Respiratory infections and tuberculosis,2
+484.1,484.2,Respiratory infections and tuberculosis,2
+484.6,484.7,Respiratory infections and tuberculosis,2
+487,489,Respiratory infections and tuberculosis,2
+730.4,730.6,Respiratory infections and tuberculosis,2
+010,019.9,Tuberculosis,3
+137,137.9,Tuberculosis,3
+138.0,138.9,Tuberculosis,3
+730.4,730.6,Tuberculosis,3
+010,019.9,Drug-susceptible tuberculosis,4
+137,137.9,Drug-susceptible tuberculosis,4
+138.0,138.9,Drug-susceptible tuberculosis,4
+730.4,730.6,Drug-susceptible tuberculosis,4
+,,Multidrug-resistant tuberculosis without extensive drug resistance,
+,,Extensively drug-resistant tuberculosis,4
+079.6,079.6,Lower respiratory infections,3
+466,469,Lower respiratory infections,3
+470.0,470.0,Lower respiratory infections,3
+480,482.8,Lower respiratory infections,3
+483.0,483.9,Lower respiratory infections,3
+484.1,484.2,Lower respiratory infections,3
+484.6,484.7,Lower respiratory infections,3
+487,489,Lower respiratory infections,3
+034.0,034.0,Upper respiratory infections,3
+460,464.4,Upper respiratory infections,3
+464.8,464.9,Upper respiratory infections,3
+465.0,465.8,Upper respiratory infections,3
+475,475.9,Upper respiratory infections,3
+476.9,476.9,Upper respiratory infections,3
+381,383.9,Otitis media,3
+001,001.9,Enteric infections,2
+002.0,009.9,Enteric infections,2
+045,045.9,Enteric infections,2
+138,138,Enteric infections,2
+001,001.9,Diarrheal diseases,
+003.8,006.9,Diarrheal diseases,
+007.4,007.8,Diarrheal diseases,
+008.2,009.9,Diarrheal diseases,
+002.0,002.9,Typhoid and paratyphoid,3
+002.0,002.0,Typhoid fever,4
+002.1,002.9,Paratyphoid fever,4
+003,003.7,Invasive non-typhoidal Salmonella (iNTS),3
+007,007.3,Other intestinal infectious diseases,3
+007.9,008.1,Other intestinal infectious diseases,3
+045,045.9,Other intestinal infectious diseases,3
+138,138,Other intestinal infectious diseases,3
+060,061.8,Neglected tropical diseases and malaria,2
+065,066.9,Neglected tropical diseases and malaria,2
+071,071.9,Neglected tropical diseases and malaria,2
+080,083.9,Neglected tropical diseases and malaria,2
+084.0,084.5,Neglected tropical diseases and malaria,2
+084.7,084.9,Neglected tropical diseases and malaria,2
+085.0,085.0,Neglected tropical diseases and malaria,2
+086,088,Neglected tropical diseases and malaria,2
+088.8,088.9,Neglected tropical diseases and malaria,2
+120,124.9,Neglected tropical diseases and malaria,2
+125.4,125.9,Neglected tropical diseases and malaria,2
+127,127.1,Neglected tropical diseases and malaria,2
+128,129.0,Neglected tropical diseases and malaria,2
+425.6,425.6,Neglected tropical diseases and malaria,2
+084.0,084.5,Malaria,3
+084.7,084.9,Malaria,3
+030,030.9,Leprosy,3
+086,086.2,Chagas disease,3
+086.9,086.9,Chagas disease,3
+425.6,425.6,Chagas disease,3
+085.0,085.0,Leishmaniasis,3
+085.0,085.0,Visceral leishmaniasis,4
+086.3,086.5,African trypanosomiasis,3
+120,120.9,Schistosomiasis,3
+123.1,123.1,Cysticercosis,3
+122,122.4,Cystic echinococcosis,3
+122.8,122.9,Cystic echinococcosis,3
+061,061.8,Dengue,3
+060,060.9,Yellow fever,3
+071,071.9,Rabies,3
+127.0,127.0,Intestinal nematode infections,3
+127.0,127.0,Ascariasis,4
+,,Ebola virus disease,3
+,,Zika virus disease,3
+065,066.9,Other neglected tropical diseases,3
+080,083.9,Other neglected tropical diseases,3
+087,088,Other neglected tropical diseases,3
+088.8,088.9,Other neglected tropical diseases,3
+122.5,122.7,Other neglected tropical diseases,3
+123,123.0,Other neglected tropical diseases,3
+123.2,124.9,Other neglected tropical diseases,3
+125.4,125.6,Other neglected tropical diseases,3
+125.9,125.9,Other neglected tropical diseases,3
+127,127,Other neglected tropical diseases,3
+127.1,127.1,Other neglected tropical diseases,3
+128,129.0,Other neglected tropical diseases,3
+020,029,Other infectious diseases,2
+032,034,Other infectious diseases,2
+034.1,034.9,Other infectious diseases,2
+036,036.3,Other infectious diseases,2
+036.5,037.9,Other infectious diseases,2
+040,040,Other infectious diseases,2
+040.1,041.0,Other infectious diseases,2
+046,054.0,Other infectious diseases,2
+054.2,059.9,Other infectious diseases,2
+062,064.9,Other infectious diseases,2
+070.0,070.2,Other infectious diseases,2
+072,075.9,Other infectious diseases,2
+078.3,078.7,Other infectious diseases,2
+079,079.5,Other infectious diseases,2
+079.7,079.7,Other infectious diseases,2
+100,101.6,Other infectious diseases,2
+104,104.9,Other infectious diseases,2
+136,136.2,Other infectious diseases,2
+139,139.0,Other infectious diseases,2
+320.0,320.8,Other infectious diseases,2
+321,323.9,Other infectious diseases,2
+390,390.9,Other infectious diseases,2
+392,392,Other infectious diseases,2
+392.9,392.9,Other infectious diseases,2
+484.0,484.0,Other infectious diseases,2
+484.3,484.5,Other infectious diseases,2
+771.0,771.3,Other infectious diseases,2
+V09,V09.9,Other infectious diseases,2
+036,036.3,Meningitis,3
+036.5,036.9,Meningitis,3
+047,049.9,Meningitis,3
+320.0,320.8,Meningitis,3
+321,322.9,Meningitis,3
+062,064.9,Encephalitis,3
+139.0,139.0,Encephalitis,3
+323,323,Encephalitis,3
+323.4,323.9,Encephalitis,3
+032,032.9,Diphtheria,3
+033,033.9,Whooping cough,3
+484.3,484.3,Whooping cough,3
+037,037.9,Tetanus,3
+771.3,771.3,Tetanus,3
+055,055.9,Measles,3
+484.0,484.0,Measles,3
+052,053.9,Varicella and herpes zoster,3
+070.0,070.2,Acute hepatitis,3
+070.0,070.1,Acute hepatitis A,4
+070.2,070.2,Acute hepatitis B,4
+,,Acute hepatitis C,4
+,,Acute hepatitis E,4
+020,029,Other unspecified infectious diseases,3
+034,034,Other unspecified infectious diseases,3
+034.1,034.9,Other unspecified infectious diseases,3
+040,040,Other unspecified infectious diseases,3
+040.1,041.0,Other unspecified infectious diseases,3
+046,046.9,Other unspecified infectious diseases,3
+050,051.9,Other unspecified infectious diseases,3
+054,054.0,Other unspecified infectious diseases,3
+054.2,054.9,Other unspecified infectious diseases,3
+056,059.9,Other unspecified infectious diseases,3
+072,075.9,Other unspecified infectious diseases,3
+078.3,078.7,Other unspecified infectious diseases,3
+079,079.5,Other unspecified infectious diseases,3
+079.7,079.7,Other unspecified infectious diseases,3
+100,101.6,Other unspecified infectious diseases,3
+104,104.9,Other unspecified infectious diseases,3
+136,136.2,Other unspecified infectious diseases,3
+139,139,Other unspecified infectious diseases,3
+323.0,323.3,Other unspecified infectious diseases,3
+390,390.9,Other unspecified infectious diseases,3
+392,392,Other unspecified infectious diseases,3
+392.9,392.9,Other unspecified infectious diseases,3
+484.4,484.5,Other unspecified infectious diseases,3
+771.0,771.2,Other unspecified infectious diseases,3
+V09,V09.9,Other unspecified infectious diseases,3
+181,181.9,Maternal and neonatal disorders,2
+630,636.9,Maternal and neonatal disorders,2
+638,638.9,Maternal and neonatal disorders,2
+640,679.1,Maternal and neonatal disorders,2
+760,760.6,Maternal and neonatal disorders,2
+760.8,768,Maternal and neonatal disorders,2
+768.2,770,Maternal and neonatal disorders,2
+770.1,771,Maternal and neonatal disorders,2
+771.4,775.0,Maternal and neonatal disorders,2
+775.4,779.3,Maternal and neonatal disorders,2
+779.6,779.8,Maternal and neonatal disorders,2
+181,181.9,Maternal disorders,3
+630,636.9,Maternal disorders,3
+638,638.9,Maternal disorders,3
+640,679.1,Maternal disorders,3
+640,641.9,Maternal haemorrhage,4
+661,661.9,Maternal haemorrhage,4
+665,665,Maternal haemorrhage,4
+666,666.9,Maternal haemorrhage,4
+659.3,659.3,Maternal sepsis and other maternal infections,4
+670,670.9,Maternal sepsis and other maternal infections,4
+642,642.9,Maternal hypertensive disorders,4
+652,653.9,Maternal obstructed labor and uterine rupture,4
+660,660.9,Maternal obstructed labor and uterine rupture,4
+665.0,665.3,Maternal obstructed labor and uterine rupture,4
+630,632.9,Maternal abortion and miscarriage,4
+634,636.9,Maternal abortion and miscarriage,4
+638,638.9,Maternal abortion and miscarriage,4
+646.3,646.3,Maternal abortion and miscarriage,4
+633,633.9,Ectopic pregnancy,4
+646,646.2,Indirect maternal deaths,4
+646.4,649.9,Indirect maternal deaths,4
+,,Late maternal deaths,4
+,,Maternal deaths aggravated by HIV/AIDS,4
+181,181.9,Other maternal disorders,4
+643,645.2,Other maternal disorders,4
+650,651.9,Other maternal disorders,4
+654,659.2,Other maternal disorders,4
+659.4,659.9,Other maternal disorders,4
+662,664.9,Other maternal disorders,4
+665.4,665.9,Other maternal disorders,4
+667,669.9,Other maternal disorders,4
+671,679.1,Other maternal disorders,4
+760,760.6,Neonatal disorders,3
+760.8,768,Neonatal disorders,3
+768.2,770,Neonatal disorders,3
+770.1,771,Neonatal disorders,3
+771.4,775.0,Neonatal disorders,3
+775.4,779.3,Neonatal disorders,3
+779.6,779.8,Neonatal disorders,3
+761.0,761.1,Neonatal preterm birth,4
+765,765.9,Neonatal preterm birth,4
+769,769.9,Neonatal preterm birth,4
+770.2,770.9,Neonatal preterm birth,4
+776.6,776.6,Neonatal preterm birth,4
+777.5,777.6,Neonatal preterm birth,4
+761.7,763.9,Neonatal encephalopathy due to birth asphyxia and trauma,4
+767,768,Neonatal encephalopathy due to birth asphyxia and trauma,4
+768.2,768.9,Neonatal encephalopathy due to birth asphyxia and trauma,4
+770.1,770.1,Neonatal encephalopathy due to birth asphyxia and trauma,4
+772.1,772.9,Neonatal encephalopathy due to birth asphyxia and trauma,4
+779.0,779.2,Neonatal encephalopathy due to birth asphyxia and trauma,4
+771.4,771.9,Neonatal sepsis and other neonatal infections,4
+773,774.9,Hemolytic disease and other neonatal jaundice,
+760,760.6,Other neonatal disorders,4
+760.8,761,Other neonatal disorders,4
+761.2,761.6,Other neonatal disorders,4
+764,764.9,Other neonatal disorders,4
+766,766.9,Other neonatal disorders,4
+770,770,Other neonatal disorders,4
+771,771,Other neonatal disorders,4
+772,772.0,Other neonatal disorders,4
+775,775.0,Other neonatal disorders,4
+775.4,776.5,Other neonatal disorders,4
+776.7,777.4,Other neonatal disorders,4
+777.7,779,Other neonatal disorders,4
+779.3,779.3,Other neonatal disorders,4
+779.6,779.8,Other neonatal disorders,4
+244.2,244.2,Nutritional deficiencies,2
+260,263.9,Nutritional deficiencies,2
+265,269.9,Nutritional deficiencies,2
+281.0,281.9,Nutritional deficiencies,2
+716.0,716.0,Nutritional deficiencies,2
+260,263.9,Protein-energy malnutrition,3
+244.2,244.2,Other nutritional deficiencies,3
+265,269.9,Other nutritional deficiencies,3
+281.0,281.9,Other nutritional deficiencies,3
+716.0,716.0,Other nutritional deficiencies,3
+035,035.9,Non-communicable diseases,1
+036.4,036.4,Non-communicable diseases,1
+102,103.9,Non-communicable diseases,1
+133,133.6,Non-communicable diseases,1
+135,135.9,Non-communicable diseases,1
+140,148.9,Non-communicable diseases,1
+150,155.1,Non-communicable diseases,1
+155.3,158.9,Non-communicable diseases,1
+160,164.9,Non-communicable diseases,1
+170,175.9,Non-communicable diseases,1
+180,180.9,Non-communicable diseases,1
+182,183.8,Non-communicable diseases,1
+184.0,184.4,Non-communicable diseases,1
+184.8,184.8,Non-communicable diseases,1
+185,186.9,Non-communicable diseases,1
+187.1,187.8,Non-communicable diseases,1
+188,188.9,Non-communicable diseases,1
+189.0,189.8,Non-communicable diseases,1
+190,190.8,Non-communicable diseases,1
+191,193.9,Non-communicable diseases,1
+194.1,194.8,Non-communicable diseases,1
+200,204.0,Non-communicable diseases,1
+204.2,204.2,Non-communicable diseases,1
+205,205.3,Non-communicable diseases,1
+206,206.1,Non-communicable diseases,1
+207,208.9,Non-communicable diseases,1
+209.0,209.1,Non-communicable diseases,1
+209.4,209.5,Non-communicable diseases,1
+210.0,210.9,Non-communicable diseases,1
+211.0,211.8,Non-communicable diseases,1
+212.0,212.8,Non-communicable diseases,1
+213,213.9,Non-communicable diseases,1
+217,220.9,Non-communicable diseases,1
+221.0,221.8,Non-communicable diseases,1
+222.0,222.8,Non-communicable diseases,1
+223.0,223.8,Non-communicable diseases,1
+224,228.9,Non-communicable diseases,1
+229.0,229.0,Non-communicable diseases,1
+229.8,229.8,Non-communicable diseases,1
+230.1,230.8,Non-communicable diseases,1
+231.0,231.2,Non-communicable diseases,1
+232,232.9,Non-communicable diseases,1
+233.0,233.2,Non-communicable diseases,1
+233.4,233.5,Non-communicable diseases,1
+233.7,233.7,Non-communicable diseases,1
+234.0,234.8,Non-communicable diseases,1
+235.0,235.0,Non-communicable diseases,1
+235.4,235.4,Non-communicable diseases,1
+235.6,235.8,Non-communicable diseases,1
+236.0,236.2,Non-communicable diseases,1
+236.4,236.5,Non-communicable diseases,1
+236.7,236.7,Non-communicable diseases,1
+237,237.3,Non-communicable diseases,1
+237.5,237.9,Non-communicable diseases,1
+238.0,238.9,Non-communicable diseases,1
+239.2,239.4,Non-communicable diseases,1
+239.6,239.6,Non-communicable diseases,1
+240,243.9,Non-communicable diseases,1
+244.0,244.1,Non-communicable diseases,1
+244.3,244.8,Non-communicable diseases,1
+245,246.9,Non-communicable diseases,1
+251,259.1,Non-communicable diseases,1
+259.3,259.9,Non-communicable diseases,1
+270,273.9,Non-communicable diseases,1
+275,276,Non-communicable diseases,1
+277,277.2,Non-communicable diseases,1
+277.4,277.9,Non-communicable diseases,1
+278.0,278.8,Non-communicable diseases,1
+282,284.9,Non-communicable diseases,1
+286,286.5,Non-communicable diseases,1
+286.7,289.0,Non-communicable diseases,1
+289.4,289.7,Non-communicable diseases,1
+290,292.9,Non-communicable diseases,1
+294.1,294.9,Non-communicable diseases,1
+303,303.9,Non-communicable diseases,1
+304.0,304.8,Non-communicable diseases,1
+305.0,305.0,Non-communicable diseases,1
+305.2,305.8,Non-communicable diseases,1
+307.1,307.1,Non-communicable diseases,1
+327.2,327.8,Non-communicable diseases,1
+330,331.2,Non-communicable diseases,1
+331.5,332.0,Non-communicable diseases,1
+333,337.9,Non-communicable diseases,1
+340,341.9,Non-communicable diseases,1
+345,345.9,Non-communicable diseases,1
+349,349,Non-communicable diseases,1
+349.2,349.8,Non-communicable diseases,1
+353.8,353.9,Non-communicable diseases,1
+356,356.9,Non-communicable diseases,1
+357.0,357.1,Non-communicable diseases,1
+357.3,357.7,Non-communicable diseases,1
+358,359.9,Non-communicable diseases,1
+376.0,376.1,Non-communicable diseases,1
+391,391.9,Non-communicable diseases,1
+392.0,392.0,Non-communicable diseases,1
+393,398.9,Non-communicable diseases,1
+402,404.9,Non-communicable diseases,1
+410,414.9,Non-communicable diseases,1
+416.0,416.1,Non-communicable diseases,1
+417,417.9,Non-communicable diseases,1
+420,423,Non-communicable diseases,1
+423.1,423.9,Non-communicable diseases,1
+424.0,424.3,Non-communicable diseases,1
+424.8,424.8,Non-communicable diseases,1
+425.0,425.3,Non-communicable diseases,1
+425.5,425.5,Non-communicable diseases,1
+425.7,425.8,Non-communicable diseases,1
+427.0,427.3,Non-communicable diseases,1
+427.6,427.8,Non-communicable diseases,1
+429.0,429.0,Non-communicable diseases,1
+430,435.9,Non-communicable diseases,1
+437.0,437.2,Non-communicable diseases,1
+437.4,437.8,Non-communicable diseases,1
+440.2,440.2,Non-communicable diseases,1
+440.4,440.4,Non-communicable diseases,1
+441,443.9,Non-communicable diseases,1
+446,457,Non-communicable diseases,1
+457.1,457.9,Non-communicable diseases,1
+459,459,Non-communicable diseases,1
+459.1,459.3,Non-communicable diseases,1
+470,470,Non-communicable diseases,1
+470.9,474.9,Non-communicable diseases,1
+476,476.1,Non-communicable diseases,1
+477,479,Non-communicable diseases,1
+491,493.9,Non-communicable diseases,1
+495,504.9,Non-communicable diseases,1
+506,506.9,Non-communicable diseases,1
+508,509,Non-communicable diseases,1
+515,515,Non-communicable diseases,1
+516,517.8,Non-communicable diseases,1
+518.6,518.7,Non-communicable diseases,1
+518.9,518.9,Non-communicable diseases,1
+519.0,519.4,Non-communicable diseases,1
+530,530.0,Non-communicable diseases,1
+530.2,530.6,Non-communicable diseases,1
+531,536.1,Non-communicable diseases,1
+536.4,536.4,Non-communicable diseases,1
+537,537.6,Non-communicable diseases,1
+537.8,537.8,Non-communicable diseases,1
+538,543.9,Non-communicable diseases,1
+550,553.6,Non-communicable diseases,1
+555,558.9,Non-communicable diseases,1
+560,560.3,Non-communicable diseases,1
+560.8,560.9,Non-communicable diseases,1
+562,562.1,Non-communicable diseases,1
+564,564.7,Non-communicable diseases,1
+565,566.9,Non-communicable diseases,1
+569.0,569.7,Non-communicable diseases,1
+571,571.9,Non-communicable diseases,1
+572.2,573.0,Non-communicable diseases,1
+573.4,577.9,Non-communicable diseases,1
+579,583.9,Non-communicable diseases,1
+585,585.9,Non-communicable diseases,1
+588,590.9,Non-communicable diseases,1
+592,593.8,Non-communicable diseases,1
+594,599.6,Non-communicable diseases,1
+599.8,599.8,Non-communicable diseases,1
+601,602.9,Non-communicable diseases,1
+604,604.9,Non-communicable diseases,1
+608.2,608.2,Non-communicable diseases,1
+610,610.9,Non-communicable diseases,1
+617,618.9,Non-communicable diseases,1
+620,620.9,Non-communicable diseases,1
+621.4,621.9,Non-communicable diseases,1
+622.1,622.7,Non-communicable diseases,1
+629,629.8,Non-communicable diseases,1
+680,689,Non-communicable diseases,1
+694,695.5,Non-communicable diseases,1
+707,707.9,Non-communicable diseases,1
+710,711.9,Non-communicable diseases,1
+714,714.3,Non-communicable diseases,1
+714.8,714.9,Non-communicable diseases,1
+730.1,730.1,Non-communicable diseases,1
+732,732.9,Non-communicable diseases,1
+733.0,733.1,Non-communicable diseases,1
+740,749.0,Non-communicable diseases,1
+749.2,758.9,Non-communicable diseases,1
+759.0,759.8,Non-communicable diseases,1
+760.7,760.7,Non-communicable diseases,1
+775.1,775.3,Non-communicable diseases,1
+779.4,779.5,Non-communicable diseases,1
+788.0,788.0,Non-communicable diseases,1
+790.3,790.3,Non-communicable diseases,1
+798,798.0,Non-communicable diseases,1
+E850,E850,Non-communicable diseases,1
+E860,E860,Non-communicable diseases,1
+140,148.9,Neoplasms,2
+150,155.1,Neoplasms,2
+155.3,158.9,Neoplasms,2
+160,164.9,Neoplasms,2
+170,175.9,Neoplasms,2
+180,180.9,Neoplasms,2
+182,183.8,Neoplasms,2
+184.0,184.4,Neoplasms,2
+184.8,184.8,Neoplasms,2
+185,186.9,Neoplasms,2
+187.1,187.8,Neoplasms,2
+188,188.9,Neoplasms,2
+189.0,189.8,Neoplasms,2
+190,190.8,Neoplasms,2
+191,193.9,Neoplasms,2
+194.1,194.8,Neoplasms,2
+200,204.0,Neoplasms,2
+204.2,204.2,Neoplasms,2
+205,205.3,Neoplasms,2
+206,206.1,Neoplasms,2
+207,208.9,Neoplasms,2
+209.0,209.1,Neoplasms,2
+209.4,209.5,Neoplasms,2
+210.0,210.9,Neoplasms,2
+211.0,211.8,Neoplasms,2
+212.0,212.8,Neoplasms,2
+213,213.9,Neoplasms,2
+217,217.8,Neoplasms,2
+219.0,219.0,Neoplasms,2
+220,220.9,Neoplasms,2
+221.0,221.8,Neoplasms,2
+222.0,222.8,Neoplasms,2
+223.0,223.8,Neoplasms,2
+224,228.9,Neoplasms,2
+229.0,229.0,Neoplasms,2
+229.8,229.8,Neoplasms,2
+230.1,230.8,Neoplasms,2
+231.0,231.2,Neoplasms,2
+232,232.9,Neoplasms,2
+233.0,233.2,Neoplasms,2
+233.4,233.5,Neoplasms,2
+233.7,233.7,Neoplasms,2
+234.0,234.8,Neoplasms,2
+235.0,235.0,Neoplasms,2
+235.4,235.4,Neoplasms,2
+235.6,235.8,Neoplasms,2
+236.1,236.2,Neoplasms,2
+236.4,236.5,Neoplasms,2
+236.7,236.7,Neoplasms,2
+237,237.3,Neoplasms,2
+237.5,237.9,Neoplasms,2
+238.0,238.9,Neoplasms,2
+239.2,239.4,Neoplasms,2
+239.6,239.6,Neoplasms,2
+569.0,569.0,Neoplasms,2
+610,610.9,Neoplasms,2
+622.1,622.2,Neoplasms,2
+622.7,622.7,Neoplasms,2
+140,145.9,Lip and oral cavity cancer,3
+210.0,210.6,Lip and oral cavity cancer,3
+235.0,235.0,Lip and oral cavity cancer,3
+147,147.9,Nasopharynx cancer,3
+210.7,210.9,Nasopharynx cancer,3
+146,146.9,Other pharynx cancer,3
+148,148.9,Other pharynx cancer,3
+150,150.9,Oesophageal cancer,3
+211.0,211.0,Oesophageal cancer,3
+230.1,230.1,Oesophageal cancer,3
+151,151.9,Stomach cancer,3
+211.1,211.1,Stomach cancer,3
+230.2,230.2,Stomach cancer,3
+153,154.9,Colon and rectum cancer,3
+209.1,209.1,Colon and rectum cancer,3
+209.5,209.5,Colon and rectum cancer,3
+211.3,211.4,Colon and rectum cancer,3
+230.3,230.6,Colon and rectum cancer,3
+569.0,569.0,Colon and rectum cancer,3
+155,155.1,Liver cancer,3
+155.3,155.9,Liver cancer,3
+211.5,211.5,Liver cancer,3
+,,Liver cancer due to hepatitis B,4
+,,Liver cancer due to hepatitis C,4
+,,Liver cancer due to alcohol use,4
+,,Liver cancer due to NASH,4
+,,Hepatoblastoma,
+,,Liver cancer due to other causes (internal),
+156,156.9,Gallbladder and biliary tract cancer,3
+157,157.9,Pancreatic cancer,3
+211.6,211.7,Pancreatic cancer,3
+161,161.9,Larynx cancer,3
+212.1,212.1,Larynx cancer,3
+231.0,231.0,Larynx cancer,3
+235.6,235.6,Larynx cancer,3
+162,162.9,"Tracheal, bronchus, and lung cancer",3
+212.2,212.3,"Tracheal, bronchus, and lung cancer",3
+231.1,231.2,"Tracheal, bronchus, and lung cancer",3
+235.7,235.7,"Tracheal, bronchus, and lung cancer",3
+172,172.9,Malignant skin melanoma,3
+173,173.9,Non-melanoma skin cancer,3
+222.4,222.4,Non-melanoma skin cancer,3
+232,232.9,Non-melanoma skin cancer,3
+238.2,238.2,Non-melanoma skin cancer,3
+173,173.9,Non-melanoma skin cancer (squamous-cell carcinoma),4
+222.4,222.4,Non-melanoma skin cancer (squamous-cell carcinoma),4
+232,232.9,Non-melanoma skin cancer (squamous-cell carcinoma),4
+238.2,238.2,Non-melanoma skin cancer (squamous-cell carcinoma),4
+171,171.9,Soft tissue and other extraosseous sarcomas,
+170,170.9,Malignant neoplasm of bone and articular cartilage,
+174,175.9,Breast cancer,3
+217,217.8,Breast cancer,3
+233.0,233.0,Breast cancer,3
+238.3,238.3,Breast cancer,3
+239.3,239.3,Breast cancer,3
+610,610.9,Breast cancer,3
+180,180.9,Cervical cancer,3
+219.0,219.0,Cervical cancer,3
+233.1,233.1,Cervical cancer,3
+622.1,622.2,Cervical cancer,3
+622.7,622.7,Cervical cancer,3
+182,182.9,Uterine cancer,3
+233.2,233.2,Uterine cancer,3
+183,183.0,Ovarian cancer,3
+220,220.9,Ovarian cancer,3
+236.2,236.2,Ovarian cancer,3
+185,185.9,Prostate cancer,3
+222.2,222.2,Prostate cancer,3
+236.5,236.5,Prostate cancer,3
+186,186.9,Testicular cancer,3
+222.0,222.0,Testicular cancer,3
+222.3,222.3,Testicular cancer,3
+236.4,236.4,Testicular cancer,3
+189.0,189.1,Kidney cancer,3
+189.5,189.6,Kidney cancer,3
+223.0,223.1,Kidney cancer,3
+188,188.9,Bladder cancer,3
+223.3,223.3,Bladder cancer,3
+233.7,233.7,Bladder cancer,3
+236.7,236.7,Bladder cancer,3
+239.4,239.4,Bladder cancer,3
+191,192.9,Brain and central nervous system cancer,3
+190,190.8,Eye cancer,
+190.5,190.5,Retinoblastoma,
+190,190.4,Other eye cancers,
+190.6,190.8,Other eye cancers,
+,,Neuroblastoma and other peripheral nervous cell tumors,
+193,193.9,Thyroid cancer,3
+226,226.9,Thyroid cancer,3
+,,Mesothelioma,3
+201,201.9,Hodgkin lymphoma,3
+200,200.9,Non-Hodgkin lymphoma,3
+202,202.9,Non-Hodgkin lymphoma,3
+200.2,200.2,Burkitt lymphoma,
+200,200.1,Other non-Hodgkin lymphoma,
+200.3,200.9,Other non-Hodgkin lymphoma,
+202,202.9,Other non-Hodgkin lymphoma,
+203,203.9,Multiple myeloma,3
+204,204.0,Leukaemia,3
+204.2,204.2,Leukaemia,3
+205,205.3,Leukaemia,3
+206,206.1,Leukaemia,3
+207,208.9,Leukaemia,3
+204.0,204.0,Acute lymphoid leukaemia,
+204.2,204.2,Acute lymphoid leukaemia,
+,,Chronic lymphoid leukaemia,4
+205.0,205.0,Acute myeloid leukaemia,4
+205.2,205.3,Acute myeloid leukaemia,4
+206.0,206.0,Acute myeloid leukaemia,4
+207.0,207.0,Acute myeloid leukaemia,4
+207.2,207.8,Acute myeloid leukaemia,4
+205.1,205.1,Chronic myeloid leukaemia,4
+206.1,206.1,Other leukaemia,4
+207.1,207.1,Other leukaemia,4
+207.9,208.9,Other leukaemia,4
+152,152.9,Other malignant neoplasms (internal),
+158,158.9,Other malignant neoplasms (internal),
+160,160.9,Other malignant neoplasms (internal),
+163,164.9,Other malignant neoplasms (internal),
+183.2,183.8,Other malignant neoplasms (internal),
+184.0,184.4,Other malignant neoplasms (internal),
+184.8,184.8,Other malignant neoplasms (internal),
+187.1,187.8,Other malignant neoplasms (internal),
+189.2,189.4,Other malignant neoplasms (internal),
+189.8,189.8,Other malignant neoplasms (internal),
+194.1,194.8,Other malignant neoplasms (internal),
+209.0,209.0,Other malignant neoplasms (internal),
+209.4,209.4,Other malignant neoplasms (internal),
+211.2,211.2,Other malignant neoplasms (internal),
+211.8,211.8,Other malignant neoplasms (internal),
+212.0,212.0,Other malignant neoplasms (internal),
+212.4,212.8,Other malignant neoplasms (internal),
+213,213.9,Other malignant neoplasms (internal),
+221.0,221.8,Other malignant neoplasms (internal),
+222.1,222.1,Other malignant neoplasms (internal),
+222.8,222.8,Other malignant neoplasms (internal),
+223.2,223.2,Other malignant neoplasms (internal),
+223.8,223.8,Other malignant neoplasms (internal),
+224,224.9,Other malignant neoplasms (internal),
+227,228.9,Other malignant neoplasms (internal),
+229.0,229.0,Other malignant neoplasms (internal),
+229.8,229.8,Other malignant neoplasms (internal),
+230.7,230.8,Other malignant neoplasms (internal),
+233.4,233.5,Other malignant neoplasms (internal),
+234.0,234.8,Other malignant neoplasms (internal),
+235.4,235.4,Other malignant neoplasms (internal),
+235.8,235.8,Other malignant neoplasms (internal),
+236.1,236.1,Other malignant neoplasms (internal),
+238.0,238.1,Other malignant neoplasms (internal),
+239.2,239.2,Other malignant neoplasms (internal),
+225,225.9,Other neoplasms,3
+237,237.3,Other neoplasms,3
+237.5,237.9,Other neoplasms,3
+238.4,238.9,Other neoplasms,3
+239.6,239.6,Other neoplasms,3
+238.4,238.9,"Myelodysplastic, myeloproliferative, and other haematopoietic neoplasms",
+036.4,036.4,Cardiovascular diseases,2
+391,391.9,Cardiovascular diseases,2
+392.0,392.0,Cardiovascular diseases,2
+393,398.9,Cardiovascular diseases,2
+402,402.9,Cardiovascular diseases,2
+410,414.9,Cardiovascular diseases,2
+416.0,416.0,Cardiovascular diseases,2
+417,417.9,Cardiovascular diseases,2
+420,423,Cardiovascular diseases,2
+423.1,423.9,Cardiovascular diseases,2
+424.0,424.3,Cardiovascular diseases,2
+424.8,424.8,Cardiovascular diseases,2
+425.0,425.3,Cardiovascular diseases,2
+425.5,425.5,Cardiovascular diseases,2
+425.7,425.8,Cardiovascular diseases,2
+427.0,427.3,Cardiovascular diseases,2
+427.6,427.8,Cardiovascular diseases,2
+429.0,429.0,Cardiovascular diseases,2
+430,435.9,Cardiovascular diseases,2
+437.0,437.2,Cardiovascular diseases,2
+437.5,437.8,Cardiovascular diseases,2
+440.2,440.2,Cardiovascular diseases,2
+440.4,440.4,Cardiovascular diseases,2
+441,443.9,Cardiovascular diseases,2
+447,454.9,Cardiovascular diseases,2
+456,456,Cardiovascular diseases,2
+456.3,457,Cardiovascular diseases,2
+457.1,457.1,Cardiovascular diseases,2
+457.8,457.9,Cardiovascular diseases,2
+459,459,Cardiovascular diseases,2
+459.1,459.3,Cardiovascular diseases,2
+391,391.9,Rheumatic heart disease,3
+392.0,392.0,Rheumatic heart disease,3
+393,398.9,Rheumatic heart disease,3
+410,414.9,Ischaemic heart disease,3
+430,435.9,Stroke,3
+437.0,437.2,Stroke,3
+437.5,437.8,Stroke,3
+433,435.9,Ischaemic stroke,4
+437.0,437.1,Ischaemic stroke,4
+437.5,437.8,Ischaemic stroke,4
+431,432.9,Intracerebral haemorrhage,4
+437.2,437.2,Intracerebral haemorrhage,4
+430,430.9,Subarachnoid hemorrhage,
+402,402.9,Hypertensive heart disease,3
+424.0,424.3,Non-rheumatic valvular heart disease,3
+424.8,424.8,Non-rheumatic valvular heart disease,3
+424.1,424.1,Non-rheumatic calcific aortic valvular heart disease,4
+424.0,424.0,Non-rheumatic degenerative mitral valvular heart disease,4
+424.2,424.3,Other non-rheumatic valvular heart diseases,4
+424.8,424.8,Other non-rheumatic valvular heart diseases,4
+422,422.9,Cardiomyopathy and myocarditis,3
+425.0,425.3,Cardiomyopathy and myocarditis,3
+425.5,425.5,Cardiomyopathy and myocarditis,3
+425.7,425.8,Cardiomyopathy and myocarditis,3
+429.0,429.0,Cardiomyopathy and myocarditis,3
+422,422.9,Myocarditis,4
+425.5,425.5,Alcoholic cardiomyopathy,4
+425.0,425.3,Other cardiomyopathy,4
+425.7,425.8,Other cardiomyopathy,4
+429.0,429.0,Other cardiomyopathy,4
+416.0,416.0,Pulmonary arterial hypertension,
+427.3,427.3,Atrial fibrillation and flutter,3
+441,441.9,Aortic aneurysm,3
+440.2,440.2,Peripheral artery disease,3
+440.4,440.4,Peripheral artery disease,3
+443.0,443.9,Peripheral artery disease,3
+421,421.9,Endocarditis,3
+036.4,036.4,Other cardiovascular and circulatory diseases (internal),
+417,417.9,Other cardiovascular and circulatory diseases (internal),
+420,420.9,Other cardiovascular and circulatory diseases (internal),
+423,423,Other cardiovascular and circulatory diseases (internal),
+423.1,423.9,Other cardiovascular and circulatory diseases (internal),
+427.0,427.2,Other cardiovascular and circulatory diseases (internal),
+427.6,427.8,Other cardiovascular and circulatory diseases (internal),
+442,443,Other cardiovascular and circulatory diseases (internal),
+447,454.9,Other cardiovascular and circulatory diseases (internal),
+456,456,Other cardiovascular and circulatory diseases (internal),
+456.3,457,Other cardiovascular and circulatory diseases (internal),
+457.1,457.1,Other cardiovascular and circulatory diseases (internal),
+457.8,457.9,Other cardiovascular and circulatory diseases (internal),
+459,459,Other cardiovascular and circulatory diseases (internal),
+459.1,459.3,Other cardiovascular and circulatory diseases (internal),
+135,135.9,Chronic respiratory diseases,2
+327.2,327.8,Chronic respiratory diseases,2
+470,470,Chronic respiratory diseases,2
+470.9,474.9,Chronic respiratory diseases,2
+476,476.1,Chronic respiratory diseases,2
+477,479,Chronic respiratory diseases,2
+491,493.9,Chronic respiratory diseases,2
+495,504.9,Chronic respiratory diseases,2
+506,506.9,Chronic respiratory diseases,2
+508,509,Chronic respiratory diseases,2
+515,515,Chronic respiratory diseases,2
+516,517.8,Chronic respiratory diseases,2
+518.6,518.6,Chronic respiratory diseases,2
+518.9,518.9,Chronic respiratory diseases,2
+519.1,519.4,Chronic respiratory diseases,2
+491,492.9,Chronic obstructive pulmonary disease,3
+496,499,Chronic obstructive pulmonary disease,3
+500,504.9,Pneumoconiosis,3
+502,502.9,Silicosis,4
+503.0,503.0,Silicosis,4
+503.9,503.9,Silicosis,4
+501,501,Asbestosis,4
+500,500.9,Coal workers pneumoconiosis,4
+501.0,501.9,Coal workers pneumoconiosis,4
+503,503,Other pneumoconiosis,4
+503.1,503.1,Other pneumoconiosis,4
+504,504.9,Other pneumoconiosis,4
+493,493.9,Asthma,3
+135,135.9,Interstitial lung disease and pulmonary sarcoidosis,3
+515,515,Interstitial lung disease and pulmonary sarcoidosis,3
+516,516.9,Interstitial lung disease and pulmonary sarcoidosis,3
+327.2,327.8,Other chronic respiratory diseases,3
+470,470,Other chronic respiratory diseases,3
+470.9,474.9,Other chronic respiratory diseases,3
+476,476.1,Other chronic respiratory diseases,3
+477,479,Other chronic respiratory diseases,3
+495,495.9,Other chronic respiratory diseases,3
+506,506.9,Other chronic respiratory diseases,3
+508,509,Other chronic respiratory diseases,3
+517,517.8,Other chronic respiratory diseases,3
+518.6,518.6,Other chronic respiratory diseases,3
+518.9,518.9,Other chronic respiratory diseases,3
+519.1,519.4,Other chronic respiratory diseases,3
+455,455.9,Digestive diseases,2
+456.0,456.2,Digestive diseases,2
+530,530.0,Digestive diseases,2
+530.2,530.6,Digestive diseases,2
+531,536.1,Digestive diseases,2
+537,537.6,Digestive diseases,2
+537.8,537.8,Digestive diseases,2
+538,538,Digestive diseases,2
+540,543.9,Digestive diseases,2
+550,551.1,Digestive diseases,2
+551.3,552.1,Digestive diseases,2
+552.3,553.6,Digestive diseases,2
+555,558.9,Digestive diseases,2
+560,560.3,Digestive diseases,2
+560.8,560.9,Digestive diseases,2
+562,562.1,Digestive diseases,2
+564,564.1,Digestive diseases,2
+564.5,564.7,Digestive diseases,2
+565,566.9,Digestive diseases,2
+569.1,569.5,Digestive diseases,2
+569.7,569.7,Digestive diseases,2
+571,571.9,Digestive diseases,2
+572.2,573.0,Digestive diseases,2
+573.4,577.9,Digestive diseases,2
+579,579.2,Digestive diseases,2
+579.4,579.9,Digestive diseases,2
+456.0,456.2,Cirrhosis and other chronic liver diseases,3
+571,571.9,Cirrhosis and other chronic liver diseases,3
+572.2,573.0,Cirrhosis and other chronic liver diseases,3
+573.4,573.9,Cirrhosis and other chronic liver diseases,3
+,,Cirrhosis and other chronic liver diseases due to hepatitis B,4
+,,Cirrhosis and other chronic liver diseases due to hepatitis C,4
+,,Cirrhosis and other chronic liver diseases due to alcohol use,4
+,,Cirrhosis and other chronic liver diseases due to NAFLD,4
+,,Cirrhosis and other chronic liver diseases due to other causes,4
+531,535.9,Upper digestive system diseases,3
+531,534.9,Peptic ulcer disease,4
+535,535.9,Gastritis and duodenitis,4
+540,542.9,Appendicitis,3
+560,560.3,Paralytic ileus and intestinal obstruction,3
+560.8,560.9,Paralytic ileus and intestinal obstruction,3
+550,551.1,"Inguinal, femoral, and abdominal hernia",3
+551.3,552.1,"Inguinal, femoral, and abdominal hernia",3
+552.3,553.0,"Inguinal, femoral, and abdominal hernia",3
+553.6,553.6,"Inguinal, femoral, and abdominal hernia",3
+555,556.9,Inflammatory bowel disease,3
+558,558.9,Inflammatory bowel disease,3
+569.5,569.5,Inflammatory bowel disease,3
+557,557.9,Vascular intestinal disorders,3
+574,576.9,Gallbladder and biliary diseases,3
+577,577.9,Pancreatitis,3
+579.4,579.4,Pancreatitis,3
+455,455.9,Other digestive diseases,3
+530,530.0,Other digestive diseases,3
+530.2,530.6,Other digestive diseases,3
+536,536.1,Other digestive diseases,3
+537,537.6,Other digestive diseases,3
+537.8,537.8,Other digestive diseases,3
+538,538,Other digestive diseases,3
+543,543.9,Other digestive diseases,3
+553.1,553.3,Other digestive diseases,3
+562,562.1,Other digestive diseases,3
+564,564.1,Other digestive diseases,3
+564.5,564.7,Other digestive diseases,3
+565,566.9,Other digestive diseases,3
+569.1,569.4,Other digestive diseases,3
+569.7,569.7,Other digestive diseases,3
+579,579.2,Other digestive diseases,3
+579.8,579.9,Other digestive diseases,3
+290,290.9,Neurological disorders,2
+294.1,294.9,Neurological disorders,2
+330,331.2,Neurological disorders,2
+331.5,332.0,Neurological disorders,2
+333,337.9,Neurological disorders,2
+340,341.9,Neurological disorders,2
+345,345.9,Neurological disorders,2
+349,349,Neurological disorders,2
+349.2,349.8,Neurological disorders,2
+353.8,353.9,Neurological disorders,2
+356,356.9,Neurological disorders,2
+357.0,357.1,Neurological disorders,2
+357.3,357.4,Neurological disorders,2
+357.7,357.7,Neurological disorders,2
+358,359.9,Neurological disorders,2
+775.2,775.2,Neurological disorders,2
+290,290.9,Alzheimer's disease and other dementias,3
+294.1,294.9,Alzheimer's disease and other dementias,3
+331,331.2,Alzheimer's disease and other dementias,3
+332,332.0,Parkinson's disease,3
+345,345.9,Idiopathic epilepsy,3
+340,340.9,Multiple sclerosis,3
+335,335.2,Motor neuron disease,3
+335.8,335.9,Motor neuron disease,3
+330,330.9,Other neurological disorders,3
+331.5,331.9,Other neurological disorders,3
+333,334.9,Other neurological disorders,3
+335.3,335.3,Other neurological disorders,3
+336,337.9,Other neurological disorders,3
+341,341.9,Other neurological disorders,3
+349,349,Other neurological disorders,3
+349.2,349.8,Other neurological disorders,3
+353.8,353.9,Other neurological disorders,3
+356,356.9,Other neurological disorders,3
+357.0,357.1,Other neurological disorders,3
+357.3,357.4,Other neurological disorders,3
+357.7,357.7,Other neurological disorders,3
+358,359.9,Other neurological disorders,3
+775.2,775.2,Other neurological disorders,3
+307.1,307.1,Mental disorders,2
+307.1,307.1,Eating disorders,3
+307.1,307.1,Anorexia nervosa,4
+,,Bulimia nervosa,4
+291,292.9,Substance use disorders,2
+303,303.9,Substance use disorders,2
+304.0,304.8,Substance use disorders,2
+305.0,305.0,Substance use disorders,2
+305.2,305.8,Substance use disorders,2
+357.5,357.5,Substance use disorders,2
+760.7,760.7,Substance use disorders,2
+790.3,790.3,Substance use disorders,2
+E850,E850,Substance use disorders,2
+E860,E860,Substance use disorders,2
+291,291.9,Alcohol use disorders,3
+303,303.9,Alcohol use disorders,3
+305.0,305.0,Alcohol use disorders,3
+357.5,357.5,Alcohol use disorders,3
+790.3,790.3,Alcohol use disorders,3
+E860,E860,Alcohol use disorders,3
+292,292.9,Drug use disorders,3
+304.0,304.8,Drug use disorders,3
+305.2,305.8,Drug use disorders,3
+760.7,760.7,Drug use disorders,3
+E850,E850,Drug use disorders,3
+304.0,304.0,Opioid use disorders,4
+305.5,305.5,Opioid use disorders,4
+304.2,304.2,Cocaine use disorders,4
+305.6,305.6,Cocaine use disorders,4
+304.4,304.4,Amphetamine use disorders,4
+305.7,305.7,Amphetamine use disorders,4
+292,292.9,Other drug use disorders,4
+304.1,304.1,Other drug use disorders,4
+304.5,304.8,Other drug use disorders,4
+305.3,305.4,Other drug use disorders,4
+305.8,305.8,Other drug use disorders,4
+760.7,760.7,Other drug use disorders,4
+403,404.9,Diabetes and kidney diseases,2
+580,583.9,Diabetes and kidney diseases,2
+585,585.9,Diabetes and kidney diseases,2
+589,589.9,Diabetes and kidney diseases,2
+753,753.3,Diabetes and kidney diseases,2
+775.1,775.1,Diabetes and kidney diseases,2
+775.1,775.1,Diabetes mellitus,3
+775.1,775.1,Diabetes mellitus type 1,4
+,,Diabetes mellitus type 2,4
+403,404.9,Chronic kidney disease,3
+581,583.9,Chronic kidney disease,3
+585,585.9,Chronic kidney disease,3
+589,589.9,Chronic kidney disease,3
+753,753.3,Chronic kidney disease,3
+,,Chronic kidney disease due to diabetes mellitus type 1,4
+,,Chronic kidney disease due to diabetes mellitus type 2,4
+403,404.9,Chronic kidney disease due to hypertension,4
+581,583.9,Chronic kidney disease due to glomerulonephritis,4
+589,589.9,Chronic kidney disease due to other and unspecified causes,4
+753,753.3,Chronic kidney disease due to other and unspecified causes,4
+580,580.9,Acute glomerulonephritis,3
+035,035.9,Skin and subcutaneous diseases,2
+102,103.9,Skin and subcutaneous diseases,2
+133,133.6,Skin and subcutaneous diseases,2
+457.2,457.3,Skin and subcutaneous diseases,2
+680,689,Skin and subcutaneous diseases,2
+694,695.3,Skin and subcutaneous diseases,2
+707,707.9,Skin and subcutaneous diseases,2
+035,035.9,Bacterial skin diseases,3
+102,103.9,Bacterial skin diseases,3
+457.2,457.3,Bacterial skin diseases,3
+680,689,Bacterial skin diseases,3
+681,682.9,Cellulitis,4
+035,035.9,Pyoderma,4
+102,103.9,Pyoderma,4
+457.2,457.3,Pyoderma,4
+680,680.9,Pyoderma,4
+683,689,Pyoderma,4
+707,707.9,Decubitus ulcer,3
+694,695.3,Other skin and subcutaneous diseases,3
+416.1,416.1,Musculoskeletal disorders,2
+437.4,437.4,Musculoskeletal disorders,2
+446,446.9,Musculoskeletal disorders,2
+695.4,695.5,Musculoskeletal disorders,2
+710,711.9,Musculoskeletal disorders,2
+714,714.3,Musculoskeletal disorders,2
+714.8,714.9,Musculoskeletal disorders,2
+730.1,730.1,Musculoskeletal disorders,2
+732,732.9,Musculoskeletal disorders,2
+733.0,733.1,Musculoskeletal disorders,2
+714,714.3,Rheumatoid arthritis,3
+714.8,714.9,Rheumatoid arthritis,3
+416.1,416.1,Other musculoskeletal disorders,3
+437.4,437.4,Other musculoskeletal disorders,3
+446,446.9,Other musculoskeletal disorders,3
+695.4,695.5,Other musculoskeletal disorders,3
+710,711.9,Other musculoskeletal disorders,3
+730.1,730.1,Other musculoskeletal disorders,3
+732,732.9,Other musculoskeletal disorders,3
+733.0,733.1,Other musculoskeletal disorders,3
+218,219,Other non-communicable diseases,2
+219.1,219.9,Other non-communicable diseases,2
+236.0,236.0,Other non-communicable diseases,2
+240,243.9,Other non-communicable diseases,2
+244.0,244.1,Other non-communicable diseases,2
+244.3,244.8,Other non-communicable diseases,2
+245,246.9,Other non-communicable diseases,2
+251,259.1,Other non-communicable diseases,2
+259.3,259.9,Other non-communicable diseases,2
+270,273.9,Other non-communicable diseases,2
+275,276,Other non-communicable diseases,2
+277,277.2,Other non-communicable diseases,2
+277.4,277.9,Other non-communicable diseases,2
+278.0,278.8,Other non-communicable diseases,2
+282,284.9,Other non-communicable diseases,2
+286,286.5,Other non-communicable diseases,2
+286.7,289.0,Other non-communicable diseases,2
+289.4,289.7,Other non-communicable diseases,2
+357.6,357.6,Other non-communicable diseases,2
+518.7,518.7,Other non-communicable diseases,2
+519.0,519.0,Other non-communicable diseases,2
+536.4,536.4,Other non-communicable diseases,2
+539,539.9,Other non-communicable diseases,2
+551.2,551.2,Other non-communicable diseases,2
+552.2,552.2,Other non-communicable diseases,2
+564.2,564.4,Other non-communicable diseases,2
+569.6,569.6,Other non-communicable diseases,2
+579.3,579.3,Other non-communicable diseases,2
+588,588.9,Other non-communicable diseases,2
+590,590.9,Other non-communicable diseases,2
+592,593.8,Other non-communicable diseases,2
+594,599.6,Other non-communicable diseases,2
+599.8,599.8,Other non-communicable diseases,2
+601,602.9,Other non-communicable diseases,2
+604,604.9,Other non-communicable diseases,2
+608.2,608.2,Other non-communicable diseases,2
+617,618.9,Other non-communicable diseases,2
+620,620.9,Other non-communicable diseases,2
+621.4,621.9,Other non-communicable diseases,2
+622.3,622.6,Other non-communicable diseases,2
+629,629.8,Other non-communicable diseases,2
+740,749.0,Other non-communicable diseases,2
+749.2,752.9,Other non-communicable diseases,2
+753.4,758.9,Other non-communicable diseases,2
+759.0,759.8,Other non-communicable diseases,2
+775.3,775.3,Other non-communicable diseases,2
+779.4,779.5,Other non-communicable diseases,2
+788.0,788.0,Other non-communicable diseases,2
+798,798.0,Other non-communicable diseases,2
+740,749.0,Congenital birth defects,3
+749.2,752.9,Congenital birth defects,3
+753.4,758.9,Congenital birth defects,3
+759.0,759.8,Congenital birth defects,3
+740,741.9,Neural tube defects,4
+742.0,742.0,Neural tube defects,4
+745,747.9,Congenital heart anomalies,4
+749,749.0,Orofacial clefts,4
+749.2,749.9,Orofacial clefts,4
+758.0,758.0,Down syndrome,4
+758,758,Other chromosomal abnormalities,4
+758.1,758.6,Other chromosomal abnormalities,4
+758.8,758.9,Other chromosomal abnormalities,4
+742.5,742.5,Congenital musculoskeletal and limb anomalies,4
+754,756.5,Congenital musculoskeletal and limb anomalies,4
+756.8,756.9,Congenital musculoskeletal and limb anomalies,4
+752,752.9,Urogenital congenital anomalies,4
+753.4,753.9,Urogenital congenital anomalies,4
+750,751.9,Digestive congenital anomalies,4
+756.6,756.7,Digestive congenital anomalies,4
+742,742,Other congenital birth defects,4
+742.1,742.4,Other congenital birth defects,4
+742.8,744.9,Other congenital birth defects,4
+748,748.9,Other congenital birth defects,4
+757,757.9,Other congenital birth defects,4
+759.0,759.8,Other congenital birth defects,4
+588,588.9,Urinary diseases and male infertility,3
+590,590.9,Urinary diseases and male infertility,3
+592,593.8,Urinary diseases and male infertility,3
+594,598.1,Urinary diseases and male infertility,3
+598.8,599.6,Urinary diseases and male infertility,3
+599.8,599.8,Urinary diseases and male infertility,3
+601,602.9,Urinary diseases and male infertility,3
+604,604.9,Urinary diseases and male infertility,3
+608.2,608.2,Urinary diseases and male infertility,3
+788.0,788.0,Urinary diseases and male infertility,3
+590,590.9,Urinary tract infection and interstitial nephritis,4
+595,595.9,Urinary tract infection and interstitial nephritis,4
+597,597.9,Urinary tract infection and interstitial nephritis,4
+599.0,599.0,Urinary tract infection and interstitial nephritis,4
+592,592.9,Urolithiasis,4
+594,594.9,Urolithiasis,4
+788.0,788.0,Urolithiasis,4
+588,588.9,Other urinary diseases,4
+593,593.8,Other urinary diseases,4
+596,596.9,Other urinary diseases,4
+598,598.1,Other urinary diseases,4
+598.8,599,Other urinary diseases,4
+599.1,599.6,Other urinary diseases,4
+599.8,599.8,Other urinary diseases,4
+601,602.9,Other urinary diseases,4
+604,604.9,Other urinary diseases,4
+608.2,608.2,Other urinary diseases,4
+218,219,Gynaecological diseases,3
+219.1,219.9,Gynaecological diseases,3
+236.0,236.0,Gynaecological diseases,3
+256.4,256.4,Gynaecological diseases,3
+617,618.9,Gynaecological diseases,3
+620,620.9,Gynaecological diseases,3
+621.4,621.9,Gynaecological diseases,3
+622.3,622.6,Gynaecological diseases,3
+629,629.8,Gynaecological diseases,3
+218,219,Uterine fibroids,4
+219.1,219.9,Uterine fibroids,4
+236.0,236.0,Uterine fibroids,4
+617,617.9,Endometriosis,4
+618,618.9,Genital prolapse,4
+620,620.9,Other gynaecological diseases,4
+621.4,621.9,Other gynaecological diseases,4
+622.3,622.6,Other gynaecological diseases,4
+629,629.8,Other gynaecological diseases,4
+282,284.9,Haemoglobinopathies and haemolytic anaemias,3
+282.4,282.5,Thalassaemias,4
+282.6,282.6,Sickle cell disorders,4
+282.2,282.3,G6PD deficiency,4
+282,282.1,Other haemoglobinopathies and haemolytic anaemias,4
+282.7,284.9,Other haemoglobinopathies and haemolytic anaemias,4
+240,243.9,"Endocrine, metabolic, blood, and immune disorders",3
+244.0,244.1,"Endocrine, metabolic, blood, and immune disorders",3
+244.3,244.8,"Endocrine, metabolic, blood, and immune disorders",3
+245,246.9,"Endocrine, metabolic, blood, and immune disorders",3
+251,256.3,"Endocrine, metabolic, blood, and immune disorders",3
+256.8,259.1,"Endocrine, metabolic, blood, and immune disorders",3
+259.3,259.9,"Endocrine, metabolic, blood, and immune disorders",3
+270,273.9,"Endocrine, metabolic, blood, and immune disorders",3
+275,276,"Endocrine, metabolic, blood, and immune disorders",3
+277,277.2,"Endocrine, metabolic, blood, and immune disorders",3
+277.4,277.9,"Endocrine, metabolic, blood, and immune disorders",3
+278.0,278.8,"Endocrine, metabolic, blood, and immune disorders",3
+286,286.5,"Endocrine, metabolic, blood, and immune disorders",3
+286.7,289.0,"Endocrine, metabolic, blood, and immune disorders",3
+289.4,289.7,"Endocrine, metabolic, blood, and immune disorders",3
+357.6,357.6,"Endocrine, metabolic, blood, and immune disorders",3
+518.7,518.7,"Endocrine, metabolic, blood, and immune disorders",3
+519.0,519.0,"Endocrine, metabolic, blood, and immune disorders",3
+536.4,536.4,"Endocrine, metabolic, blood, and immune disorders",3
+539,539.9,"Endocrine, metabolic, blood, and immune disorders",3
+551.2,551.2,"Endocrine, metabolic, blood, and immune disorders",3
+552.2,552.2,"Endocrine, metabolic, blood, and immune disorders",3
+564.2,564.4,"Endocrine, metabolic, blood, and immune disorders",3
+569.6,569.6,"Endocrine, metabolic, blood, and immune disorders",3
+579.3,579.3,"Endocrine, metabolic, blood, and immune disorders",3
+598.2,598.2,"Endocrine, metabolic, blood, and immune disorders",3
+775.3,775.3,"Endocrine, metabolic, blood, and immune disorders",3
+779.4,779.5,"Endocrine, metabolic, blood, and immune disorders",3
+798,798.0,Sudden infant death syndrome,3
+349.0,349.1,Injuries,1
+457.0,457.0,Injuries,1
+E800,E807,Injuries,1
+E830,E838,Injuries,1
+E840,E849,Injuries,1
+E856,E857,Injuries,1
+E861,E865,Injuries,1
+E867,E869,Injuries,1
+E870,E876,Injuries,1
+E878,E879,Injuries,1
+E880,E886,Injuries,1
+E888,E928,Injuries,1
+E930,E979,Injuries,1
+E990,E999,Injuries,1
+E800,E807,Transport injuries,2
+E830,E838,Transport injuries,2
+E840,E849,Transport injuries,2
+,,Road injuries,3
+,,Pedestrian road injuries,4
+,,Cyclist road injuries,4
+,,Motorcyclist road injuries,4
+,,Motor vehicle road injuries,4
+,,Other road injuries,4
+E800,E807,Other transport injuries,3
+E830,E838,Other transport injuries,3
+E840,E849,Other transport injuries,3
+349.0,349.1,Unintentional injuries,2
+457.0,457.0,Unintentional injuries,2
+E856,E857,Unintentional injuries,2
+E861,E865,Unintentional injuries,2
+E867,E869,Unintentional injuries,2
+E870,E876,Unintentional injuries,2
+E878,E879,Unintentional injuries,2
+E880,E886,Unintentional injuries,2
+E888,E928,Unintentional injuries,2
+E930,E949,Unintentional injuries,2
+E880,E886,Falls,3
+E888,E888,Falls,3
+E910,E910,Drowning,3
+E890,E899,"Fire, heat, and hot substances",3
+E924,E924,"Fire, heat, and hot substances",3
+E856,E857,Poisonings,3
+E861,E865,Poisonings,3
+E867,E869,Poisonings,3
+E862,E862,Poisoning by carbon monoxide,4
+E868,E869,Poisoning by carbon monoxide,4
+E856,E857,Poisoning by other means,4
+E861,E861,Poisoning by other means,4
+E863,E865,Poisoning by other means,4
+E867,E867,Poisoning by other means,4
+E916,E922,Exposure to mechanical forces,3
+E922,E922,Unintentional firearm injuries,4
+E916,E921,Other exposure to mechanical forces,4
+349.0,349.1,Adverse effects of medical treatment,3
+457.0,457.0,Adverse effects of medical treatment,3
+E870,E876,Adverse effects of medical treatment,3
+E878,E879,Adverse effects of medical treatment,3
+E930,E949,Adverse effects of medical treatment,3
+E905,E906,Animal contact,3
+E905,E905,Venomous animal contact,4
+E906,E906,Non-venomous animal contact,4
+E911,E915,Foreign body,3
+E911,E913,Pulmonary aspiration and foreign body in airway,4
+E914,E915,Foreign body in other body part,4
+E900,E902,Environmental heat and cold exposure,3
+E926,E926,Environmental heat and cold exposure,3
+E907,E909,Exposure to forces of nature,3
+768.0,768.1,Still Born,
+E903,E904,Other unintentional injuries,3
+E923,E923,Other unintentional injuries,3
+E925,E925,Other unintentional injuries,3
+E927,E928,Other unintentional injuries,3
+E950,E979,Self-harm and interpersonal violence,2
+E990,E999,Self-harm and interpersonal violence,2
+E950,E959,Self-harm,3
+E955,E955,Self-harm by firearm,4
+E950,E954,Self-harm by other specified means,4
+E956,E959,Self-harm by other specified means,4
+E960,E969,Interpersonal violence,3
+E965,E965,Physical violence by firearm,4
+E966,E966,Physical violence by sharp object,4
+E961,E964,Physical violence by other means,4
+E967,E969,Physical violence by other means,4
+E979,E979,Conflict and terrorism,3
+E990,E999,Conflict and terrorism,3
+E970,E978,Police conflict and executions,3
+038,038.9,Garbage Code (GBD Level 1),
+040.0,040.0,Garbage Code (GBD Level 1),
+041.1,041.1,Garbage Code (GBD Level 1),
+076,078.2,Garbage Code (GBD Level 1),
+110,111.9,Garbage Code (GBD Level 1),
+125,125.3,Garbage Code (GBD Level 1),
+126,126.9,Garbage Code (GBD Level 1),
+127.2,127.9,Garbage Code (GBD Level 1),
+131,132.9,Garbage Code (GBD Level 1),
+133.8,134.9,Garbage Code (GBD Level 1),
+136.6,136.6,Garbage Code (GBD Level 1),
+139.1,139.1,Garbage Code (GBD Level 1),
+139.9,139.9,Garbage Code (GBD Level 1),
+247,248,Garbage Code (GBD Level 1),
+264,264.9,Garbage Code (GBD Level 1),
+274,274.9,Garbage Code (GBD Level 1),
+276.0,276.5,Garbage Code (GBD Level 1),
+276.7,276.9,Garbage Code (GBD Level 1),
+277.3,277.3,Garbage Code (GBD Level 1),
+280,281,Garbage Code (GBD Level 1),
+285,285.9,Garbage Code (GBD Level 1),
+286.6,286.6,Garbage Code (GBD Level 1),
+289.1,289.3,Garbage Code (GBD Level 1),
+293,293,Garbage Code (GBD Level 1),
+294,294.0,Garbage Code (GBD Level 1),
+295,302.9,Garbage Code (GBD Level 1),
+305,305,Garbage Code (GBD Level 1),
+305.9,307.0,Garbage Code (GBD Level 1),
+307.2,307.4,Garbage Code (GBD Level 1),
+307.6,319.9,Garbage Code (GBD Level 1),
+324,327.1,Garbage Code (GBD Level 1),
+328,329,Garbage Code (GBD Level 1),
+338,339.1,Garbage Code (GBD Level 1),
+339.3,339.8,Garbage Code (GBD Level 1),
+342,344.9,Garbage Code (GBD Level 1),
+346,346.9,Garbage Code (GBD Level 1),
+350,353.6,Garbage Code (GBD Level 1),
+354,355.9,Garbage Code (GBD Level 1),
+360,362,Garbage Code (GBD Level 1),
+362.1,376,Garbage Code (GBD Level 1),
+376.2,380.9,Garbage Code (GBD Level 1),
+384,389.9,Garbage Code (GBD Level 1),
+415,415.9,Garbage Code (GBD Level 1),
+423.0,423.0,Garbage Code (GBD Level 1),
+424,424,Garbage Code (GBD Level 1),
+424.4,424.5,Garbage Code (GBD Level 1),
+424.9,424.9,Garbage Code (GBD Level 1),
+427.5,427.5,Garbage Code (GBD Level 1),
+427.9,428.9,Garbage Code (GBD Level 1),
+437.3,437.3,Garbage Code (GBD Level 1),
+458,458.9,Garbage Code (GBD Level 1),
+459.0,459.0,Garbage Code (GBD Level 1),
+507,507.9,Garbage Code (GBD Level 1),
+510,510.9,Garbage Code (GBD Level 1),
+512,513.9,Garbage Code (GBD Level 1),
+518.1,518.2,Garbage Code (GBD Level 1),
+520,529.9,Garbage Code (GBD Level 1),
+536.3,536.3,Garbage Code (GBD Level 1),
+536.8,536.9,Garbage Code (GBD Level 1),
+537.7,537.7,Garbage Code (GBD Level 1),
+537.9,537.9,Garbage Code (GBD Level 1),
+564.8,564.9,Garbage Code (GBD Level 1),
+567,568.9,Garbage Code (GBD Level 1),
+570,570.9,Garbage Code (GBD Level 1),
+572,572.1,Garbage Code (GBD Level 1),
+573.1,573.3,Garbage Code (GBD Level 1),
+584,584.9,Garbage Code (GBD Level 1),
+586,587.9,Garbage Code (GBD Level 1),
+603,603.9,Garbage Code (GBD Level 1),
+605,608.1,Garbage Code (GBD Level 1),
+608.3,609,Garbage Code (GBD Level 1),
+611,612.1,Garbage Code (GBD Level 1),
+615,616.9,Garbage Code (GBD Level 1),
+619,619.9,Garbage Code (GBD Level 1),
+621,621.3,Garbage Code (GBD Level 1),
+622,622.0,Garbage Code (GBD Level 1),
+622.8,623.6,Garbage Code (GBD Level 1),
+623.8,624.5,Garbage Code (GBD Level 1),
+624.8,628.9,Garbage Code (GBD Level 1),
+629.9,629.9,Garbage Code (GBD Level 1),
+690,693.9,Garbage Code (GBD Level 1),
+695.8,706.9,Garbage Code (GBD Level 1),
+708,709.9,Garbage Code (GBD Level 1),
+712,713.8,Garbage Code (GBD Level 1),
+715,716,Garbage Code (GBD Level 1),
+716.2,721.6,Garbage Code (GBD Level 1),
+721.8,730.0,Garbage Code (GBD Level 1),
+730.2,730.3,Garbage Code (GBD Level 1),
+730.7,731.9,Garbage Code (GBD Level 1),
+733,733,Garbage Code (GBD Level 1),
+733.2,734.2,Garbage Code (GBD Level 1),
+737,738,Garbage Code (GBD Level 1),
+738.2,739.9,Garbage Code (GBD Level 1),
+780,782.4,Garbage Code (GBD Level 1),
+782.6,784.6,Garbage Code (GBD Level 1),
+784.9,784.9,Garbage Code (GBD Level 1),
+785.4,786,Garbage Code (GBD Level 1),
+786.6,786.6,Garbage Code (GBD Level 1),
+786.8,786.8,Garbage Code (GBD Level 1),
+787,787,Garbage Code (GBD Level 1),
+787.3,788,Garbage Code (GBD Level 1),
+788.3,789,Garbage Code (GBD Level 1),
+789.1,789.2,Garbage Code (GBD Level 1),
+789.5,789.5,Garbage Code (GBD Level 1),
+790,790.1,Garbage Code (GBD Level 1),
+790.4,796.1,Garbage Code (GBD Level 1),
+796.3,797.9,Garbage Code (GBD Level 1),
+798.1,799,Garbage Code (GBD Level 1),
+799.2,799.9,Garbage Code (GBD Level 1),
+999.0,999.9,Garbage Code (GBD Level 1),
+E851,E855,Garbage Code (GBD Level 1),
+E858,E858,Garbage Code (GBD Level 1),
+E866,E866,Garbage Code (GBD Level 1),
+E980,E982,Garbage Code (GBD Level 1),
+V01,V08,Garbage Code (GBD Level 1),
+V10,uns,Garbage Code (GBD Level 1),
+000,000.9,Garbage Code (GBD Level 2),
+030,030.9,Garbage Code (GBD Level 2),
+041.2,041.9,Garbage Code (GBD Level 2),
+067,069,Garbage Code (GBD Level 2),
+078.8,078.9,Garbage Code (GBD Level 2),
+079.8,079.9,Garbage Code (GBD Level 2),
+089,089.9,Garbage Code (GBD Level 2),
+105,109.9,Garbage Code (GBD Level 2),
+119,119,Garbage Code (GBD Level 2),
+136.8,136.9,Garbage Code (GBD Level 2),
+139.8,139.8,Garbage Code (GBD Level 2),
+304,304,Garbage Code (GBD Level 2),
+304.9,304.9,Garbage Code (GBD Level 2),
+305.1,305.1,Garbage Code (GBD Level 2),
+339.2,339.2,Garbage Code (GBD Level 2),
+401,401.9,Garbage Code (GBD Level 2),
+405,405.9,Garbage Code (GBD Level 2),
+416,416,Garbage Code (GBD Level 2),
+416.2,416.9,Garbage Code (GBD Level 2),
+440,440.1,Garbage Code (GBD Level 2),
+440.3,440.3,Garbage Code (GBD Level 2),
+440.8,440.9,Garbage Code (GBD Level 2),
+444,445.8,Garbage Code (GBD Level 2),
+490,490.9,Garbage Code (GBD Level 2),
+494,494.9,Garbage Code (GBD Level 2),
+511,511.9,Garbage Code (GBD Level 2),
+514,514.9,Garbage Code (GBD Level 2),
+515.0,515.9,Garbage Code (GBD Level 2),
+518,518.0,Garbage Code (GBD Level 2),
+518.3,518.5,Garbage Code (GBD Level 2),
+518.8,518.8,Garbage Code (GBD Level 2),
+536.2,536.2,Garbage Code (GBD Level 2),
+578,578.9,Garbage Code (GBD Level 2),
+599.7,599.7,Garbage Code (GBD Level 2),
+613,614.9,Garbage Code (GBD Level 2),
+714.4,714.4,Garbage Code (GBD Level 2),
+716.1,716.1,Garbage Code (GBD Level 2),
+721.7,721.7,Garbage Code (GBD Level 2),
+735,736.9,Garbage Code (GBD Level 2),
+738.0,738.1,Garbage Code (GBD Level 2),
+784.7,784.8,Garbage Code (GBD Level 2),
+786.3,786.3,Garbage Code (GBD Level 2),
+787.0,787.2,Garbage Code (GBD Level 2),
+789.0,789.0,Garbage Code (GBD Level 2),
+789.3,789.4,Garbage Code (GBD Level 2),
+789.6,789.9,Garbage Code (GBD Level 2),
+796.2,796.2,Garbage Code (GBD Level 2),
+799.0,799.1,Garbage Code (GBD Level 2),
+800,999,Garbage Code (GBD Level 2),
+E000,E80,Garbage Code (GBD Level 2),
+E83,E83,Garbage Code (GBD Level 2),
+E839,E839,Garbage Code (GBD Level 2),
+E85,E85,Garbage Code (GBD Level 2),
+E859,E859,Garbage Code (GBD Level 2),
+E87,E87,Garbage Code (GBD Level 2),
+E877,E877,Garbage Code (GBD Level 2),
+E88,E88,Garbage Code (GBD Level 2),
+E887,E887,Garbage Code (GBD Level 2),
+E929,E929,Garbage Code (GBD Level 2),
+E983,E985,Garbage Code (GBD Level 2),
+E988,E989,Garbage Code (GBD Level 2),
+002,002,Garbage Code (GBD Level 3),
+031,031.9,Garbage Code (GBD Level 3),
+039,039.9,Garbage Code (GBD Level 3),
+070,070,Garbage Code (GBD Level 3),
+070.4,070.9,Garbage Code (GBD Level 3),
+085,085,Garbage Code (GBD Level 3),
+085.1,085.9,Garbage Code (GBD Level 3),
+088.0,088.7,Garbage Code (GBD Level 3),
+112,118.9,Garbage Code (GBD Level 3),
+130,130.9,Garbage Code (GBD Level 3),
+136.3,136.5,Garbage Code (GBD Level 3),
+149,149.9,Garbage Code (GBD Level 3),
+155.2,155.2,Garbage Code (GBD Level 3),
+159,159.9,Garbage Code (GBD Level 3),
+165,169,Garbage Code (GBD Level 3),
+176,179.9,Garbage Code (GBD Level 3),
+183.9,184,Garbage Code (GBD Level 3),
+184.5,184.5,Garbage Code (GBD Level 3),
+184.9,184.9,Garbage Code (GBD Level 3),
+187,187,Garbage Code (GBD Level 3),
+187.9,187.9,Garbage Code (GBD Level 3),
+189,189,Garbage Code (GBD Level 3),
+189.9,189.9,Garbage Code (GBD Level 3),
+190.9,190.9,Garbage Code (GBD Level 3),
+195,199.9,Garbage Code (GBD Level 3),
+209,209,Garbage Code (GBD Level 3),
+209.2,209.3,Garbage Code (GBD Level 3),
+209.6,210,Garbage Code (GBD Level 3),
+211,211,Garbage Code (GBD Level 3),
+211.9,212,Garbage Code (GBD Level 3),
+212.9,212.9,Garbage Code (GBD Level 3),
+214,216.9,Garbage Code (GBD Level 3),
+221,221,Garbage Code (GBD Level 3),
+221.9,222,Garbage Code (GBD Level 3),
+222.9,223,Garbage Code (GBD Level 3),
+223.9,223.9,Garbage Code (GBD Level 3),
+229,229,Garbage Code (GBD Level 3),
+229.1,229.1,Garbage Code (GBD Level 3),
+229.9,230.0,Garbage Code (GBD Level 3),
+230.9,231,Garbage Code (GBD Level 3),
+231.8,231.9,Garbage Code (GBD Level 3),
+233,233,Garbage Code (GBD Level 3),
+233.3,233.3,Garbage Code (GBD Level 3),
+233.6,233.6,Garbage Code (GBD Level 3),
+233.9,234,Garbage Code (GBD Level 3),
+234.9,235,Garbage Code (GBD Level 3),
+235.1,235.3,Garbage Code (GBD Level 3),
+235.5,235.5,Garbage Code (GBD Level 3),
+235.9,236,Garbage Code (GBD Level 3),
+236.3,236.3,Garbage Code (GBD Level 3),
+236.6,236.6,Garbage Code (GBD Level 3),
+236.9,236.9,Garbage Code (GBD Level 3),
+237.4,237.4,Garbage Code (GBD Level 3),
+239,239.1,Garbage Code (GBD Level 3),
+239.5,239.5,Garbage Code (GBD Level 3),
+239.7,239.9,Garbage Code (GBD Level 3),
+249,249.9,Garbage Code (GBD Level 3),
+259.2,259.2,Garbage Code (GBD Level 3),
+276.6,276.6,Garbage Code (GBD Level 3),
+278,278,Garbage Code (GBD Level 3),
+279,279.9,Garbage Code (GBD Level 3),
+293.0,293.9,Garbage Code (GBD Level 3),
+331.3,331.4,Garbage Code (GBD Level 3),
+332.1,332.9,Garbage Code (GBD Level 3),
+347,348.9,Garbage Code (GBD Level 3),
+349.9,349.9,Garbage Code (GBD Level 3),
+357,357,Garbage Code (GBD Level 3),
+357.8,357.9,Garbage Code (GBD Level 3),
+399,400.0,Garbage Code (GBD Level 3),
+406,409.4,Garbage Code (GBD Level 3),
+418,419.9,Garbage Code (GBD Level 3),
+426,427,Garbage Code (GBD Level 3),
+427.4,427.4,Garbage Code (GBD Level 3),
+429,429,Garbage Code (GBD Level 3),
+429.2,429.9,Garbage Code (GBD Level 3),
+459.5,459.9,Garbage Code (GBD Level 3),
+464.5,464.5,Garbage Code (GBD Level 3),
+465,465,Garbage Code (GBD Level 3),
+465.9,465.9,Garbage Code (GBD Level 3),
+505,505.9,Garbage Code (GBD Level 3),
+519,519,Garbage Code (GBD Level 3),
+519.8,519.9,Garbage Code (GBD Level 3),
+530.1,530.1,Garbage Code (GBD Level 3),
+530.7,530.9,Garbage Code (GBD Level 3),
+544,549,Garbage Code (GBD Level 3),
+553.8,553.9,Garbage Code (GBD Level 3),
+559,559.0,Garbage Code (GBD Level 3),
+560.4,560.7,Garbage Code (GBD Level 3),
+561,561,Garbage Code (GBD Level 3),
+562.2,563,Garbage Code (GBD Level 3),
+569,569,Garbage Code (GBD Level 3),
+569.8,569.9,Garbage Code (GBD Level 3),
+591,591.9,Garbage Code (GBD Level 3),
+593.9,593.9,Garbage Code (GBD Level 3),
+599.9,600.9,Garbage Code (GBD Level 3),
+623.7,623.7,Garbage Code (GBD Level 3),
+624.6,624.6,Garbage Code (GBD Level 3),
+637,637.9,Garbage Code (GBD Level 3),
+639,639.9,Garbage Code (GBD Level 3),
+749.1,749.1,Garbage Code (GBD Level 3),
+759,759,Garbage Code (GBD Level 3),
+759.9,759.9,Garbage Code (GBD Level 3),
+779.9,779.9,Garbage Code (GBD Level 3),
+782.5,782.5,Garbage Code (GBD Level 3),
+785,785.3,Garbage Code (GBD Level 3),
+786.0,786.2,Garbage Code (GBD Level 3),
+786.4,786.5,Garbage Code (GBD Level 3),
+786.7,786.7,Garbage Code (GBD Level 3),
+786.9,786.9,Garbage Code (GBD Level 3),
+788.1,788.2,Garbage Code (GBD Level 3),
+E986,E987,Garbage Code (GBD Level 3),
+070.3,070.3,Garbage Code (GBD Level 4),
+084,084,Garbage Code (GBD Level 4),
+084.6,084.6,Garbage Code (GBD Level 4),
+194,194.0,Garbage Code (GBD Level 4),
+194.9,194.9,Garbage Code (GBD Level 4),
+204.1,204.1,Garbage Code (GBD Level 4),
+204.5,204.9,Garbage Code (GBD Level 4),
+205.8,205.9,Garbage Code (GBD Level 4),
+206.2,206.9,Garbage Code (GBD Level 4),
+238,238,Garbage Code (GBD Level 4),
+244,244,Garbage Code (GBD Level 4),
+244.9,244.9,Garbage Code (GBD Level 4),
+250,250.9,Garbage Code (GBD Level 4),
+289.8,289.9,Garbage Code (GBD Level 4),
+307.5,307.5,Garbage Code (GBD Level 4),
+320,320,Garbage Code (GBD Level 4),
+320.9,320.9,Garbage Code (GBD Level 4),
+357.2,357.2,Garbage Code (GBD Level 4),
+362.0,362.0,Garbage Code (GBD Level 4),
+425,425,Garbage Code (GBD Level 4),
+425.4,425.4,Garbage Code (GBD Level 4),
+425.9,425.9,Garbage Code (GBD Level 4),
+429.1,429.1,Garbage Code (GBD Level 4),
+436,437,Garbage Code (GBD Level 4),
+437.9,439.6,Garbage Code (GBD Level 4),
+482.9,483,Garbage Code (GBD Level 4),
+484,484,Garbage Code (GBD Level 4),
+484.8,486.9,Garbage Code (GBD Level 4),
+770.0,770.0,Garbage Code (GBD Level 4),
+790.2,790.2,Garbage Code (GBD Level 4),
+E808,E829,Garbage Code (GBD Level 4),

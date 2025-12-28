@@ -1,0 +1,361 @@
+"Cause","Level"
+"All causes",0
+"Communicable, maternal, neonatal, and nutritional diseases",1
+"HIV/AIDS and sexually transmitted infections",2
+"HIV/AIDS",3
+"HIV/AIDS–drug-susceptible tuberculosis",4
+"HIV/AIDS–multidrug-resistant TB without extensive drug resistance",4
+"HIV/AIDS–extensively drug-resistant tuberculosis",4
+"HIV/AIDS resulting in other diseases",4
+"Sexually transmitted infections excluding HIV",3
+"Syphilis",4
+"Chlamydial infection",4
+"Gonococcal infection",4
+"Trichomoniasis",4
+"Genital herpes",4
+"Other sexually transmitted infections",4
+"Respiratory infections and tuberculosis",2
+"Tuberculosis",3
+"Latent tuberculosis infection",4
+"Drug-susceptible tuberculosis",4
+"Multidrug resistant TB without extensive drug resistance",4
+"Extensively drug-resistant tuberculosis",4
+"Lower respiratory infections",3
+"Upper respiratory infections",3
+"Otitis media",3
+"Enteric infections",2
+"Diarrhoeal diseases",3
+"Typhoid and paratyphoid",3
+"Typhoid fever",4
+"Paratyphoid fever",4
+"Invasive non-typhoidal Salmonella (iNTS)",3
+"Other intestinal infectious diseases",3
+"Neglected tropical diseases and malaria",2
+"Malaria",3
+"Chagas disease",3
+"Leishmaniasis",3
+"Visceral leishmaniasis",4
+"Cutaneous and mucocutaneous leishmaniasis",4
+"African trypanosomiasis",3
+"Schistosomiasis",3
+"Cysticercosis",3
+"Cystic echinococcosis",3
+"Lymphatic filariasis",3
+"Onchocerciasis",3
+"Trachoma",3
+"Dengue",3
+"Yellow fever",3
+"Rabies",3
+"Intestinal nematode infections",3
+"Ascariasis",4
+"Trichuriasis",4
+"Hookworm disease",4
+"Food-borne trematodiases",3
+"Leprosy",3
+"Ebola virus disease",3
+"Zika virus disease",3
+"Guinea worm disease",3
+"Other neglected tropical diseases",3
+"Other infectious diseases",2
+"Meningitis",3
+"Encephalitis",3
+"Diphtheria",3
+"Whooping cough",3
+"Tetanus",3
+"Measles",3
+"Varicella and herpes zoster",3
+"Acute hepatitis",3
+"Acute hepatitis A",4
+"Acute hepatitis B",4
+"Acute hepatitis C",4
+"Acute hepatitis E",4
+"Other unspecified infectious diseases",3
+"Maternal and neonatal disorders",2
+"Maternal disorders",3
+"Maternal haemorrhage",4
+"Maternal sepsis and other maternal infections",4
+"Maternal hypertensive disorders",4
+"Maternal obstructed labor and uterine rupture",4
+"Maternal abortion and miscarriage",4
+"Ectopic pregnancy",4
+"Indirect maternal deaths",4
+"Late maternal deaths",4
+"Maternal deaths aggravated by HIV/AIDS",4
+"Other maternal disorders",4
+"Neonatal disorders",3
+"Neonatal preterm birth",4
+"Neonatal encephalopathy due to birth asphyxia and trauma",4
+"Neonatal sepsis and other neonatal infections",4
+"Haemolytic disease and other neonatal jaundice",4
+"Other neonatal disorders",4
+"Nutritional deficiencies",2
+"Protein-energy malnutrition",3
+"Iodine deficiency",3
+"Vitamin A deficiency",3
+"Dietary iron deficiency",3
+"Other nutritional deficiencies",3
+"Non-communicable diseases",1
+"Neoplasms",2
+"Lip and oral cavity cancer",3
+"Nasopharynx cancer",3
+"Other pharynx cancer",3
+"Oesophageal cancer",3
+"Stomach cancer",3
+"Colon and rectum cancer",3
+"Liver cancer",3
+"Liver cancer due to hepatitis B",4
+"Liver cancer due to hepatitis C",4
+"Liver cancer due to alcohol use",4
+"Liver cancer due to NASH",4
+"Liver cancer due to other causes",4
+"Gallbladder and biliary tract cancer",3
+"Pancreatic cancer",3
+"Larynx cancer",3
+"Tracheal, bronchus, and lung cancer",3
+"Malignant skin melanoma",3
+"Non-melanoma skin cancer",3
+"Non-melanoma skin cancer (squamous-cell carcinoma)",4
+"Non-melanoma skin cancer (basal-cell carcinoma)",4
+"Breast cancer",3
+"Cervical cancer",3
+"Uterine cancer",3
+"Ovarian cancer",3
+"Prostate cancer",3
+"Testicular cancer",3
+"Kidney cancer",3
+"Bladder cancer",3
+"Brain and central nervous system cancer",3
+"Thyroid cancer",3
+"Mesothelioma",3
+"Hodgkin lymphoma",3
+"Non-Hodgkin lymphoma",3
+"Multiple myeloma",3
+"Leukaemia",3
+"Acute lymphoid leukeamia",4
+"Chronic lymphoid leukaemia",4
+"Acute myeloid leukaemia",4
+"Chronic myeloid leukaemia",4
+"Other leukaemia",4
+"Other malignant neoplasms",3
+"Other neoplasms",3
+"Myelodyspastic, myeloprliferative, and other haematopoietic neoplasms",4
+"Benign and in situ intestinal neoplasms",4
+"Benign and in situ cervical and uterine neoplasms",4
+"Other benign and in situ neoplasms",4
+"Cardiovascular diseases",2
+"Rheumatic heart disease",3
+"Ischaemic heart disease",3
+"Stroke",3
+"Ischaemic stroke",4
+"Intracerebral haemorrhage",4
+"Subarachnoid haemorrhage",4
+"Hypertensive heart disease",3
+"Non-rheumatic valvular heart disease",3
+"Non-rheumatic calcific aortic valvular heart disease",4
+"Non-rheumatic degenerative mitral valvular heart disease",4
+"Other non-rheumatic valvular heart diseases",4
+"Cardiomyopathy and myocarditis",3
+"Myocarditis",4
+"Alcoholic cardiomyopathy",4
+"Other cardiomyopathy",4
+"Atrial fibrillation and flutter",3
+"Aortic aneurysm",3
+"Peripheral artery disease",3
+"Endocarditis",3
+"Other cardiovascular and circulatory diseases",3
+"Chronic respiratory diseases",2
+"Chronic obstructive pulmonary disease",3
+"Pneumoconiosis",3
+"Silicosis",4
+"Asbestosis",4
+"Coal workers pneumoconiosis",4
+"Other pneumoconiosis",4
+"Asthma",3
+"Interstitial lung disease and pulmonary sarcoidosis",3
+"Other chronic respiratory diseases",3
+"Digestive diseases",2
+"Cirrhosis and other chronic liver diseases",3
+"Cirrhosis and other chronic liver diseases due to hepatitis B",4
+"Cirrhosis and other chronic liver diseases due to hepatitis C",4
+"Cirrhosis and other chronic liver diseases due to alcohol use",4
+"Cirrhosis and other chronic liver diseases due to NAFLD",4
+"Cirrhosis and other chronic liver diseases due to other causes",4
+"Upper digestive system diseases",3
+"Peptic ulcer disease",4
+"Gastritis and duodenitis",4
+"Gastro-oesophageal reflux disease",4
+"Appendicitis",3
+"Paralytic ileus and intestinal obstruction",3
+"Inguinal, femoral, and abdominal hernia",3
+"Inflammatory bowel disease",3
+"Vascular intestinal disorders",3
+"Gallbladder and biliary diseases",3
+"Pancreatitis",3
+"Other digestive diseases",3
+"Neurological disorders",2
+"Alzheimer's disease and other dementias",3
+"Parkinson's disease",3
+"Idiopathic epilepsy",3
+"Multiple sclerosis",3
+"Motor neuron disease",3
+"Headache disorders",3
+"Migraine",4
+"Tension-type headache",4
+"Other neurological disorders",3
+"Mental disorders",2
+"Schizophrenia",3
+"Depressive disorders",3
+"Major depressive disorder",4
+"Dysthymia",4
+"Bipolar disorder",3
+"Anxiety disorders",3
+"Eating disorders",3
+"Anorexia nervosa",4
+"Bulimia nervosa",4
+"Autism spectrum disorders",3
+"Attention-deficit/hyperactivity disorder",3
+"Conduct disorder",3
+"Idiopathic developmental intellectual disability",3
+"Other mental disorders",3
+"Substance use disorders",2
+"Alcohol use disorders",3
+"Drug use disorders",3
+"Opioid use disorders",4
+"Cocaine use disorders",4
+"Amphetamine use disorders",4
+"Cannabis use disorders",4
+"Other drug use disorders",4
+"Diabetes and kidney diseases",2
+"Diabetes mellitus",3
+"Diabetes mellitus type 1",4
+"Diabetes mellitus type 2",4
+"Chronic kidney disease",3
+"Chronic kidney disease due to diabetes mellitus type 1",4
+"Chronic kidney disease due to diabetes mellitus type 2",4
+"Chronic kidney disease due to hypertension",4
+"Chronic kidney disease due to glomerulonephritis",4
+"Chronic kidney disease due to other and unspecified causes",4
+"Acute glomerulonephritis",3
+"Skin and subcutaneous diseases",2
+"Dermatitis",3
+"Atopic dermatitis",4
+"Contact dermatitis",4
+"Seborrhoeic dermatitis",4
+"Psoriasis",3
+"Bacterial skin diseases",3
+"Cellulitis",4
+"Pyoderma",4
+"Scabies",3
+"Fungal skin diseases",3
+"Viral skin diseases",3
+"Acne vulgaris",3
+"Alopecia areata",3
+"Pruritus",3
+"Urticaria",3
+"Decubitus ulcer",3
+"Other skin and subcutaneous diseases",3
+"Sense organ diseases",2
+"Blindness and vision loss",3
+"Glaucoma",4
+"Cataract",4
+"Age-related macular degeneration",4
+"Refraction disorders",4
+"Near vision loss",4
+"Other vision loss",4
+"Age-related and other hearing loss",3
+"Other sense organ diseases",3
+"Musculoskeletal disorders",2
+"Rheumatoid arthritis",3
+"Osteoarthritis",3
+"Osteoarthritis hip",4
+"Osteoarthritis knee",4
+"Osteoarthritis hand",4
+"Osteoarthritis other",4
+"Low back pain",3
+"Neck pain",3
+"Gout",3
+"Other musculoskeletal disorders",3
+"Other non-communicable diseases",2
+"Congenital birth defects",3
+"Neural tube defects",4
+"Congenital heart anomalies",4
+"Orofacial clefts",4
+"Down syndrome",4
+"Turner syndrome",4
+"Klinefelter syndrome",4
+"Other chromosomal abnormalities",4
+"Congenital musculoskeletal and limb anomalies",4
+"Urogenital congenital anomalies",4
+"Digestive congenital anomalies",4
+"Other congenital birth defects",4
+"Urinary diseases and male infertility",3
+"Urinary tract infection and interstitial nephritis",4
+"Urolithiasis",4
+"Benign prostatic hyperplasia",4
+"Male infertility",4
+"Other urinary diseases",4
+"Gynaecological diseases",3
+"Uterine fibroids",4
+"Polycystic ovarian syndrome",4
+"Female infertility",4
+"Endometriosis",4
+"Genital prolapse",4
+"Premenstrual syndrome",4
+"Other gynaecological diseases",4
+"Haemoglobinopathies and haemolytic anaemias",3
+"Thalassaemias",4
+"Thalassaemias trait",4
+"Sickle cell disorders",4
+"Sickle cell trait",4
+"G6PD deficiency",4
+"G6PD trait",4
+"Other haemoglobinopathies and haemolytic anaemias",4
+"Endocrine, metabolic, blood, and immune disorders",3
+"Oral disorders",3
+"Caries of deciduous teeth",4
+"Caries of permanent teeth",4
+"Periodontal diseases",4
+"Edentulism and severe tooth loss",4
+"Other oral disorders",4
+"Sudden infant death syndrome",3
+"Injuries",1
+"Transport injuries",2
+"Road injuries",3
+"Pedestrian road injuries",4
+"Cyclist road injuries",4
+"Motorcyclist road injuries",4
+"Motor vehicle road injuries",4
+"Other road injuries",4
+"Other transport injuries",3
+"Unintentional injuries",2
+"Falls",3
+"Drowning",3
+"Fire, heat, and hot substances",3
+"Poisonings",3
+"Poisoning by carbon monoxide",4
+"Poisoning by other means",4
+"Exposure to mechanical forces",3
+"Unintentional firearm injuries",4
+"Other exposure to mechanical forces",4
+"Adverse effects of medical treatment",3
+"Animal contact",3
+"Venomous animal contact",4
+"Non-venomous animal contact",4
+"Foreign body",3
+"Pulmonary aspiration and foreign body in airway",4
+"Foreign body in eyes",4
+"Foreign body in other body part",4
+"Environmental heat and cold exposure",3
+"Exposure to forces of nature",3
+"Other unintentional injuries",3
+"Self-harm and interpersonal violence",2
+"Self-harm",3
+"Self-harm by firearm",4
+"Self-harm by other specified means",4
+"Interpersonal violence",3
+"Physical violence by firearm",4
+"Physical violence by sharp object",4
+"Sexual violence",4
+"Physical violence by other means",4
+"Conflict and terrorism",3
+"Police conflict and executions",3
